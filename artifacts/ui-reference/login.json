@@ -1,0 +1,170 @@
+{
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "samples": [
+    {
+      "selector": "main",
+      "expected": {
+        "backgroundColor": "rgb(28, 34, 46)",
+        "color": "rgb(255, 255, 255)",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "borderRadius": "0px",
+        "borderTopColor": "rgb(223, 230, 240)",
+        "paddingTop": "0px",
+        "paddingLeft": "0px"
+      },
+      "actual": {
+        "backgroundColor": "rgb(28, 34, 46)",
+        "color": "rgb(255, 255, 255)",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "borderRadius": "0px",
+        "borderTopColor": "rgb(223, 230, 240)",
+        "paddingTop": "0px",
+        "paddingLeft": "0px"
+      }
+    },
+    {
+      "selector": "header",
+      "expected": {
+        "backgroundColor": "rgb(28, 34, 46)",
+        "color": "rgb(255, 255, 255)",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "borderRadius": "0px",
+        "borderTopColor": "oklab(0.999994 0.0000455678 0.0000200868 / 0.1)",
+        "paddingTop": "0px",
+        "paddingLeft": "0px"
+      },
+      "actual": {
+        "backgroundColor": "rgb(28, 34, 46)",
+        "color": "rgb(255, 255, 255)",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "borderRadius": "0px",
+        "borderTopColor": "oklab(0.999994 0.0000455678 0.0000200868 / 0.1)",
+        "paddingTop": "0px",
+        "paddingLeft": "0px"
+      }
+    },
+    {
+      "selector": "h1",
+      "expected": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(255, 255, 255)",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontSize": "48px",
+        "fontWeight": "600",
+        "lineHeight": "53.76px",
+        "borderRadius": "0px",
+        "borderTopColor": "rgb(223, 230, 240)",
+        "paddingTop": "0px",
+        "paddingLeft": "0px"
+      },
+      "actual": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(255, 255, 255)",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontSize": "48px",
+        "fontWeight": "600",
+        "lineHeight": "53.76px",
+        "borderRadius": "0px",
+        "borderTopColor": "rgb(223, 230, 240)",
+        "paddingTop": "0px",
+        "paddingLeft": "0px"
+      }
+    },
+    {
+      "selector": "h2",
+      "expected": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(255, 255, 255)",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontSize": "16px",
+        "fontWeight": "600",
+        "lineHeight": "24px",
+        "borderRadius": "0px",
+        "borderTopColor": "rgb(223, 230, 240)",
+        "paddingTop": "0px",
+        "paddingLeft": "0px"
+      },
+      "actual": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(255, 255, 255)",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontSize": "16px",
+        "fontWeight": "600",
+        "lineHeight": "24px",
+        "borderRadius": "0px",
+        "borderTopColor": "rgb(223, 230, 240)",
+        "paddingTop": "0px",
+        "paddingLeft": "0px"
+      }
+    },
+    {
+      "selector": "input[type=\"email\"]",
+      "expected": {
+        "backgroundColor": "rgb(28, 34, 46)",
+        "color": "rgb(255, 255, 255)",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "20px",
+        "borderRadius": "16.8px",
+        "borderTopColor": "oklab(0.999994 0.0000455678 0.0000200868 / 0.1)",
+        "paddingTop": "0px",
+        "paddingLeft": "16px"
+      },
+      "actual": {
+        "backgroundColor": "rgb(28, 34, 46)",
+        "color": "rgb(255, 255, 255)",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "20px",
+        "borderRadius": "16.8px",
+        "borderTopColor": "oklab(0.999994 0.0000455678 0.0000200868 / 0.1)",
+        "paddingTop": "0px",
+        "paddingLeft": "16px"
+      }
+    },
+    {
+      "selector": "input[type=\"password\"]",
+      "expected": {
+        "backgroundColor": "rgb(28, 34, 46)",
+        "color": "rgb(255, 255, 255)",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "20px",
+        "borderRadius": "16.8px",
+        "borderTopColor": "oklab(0.999994 0.0000455678 0.0000200868 / 0.1)",
+        "paddingTop": "0px",
+        "paddingLeft": "16px"
+      },
+      "actual": {
+        "backgroundColor": "rgb(28, 34, 46)",
+        "color": "rgb(255, 255, 255)",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "lineHeight": "20px",
+        "borderRadius": "16.8px",
+        "borderTopColor": "oklab(0.999994 0.0000455678 0.0000200868 / 0.1)",
+        "paddingTop": "0px",
+        "paddingLeft": "16px"
+      }
+    }
+  ]
+}

@@ -1,0 +1,714 @@
+[
+  {
+    "name": "category",
+    "environment": {
+      "viewport": {
+        "width": 1280,
+        "height": 665
+      },
+      "devicePixelRatio": 1,
+      "visualViewportScale": 1,
+      "cssZoom": "1",
+      "fontFaces": [
+        {
+          "family": "Inter",
+          "status": "loaded",
+          "weight": "100 900"
+        }
+      ],
+      "overflow": false
+    },
+    "metrics": [
+      {
+        "label": "title",
+        "selector": "h1",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "fontWeight": "600",
+        "fontSize": "36px",
+        "lineHeight": "40px",
+        "letterSpacing": "-0.9px",
+        "color": "rgb(28, 34, 46)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 130,
+          "y": 259,
+          "width": 1020,
+          "height": 40
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Inter Variable",
+            "postScriptName": "InterVariable-Display-SemiBold",
+            "isCustomFont": true,
+            "glyphCount": 29
+          }
+        ]
+      },
+      {
+        "label": "description",
+        "selector": "h1 + p",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "fontWeight": "400",
+        "fontSize": "16px",
+        "lineHeight": "28px",
+        "letterSpacing": "normal",
+        "color": "rgb(102, 112, 133)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 130,
+          "y": 311,
+          "width": 672,
+          "height": 56
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Inter Variable",
+            "postScriptName": "InterVariable-Text",
+            "isCustomFont": true,
+            "glyphCount": 120
+          }
+        ]
+      },
+      {
+        "label": "cardTitle",
+        "selector": "button[aria-pressed] > span:nth-of-type(3)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "fontWeight": "600",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "letterSpacing": "normal",
+        "color": "rgb(28, 34, 46)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 151,
+          "y": 484,
+          "width": 287.328125,
+          "height": 24
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Inter Variable",
+            "postScriptName": "InterVariable-Text-SemiBold",
+            "isCustomFont": true,
+            "glyphCount": 24
+          }
+        ]
+      },
+      {
+        "label": "cardDescription",
+        "selector": "button[aria-pressed] > span:nth-of-type(4)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "fontWeight": "400",
+        "fontSize": "14px",
+        "lineHeight": "24px",
+        "letterSpacing": "normal",
+        "color": "rgb(102, 112, 133)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 151,
+          "y": 520,
+          "width": 287.328125,
+          "height": 48
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Inter Variable",
+            "postScriptName": "InterVariable-Text",
+            "isCustomFont": true,
+            "glyphCount": 59
+          }
+        ]
+      },
+      {
+        "label": "cardMeta",
+        "selector": "button[aria-pressed] > span:nth-of-type(5)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "fontWeight": "600",
+        "fontSize": "12px",
+        "lineHeight": "16px",
+        "letterSpacing": "normal",
+        "color": "rgb(24, 53, 217)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 151,
+          "y": 597,
+          "width": 287.328125,
+          "height": 36
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Inter Variable",
+            "postScriptName": "InterVariable-Text-SemiBold",
+            "isCustomFont": true,
+            "glyphCount": 34
+          }
+        ]
+      },
+      {
+        "label": "button",
+        "selector": "main button.bg-\\[\\#1835d9\\]",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "fontWeight": "600",
+        "fontSize": "14px",
+        "lineHeight": "20px",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)",
+        "backgroundColor": "rgb(24, 53, 217)",
+        "borderRadius": "16.8px",
+        "rect": {
+          "x": 1011.6875,
+          "y": 932,
+          "width": 138.3125,
+          "height": 44
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Inter Variable",
+            "postScriptName": "InterVariable-Text-SemiBold",
+            "isCustomFont": true,
+            "glyphCount": 9
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "identity",
+    "environment": {
+      "viewport": {
+        "width": 1280,
+        "height": 665
+      },
+      "devicePixelRatio": 1,
+      "visualViewportScale": 1,
+      "cssZoom": "1",
+      "fontFaces": [
+        {
+          "family": "Inter",
+          "status": "loaded",
+          "weight": "100 900"
+        }
+      ],
+      "overflow": false
+    },
+    "metrics": [
+      {
+        "label": "title",
+        "selector": "h1",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "fontWeight": "600",
+        "fontSize": "36px",
+        "lineHeight": "40px",
+        "letterSpacing": "normal",
+        "color": "rgb(28, 34, 46)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 82,
+          "y": 247,
+          "width": 1116,
+          "height": 40
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Inter Variable",
+            "postScriptName": "InterVariable-Display-SemiBold",
+            "isCustomFont": true,
+            "glyphCount": 19
+          }
+        ]
+      },
+      {
+        "label": "description",
+        "selector": "h1 + p",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "fontWeight": "400",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "letterSpacing": "normal",
+        "color": "rgb(102, 112, 133)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 82,
+          "y": 299,
+          "width": 1116,
+          "height": 24
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Inter Variable",
+            "postScriptName": "InterVariable-Text",
+            "isCustomFont": true,
+            "glyphCount": 101
+          }
+        ]
+      },
+      {
+        "label": "cardTitle",
+        "selector": "form section h2",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "fontWeight": "600",
+        "fontSize": "18px",
+        "lineHeight": "28px",
+        "letterSpacing": "normal",
+        "color": "rgb(28, 34, 46)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 107,
+          "y": 380,
+          "width": 659.171875,
+          "height": 28
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Inter Variable",
+            "postScriptName": "InterVariable-Text-SemiBold",
+            "isCustomFont": true,
+            "glyphCount": 15
+          }
+        ]
+      },
+      {
+        "label": "cardDescription",
+        "selector": "form section h2 + p",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "fontWeight": "400",
+        "fontSize": "14px",
+        "lineHeight": "20px",
+        "letterSpacing": "normal",
+        "color": "rgb(102, 112, 133)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 107,
+          "y": 412,
+          "width": 659.171875,
+          "height": 20
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Inter Variable",
+            "postScriptName": "InterVariable-Text",
+            "isCustomFont": true,
+            "glyphCount": 29
+          }
+        ]
+      },
+      {
+        "label": "fieldLabel",
+        "selector": "form label",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "fontWeight": "500",
+        "fontSize": "14px",
+        "lineHeight": "20px",
+        "letterSpacing": "normal",
+        "color": "rgb(28, 34, 46)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 107,
+          "y": 456,
+          "width": 659.171875,
+          "height": 68
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Inter Variable",
+            "postScriptName": "InterVariable-Text-Medium",
+            "isCustomFont": true,
+            "glyphCount": 12
+          }
+        ]
+      },
+      {
+        "label": "button",
+        "selector": "button[type=\"submit\"]",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "fontWeight": "600",
+        "fontSize": "14px",
+        "lineHeight": "20px",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)",
+        "backgroundColor": "rgb(24, 53, 217)",
+        "borderRadius": "16.8px",
+        "rect": {
+          "x": 1004.75,
+          "y": 1039,
+          "width": 193.234375,
+          "height": 44
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Inter Variable",
+            "postScriptName": "InterVariable-Text-SemiBold",
+            "isCustomFont": true,
+            "glyphCount": 18
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "identity-wide",
+    "environment": {
+      "viewport": {
+        "width": 2560,
+        "height": 1330
+      },
+      "devicePixelRatio": 1,
+      "visualViewportScale": 1,
+      "cssZoom": "1",
+      "fontFaces": [
+        {
+          "family": "Inter",
+          "status": "loaded",
+          "weight": "100 900"
+        }
+      ],
+      "overflow": false
+    },
+    "metrics": [
+      {
+        "label": "title",
+        "selector": "h1",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "fontWeight": "600",
+        "fontSize": "36px",
+        "lineHeight": "40px",
+        "letterSpacing": "normal",
+        "color": "rgb(28, 34, 46)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 722,
+          "y": 247,
+          "width": 1116,
+          "height": 40
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Inter Variable",
+            "postScriptName": "InterVariable-Display-SemiBold",
+            "isCustomFont": true,
+            "glyphCount": 19
+          }
+        ]
+      },
+      {
+        "label": "description",
+        "selector": "h1 + p",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "fontWeight": "400",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "letterSpacing": "normal",
+        "color": "rgb(102, 112, 133)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 722,
+          "y": 299,
+          "width": 1116,
+          "height": 24
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Inter Variable",
+            "postScriptName": "InterVariable-Text",
+            "isCustomFont": true,
+            "glyphCount": 101
+          }
+        ]
+      },
+      {
+        "label": "cardTitle",
+        "selector": "form section h2",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "fontWeight": "600",
+        "fontSize": "18px",
+        "lineHeight": "28px",
+        "letterSpacing": "normal",
+        "color": "rgb(28, 34, 46)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 747,
+          "y": 380,
+          "width": 659.171875,
+          "height": 28
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Inter Variable",
+            "postScriptName": "InterVariable-Text-SemiBold",
+            "isCustomFont": true,
+            "glyphCount": 15
+          }
+        ]
+      },
+      {
+        "label": "cardDescription",
+        "selector": "form section h2 + p",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "fontWeight": "400",
+        "fontSize": "14px",
+        "lineHeight": "20px",
+        "letterSpacing": "normal",
+        "color": "rgb(102, 112, 133)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 747,
+          "y": 412,
+          "width": 659.171875,
+          "height": 20
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Inter Variable",
+            "postScriptName": "InterVariable-Text",
+            "isCustomFont": true,
+            "glyphCount": 29
+          }
+        ]
+      },
+      {
+        "label": "fieldLabel",
+        "selector": "form label",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "fontWeight": "500",
+        "fontSize": "14px",
+        "lineHeight": "20px",
+        "letterSpacing": "normal",
+        "color": "rgb(28, 34, 46)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 747,
+          "y": 456,
+          "width": 659.171875,
+          "height": 68
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Inter Variable",
+            "postScriptName": "InterVariable-Text-Medium",
+            "isCustomFont": true,
+            "glyphCount": 12
+          }
+        ]
+      },
+      {
+        "label": "button",
+        "selector": "button[type=\"submit\"]",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "fontWeight": "600",
+        "fontSize": "14px",
+        "lineHeight": "20px",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)",
+        "backgroundColor": "rgb(24, 53, 217)",
+        "borderRadius": "16.8px",
+        "rect": {
+          "x": 1644.75,
+          "y": 1039,
+          "width": 193.234375,
+          "height": 44
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Inter Variable",
+            "postScriptName": "InterVariable-Text-SemiBold",
+            "isCustomFont": true,
+            "glyphCount": 18
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "category-mobile",
+    "environment": {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "devicePixelRatio": 1,
+      "visualViewportScale": 1,
+      "cssZoom": "1",
+      "fontFaces": [
+        {
+          "family": "Inter",
+          "status": "loaded",
+          "weight": "100 900"
+        }
+      ],
+      "overflow": false
+    },
+    "metrics": [
+      {
+        "label": "title",
+        "selector": "h1",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "fontWeight": "600",
+        "fontSize": "30px",
+        "lineHeight": "36px",
+        "letterSpacing": "-0.75px",
+        "color": "rgb(28, 34, 46)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 20,
+          "y": 347,
+          "width": 350,
+          "height": 72
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Inter Variable",
+            "postScriptName": "InterVariable-Display-SemiBold",
+            "isCustomFont": true,
+            "glyphCount": 28
+          }
+        ]
+      },
+      {
+        "label": "description",
+        "selector": "h1 + p",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "fontWeight": "400",
+        "fontSize": "16px",
+        "lineHeight": "28px",
+        "letterSpacing": "normal",
+        "color": "rgb(102, 112, 133)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 20,
+          "y": 431,
+          "width": 350,
+          "height": 84
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Inter Variable",
+            "postScriptName": "InterVariable-Text",
+            "isCustomFont": true,
+            "glyphCount": 119
+          }
+        ]
+      },
+      {
+        "label": "cardTitle",
+        "selector": "button[aria-pressed] > span:nth-of-type(3)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "fontWeight": "600",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "letterSpacing": "normal",
+        "color": "rgb(28, 34, 46)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 41,
+          "y": 632,
+          "width": 308,
+          "height": 24
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Inter Variable",
+            "postScriptName": "InterVariable-Text-SemiBold",
+            "isCustomFont": true,
+            "glyphCount": 24
+          }
+        ]
+      },
+      {
+        "label": "cardDescription",
+        "selector": "button[aria-pressed] > span:nth-of-type(4)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "fontWeight": "400",
+        "fontSize": "14px",
+        "lineHeight": "24px",
+        "letterSpacing": "normal",
+        "color": "rgb(102, 112, 133)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 41,
+          "y": 668,
+          "width": 308,
+          "height": 48
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Inter Variable",
+            "postScriptName": "InterVariable-Text",
+            "isCustomFont": true,
+            "glyphCount": 59
+          }
+        ]
+      },
+      {
+        "label": "cardMeta",
+        "selector": "button[aria-pressed] > span:nth-of-type(5)",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "fontWeight": "600",
+        "fontSize": "12px",
+        "lineHeight": "16px",
+        "letterSpacing": "normal",
+        "color": "rgb(24, 53, 217)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 41,
+          "y": 745,
+          "width": 308,
+          "height": 36
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Inter Variable",
+            "postScriptName": "InterVariable-Text-SemiBold",
+            "isCustomFont": true,
+            "glyphCount": 34
+          }
+        ]
+      },
+      {
+        "label": "button",
+        "selector": "main button.bg-\\[\\#1835d9\\]",
+        "fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "fontWeight": "600",
+        "fontSize": "14px",
+        "lineHeight": "20px",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)",
+        "backgroundColor": "rgb(24, 53, 217)",
+        "borderRadius": "16.8px",
+        "rect": {
+          "x": 20,
+          "y": 1807,
+          "width": 350,
+          "height": 44
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Inter Variable",
+            "postScriptName": "InterVariable-Text-SemiBold",
+            "isCustomFont": true,
+            "glyphCount": 9
+          }
+        ]
+      }
+    ]
+  }
+]

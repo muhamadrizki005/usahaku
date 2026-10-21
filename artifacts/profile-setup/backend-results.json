@@ -1,0 +1,13 @@
+{
+  "date": "2026-10-21T07:19:09.026Z",
+  "passed": false,
+  "stage": "staff/deactivation",
+  "results": [
+    "Dua profil baru tersimpan atomik; logo opsional; kota/provinsi/deskripsi persisten",
+    "Isolasi profil antarusaha, larangan direct UPDATE, dan konflik revisi aktual",
+    "Jam lintas Minggu-Senin diterima; overlap, jam sama, revisi lama, dan usaha lain ditolak",
+    "Logo aktif private; upload/delete langsung dan baca antarusaha/anonim ditolak; logo aktif terlindungi",
+    "Dua penggantian bersamaan hanya satu berhasil; cleanup file lama tidak menghapus logo aktif",
+    "Seluruh data proyek sebelum tes tetap identik; akun/file/data yang dibuat tes dibersihkan"
+  ]
+}

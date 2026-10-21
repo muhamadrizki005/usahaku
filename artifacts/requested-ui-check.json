@@ -1,0 +1,8 @@
+{
+  "desktopWidth": "1800px",
+  "sticky": "sticky",
+  "pendingReveal": 4,
+  "visibleReveal": "visible",
+  "headerTopAfterScroll": 0,
+  "mobileOverflow": false
+}

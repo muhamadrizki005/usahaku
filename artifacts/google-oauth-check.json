@@ -1,0 +1,10 @@
+{
+  "providerEnabled": true,
+  "ownerButton": true,
+  "signupButton": true,
+  "staffButtonAbsent": true,
+  "pkceVerifierSet": true,
+  "reachedGoogle": true,
+  "googleConfigurationError": false,
+  "completedGoogleLogin": false
+}

@@ -1,0 +1,89 @@
+{
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "samples": [
+    {
+      "selector": "div.fixed > div",
+      "expected": {
+        "backgroundColor": "rgb(255, 255, 255)",
+        "color": "rgb(28, 34, 46)",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "borderRadius": "21.6px",
+        "borderTopColor": "rgb(223, 230, 240)",
+        "paddingTop": "0px",
+        "paddingLeft": "0px"
+      },
+      "actual": {
+        "backgroundColor": "rgb(255, 255, 255)",
+        "color": "rgb(28, 34, 46)",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "borderRadius": "21.6px",
+        "borderTopColor": "rgb(223, 230, 240)",
+        "paddingTop": "0px",
+        "paddingLeft": "0px"
+      }
+    },
+    {
+      "selector": "div.fixed h2",
+      "expected": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(28, 34, 46)",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontSize": "18px",
+        "fontWeight": "600",
+        "lineHeight": "28px",
+        "borderRadius": "0px",
+        "borderTopColor": "rgb(223, 230, 240)",
+        "paddingTop": "0px",
+        "paddingLeft": "0px"
+      },
+      "actual": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(28, 34, 46)",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontSize": "18px",
+        "fontWeight": "600",
+        "lineHeight": "28px",
+        "borderRadius": "0px",
+        "borderTopColor": "rgb(223, 230, 240)",
+        "paddingTop": "0px",
+        "paddingLeft": "0px"
+      }
+    },
+    {
+      "selector": "button[aria-label=\"Tambah staf\"]",
+      "expected": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(24, 53, 217)",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "borderRadius": "12px",
+        "borderTopColor": "rgb(229, 234, 242)",
+        "paddingTop": "0px",
+        "paddingLeft": "0px"
+      },
+      "actual": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "color": "rgb(24, 53, 217)",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontSize": "16px",
+        "fontWeight": "400",
+        "lineHeight": "24px",
+        "borderRadius": "12px",
+        "borderTopColor": "rgb(229, 234, 242)",
+        "paddingTop": "0px",
+        "paddingLeft": "0px"
+      }
+    }
+  ]
+}

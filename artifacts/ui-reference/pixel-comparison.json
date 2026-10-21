@@ -1,0 +1,93 @@
+[
+  {
+    "name": "login",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "image": {
+      "width": 1440,
+      "height": 1002
+    },
+    "differingPixelsPercent": 0.0478,
+    "note": "Differences include test identity text, focus/hover states, and backend guards. Staff modal contains real member controls and is compared by styles rather than pixel ratio."
+  },
+  {
+    "name": "signup",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "image": {
+      "width": 1440,
+      "height": 1284
+    },
+    "differingPixelsPercent": 0.1151,
+    "note": "Differences include test identity text, focus/hover states, and backend guards. Staff modal contains real member controls and is compared by styles rather than pixel ratio."
+  },
+  {
+    "name": "onboarding",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "image": {
+      "width": 1440,
+      "height": 1074
+    },
+    "differingPixelsPercent": 0.2035,
+    "note": "Differences include test identity text, focus/hover states, and backend guards. Staff modal contains real member controls and is compared by styles rather than pixel ratio."
+  },
+  {
+    "name": "onboarding-identity",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "image": {
+      "width": 1440,
+      "height": 1116
+    },
+    "differingPixelsPercent": 0.0068,
+    "note": "Differences include test identity text, focus/hover states, and backend guards. Staff modal contains real member controls and is compared by styles rather than pixel ratio."
+  },
+  {
+    "name": "setup",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "image": {
+      "width": 1440,
+      "height": 1000
+    },
+    "differingPixelsPercent": 0.0076,
+    "note": "Differences include test identity text, focus/hover states, and backend guards. Staff modal contains real member controls and is compared by styles rather than pixel ratio."
+  },
+  {
+    "name": "summary",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "image": {
+      "width": 1440,
+      "height": 1359
+    },
+    "differingPixelsPercent": 0.2086,
+    "note": "Differences include test identity text, focus/hover states, and backend guards. Staff modal contains real member controls and is compared by styles rather than pixel ratio."
+  },
+  {
+    "name": "dashboard",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "image": {
+      "width": 1440,
+      "height": 1277
+    },
+    "differingPixelsPercent": 0.2119,
+    "note": "Differences include test identity text, focus/hover states, and backend guards. Staff modal contains real member controls and is compared by styles rather than pixel ratio."
+  }
+]

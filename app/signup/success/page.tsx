@@ -1,0 +1,3 @@
+export default function SignupSuccessPage() {
+  return <main className="grid min-h-screen place-items-center bg-background px-6 text-foreground"><section className="w-full max-w-md rounded-3xl border border-border bg-card p-8 text-center shadow-sm"><span className="mx-auto grid size-12 place-items-center rounded-2xl bg-secondary text-primary">✓</span><h1 className="mt-5 text-2xl font-semibold tracking-tight">Cek email Anda</h1><p className="mt-3 text-sm leading-6 text-muted-foreground">Kami mengirim tautan konfirmasi ke email Anda. Setelah dikonfirmasi, Anda dapat masuk dan menyiapkan usaha.</p><a href="/login" className="mt-7 inline-flex h-11 items-center rounded-xl bg-primary px-5 font-semibold text-primary-foreground">Kembali ke masuk</a></section></main>
+}

@@ -1,0 +1,518 @@
+[
+  {
+    "name": "category",
+    "environment": {
+      "viewport": {
+        "width": 1280,
+        "height": 665
+      },
+      "devicePixelRatio": 1,
+      "visualViewportScale": 1,
+      "cssZoom": "1",
+      "fontFaces": [],
+      "overflow": false
+    },
+    "metrics": [
+      {
+        "label": "title",
+        "selector": "h1",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontWeight": "600",
+        "fontSize": "36px",
+        "lineHeight": "40px",
+        "letterSpacing": "-0.9px",
+        "color": "rgb(28, 34, 46)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 130,
+          "y": 259,
+          "width": 1020,
+          "height": 40
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Times New Roman",
+            "postScriptName": "TimesNewRomanPS-BoldMT",
+            "isCustomFont": false,
+            "glyphCount": 29
+          }
+        ]
+      },
+      {
+        "label": "description",
+        "selector": "h1 + p",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontWeight": "400",
+        "fontSize": "16px",
+        "lineHeight": "28px",
+        "letterSpacing": "normal",
+        "color": "rgb(102, 112, 133)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 130,
+          "y": 311,
+          "width": 672,
+          "height": 56
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Times New Roman",
+            "postScriptName": "TimesNewRomanPSMT",
+            "isCustomFont": false,
+            "glyphCount": 120
+          }
+        ]
+      },
+      {
+        "label": "cardTitle",
+        "selector": "button[aria-pressed] > span:nth-of-type(3)",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontWeight": "600",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "letterSpacing": "normal",
+        "color": "rgb(28, 34, 46)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 151,
+          "y": 484,
+          "width": 287.328125,
+          "height": 24
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Times New Roman",
+            "postScriptName": "TimesNewRomanPS-BoldMT",
+            "isCustomFont": false,
+            "glyphCount": 24
+          }
+        ]
+      },
+      {
+        "label": "cardDescription",
+        "selector": "button[aria-pressed] > span:nth-of-type(4)",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontWeight": "400",
+        "fontSize": "14px",
+        "lineHeight": "24px",
+        "letterSpacing": "normal",
+        "color": "rgb(102, 112, 133)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 151,
+          "y": 520,
+          "width": 287.328125,
+          "height": 48
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Times New Roman",
+            "postScriptName": "TimesNewRomanPSMT",
+            "isCustomFont": false,
+            "glyphCount": 59
+          }
+        ]
+      },
+      {
+        "label": "cardMeta",
+        "selector": "button[aria-pressed] > span:nth-of-type(5)",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontWeight": "600",
+        "fontSize": "12px",
+        "lineHeight": "16px",
+        "letterSpacing": "normal",
+        "color": "rgb(24, 53, 217)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 151,
+          "y": 597,
+          "width": 287.328125,
+          "height": 36
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Times New Roman",
+            "postScriptName": "TimesNewRomanPS-BoldMT",
+            "isCustomFont": false,
+            "glyphCount": 34
+          }
+        ]
+      },
+      {
+        "label": "button",
+        "selector": "main button.bg-\\[\\#1835d9\\]",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontWeight": "600",
+        "fontSize": "14px",
+        "lineHeight": "20px",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)",
+        "backgroundColor": "rgb(24, 53, 217)",
+        "borderRadius": "16.8px",
+        "rect": {
+          "x": 1014.1875,
+          "y": 932,
+          "width": 135.8125,
+          "height": 44
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Times New Roman",
+            "postScriptName": "TimesNewRomanPS-BoldMT",
+            "isCustomFont": false,
+            "glyphCount": 9
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "identity",
+    "environment": {
+      "viewport": {
+        "width": 1280,
+        "height": 665
+      },
+      "devicePixelRatio": 1,
+      "visualViewportScale": 1,
+      "cssZoom": "1",
+      "fontFaces": [],
+      "overflow": false
+    },
+    "metrics": [
+      {
+        "label": "title",
+        "selector": "h1",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontWeight": "600",
+        "fontSize": "36px",
+        "lineHeight": "40px",
+        "letterSpacing": "normal",
+        "color": "rgb(28, 34, 46)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 82,
+          "y": 247,
+          "width": 1116,
+          "height": 40
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Times New Roman",
+            "postScriptName": "TimesNewRomanPS-BoldMT",
+            "isCustomFont": false,
+            "glyphCount": 19
+          }
+        ]
+      },
+      {
+        "label": "description",
+        "selector": "h1 + p",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontWeight": "400",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "letterSpacing": "normal",
+        "color": "rgb(102, 112, 133)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 82,
+          "y": 299,
+          "width": 1116,
+          "height": 24
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Times New Roman",
+            "postScriptName": "TimesNewRomanPSMT",
+            "isCustomFont": false,
+            "glyphCount": 101
+          }
+        ]
+      },
+      {
+        "label": "cardTitle",
+        "selector": "form section h2",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontWeight": "600",
+        "fontSize": "18px",
+        "lineHeight": "28px",
+        "letterSpacing": "normal",
+        "color": "rgb(28, 34, 46)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 107,
+          "y": 380,
+          "width": 659.171875,
+          "height": 28
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Times New Roman",
+            "postScriptName": "TimesNewRomanPS-BoldMT",
+            "isCustomFont": false,
+            "glyphCount": 15
+          }
+        ]
+      },
+      {
+        "label": "cardDescription",
+        "selector": "form section h2 + p",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontWeight": "400",
+        "fontSize": "14px",
+        "lineHeight": "20px",
+        "letterSpacing": "normal",
+        "color": "rgb(102, 112, 133)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 107,
+          "y": 412,
+          "width": 659.171875,
+          "height": 20
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Times New Roman",
+            "postScriptName": "TimesNewRomanPSMT",
+            "isCustomFont": false,
+            "glyphCount": 29
+          }
+        ]
+      },
+      {
+        "label": "fieldLabel",
+        "selector": "form label",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontWeight": "500",
+        "fontSize": "14px",
+        "lineHeight": "20px",
+        "letterSpacing": "normal",
+        "color": "rgb(28, 34, 46)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 107,
+          "y": 456,
+          "width": 659.171875,
+          "height": 68
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Times New Roman",
+            "postScriptName": "TimesNewRomanPSMT",
+            "isCustomFont": false,
+            "glyphCount": 12
+          }
+        ]
+      },
+      {
+        "label": "button",
+        "selector": "button[type=\"submit\"]",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontWeight": "600",
+        "fontSize": "14px",
+        "lineHeight": "20px",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)",
+        "backgroundColor": "rgb(24, 53, 217)",
+        "borderRadius": "16.8px",
+        "rect": {
+          "x": 1011.046875,
+          "y": 1039,
+          "width": 186.9375,
+          "height": 44
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Times New Roman",
+            "postScriptName": "TimesNewRomanPS-BoldMT",
+            "isCustomFont": false,
+            "glyphCount": 18
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "identity-wide",
+    "environment": {
+      "viewport": {
+        "width": 2560,
+        "height": 1330
+      },
+      "devicePixelRatio": 1,
+      "visualViewportScale": 1,
+      "cssZoom": "1",
+      "fontFaces": [],
+      "overflow": false
+    },
+    "metrics": [
+      {
+        "label": "title",
+        "selector": "h1",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontWeight": "600",
+        "fontSize": "36px",
+        "lineHeight": "40px",
+        "letterSpacing": "normal",
+        "color": "rgb(28, 34, 46)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 722,
+          "y": 247,
+          "width": 1116,
+          "height": 40
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Times New Roman",
+            "postScriptName": "TimesNewRomanPS-BoldMT",
+            "isCustomFont": false,
+            "glyphCount": 19
+          }
+        ]
+      },
+      {
+        "label": "description",
+        "selector": "h1 + p",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontWeight": "400",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "letterSpacing": "normal",
+        "color": "rgb(102, 112, 133)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 722,
+          "y": 299,
+          "width": 1116,
+          "height": 24
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Times New Roman",
+            "postScriptName": "TimesNewRomanPSMT",
+            "isCustomFont": false,
+            "glyphCount": 101
+          }
+        ]
+      },
+      {
+        "label": "cardTitle",
+        "selector": "form section h2",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontWeight": "600",
+        "fontSize": "18px",
+        "lineHeight": "28px",
+        "letterSpacing": "normal",
+        "color": "rgb(28, 34, 46)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 747,
+          "y": 380,
+          "width": 659.171875,
+          "height": 28
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Times New Roman",
+            "postScriptName": "TimesNewRomanPS-BoldMT",
+            "isCustomFont": false,
+            "glyphCount": 15
+          }
+        ]
+      },
+      {
+        "label": "cardDescription",
+        "selector": "form section h2 + p",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontWeight": "400",
+        "fontSize": "14px",
+        "lineHeight": "20px",
+        "letterSpacing": "normal",
+        "color": "rgb(102, 112, 133)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 747,
+          "y": 412,
+          "width": 659.171875,
+          "height": 20
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Times New Roman",
+            "postScriptName": "TimesNewRomanPSMT",
+            "isCustomFont": false,
+            "glyphCount": 29
+          }
+        ]
+      },
+      {
+        "label": "fieldLabel",
+        "selector": "form label",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontWeight": "500",
+        "fontSize": "14px",
+        "lineHeight": "20px",
+        "letterSpacing": "normal",
+        "color": "rgb(28, 34, 46)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "borderRadius": "0px",
+        "rect": {
+          "x": 747,
+          "y": 456,
+          "width": 659.171875,
+          "height": 68
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Times New Roman",
+            "postScriptName": "TimesNewRomanPSMT",
+            "isCustomFont": false,
+            "glyphCount": 12
+          }
+        ]
+      },
+      {
+        "label": "button",
+        "selector": "button[type=\"submit\"]",
+        "fontFamily": "Inter, \"Inter Fallback\"",
+        "fontWeight": "600",
+        "fontSize": "14px",
+        "lineHeight": "20px",
+        "letterSpacing": "normal",
+        "color": "rgb(255, 255, 255)",
+        "backgroundColor": "rgb(24, 53, 217)",
+        "borderRadius": "16.8px",
+        "rect": {
+          "x": 1651.046875,
+          "y": 1039,
+          "width": 186.9375,
+          "height": 44
+        },
+        "renderedFonts": [
+          {
+            "familyName": "Times New Roman",
+            "postScriptName": "TimesNewRomanPS-BoldMT",
+            "isCustomFont": false,
+            "glyphCount": 18
+          }
+        ]
+      }
+    ]
+  }
+]

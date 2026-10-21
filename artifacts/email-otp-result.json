@@ -1,0 +1,10 @@
+{
+  "wrongCodeRejected": true,
+  "unconfirmedPasswordLoginRejected": true,
+  "otpConfirmed": true,
+  "serverSession": true,
+  "reusedCodeRejected": true,
+  "passwordLoginAfterConfirmation": true,
+  "cleanup": true,
+  "inboxDeliveryTested": false
+}

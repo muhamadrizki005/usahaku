@@ -1,0 +1,8 @@
+{
+  "registrationAccepted": true,
+  "authUserCreated": true,
+  "confirmationConsumed": true,
+  "passwordLoginAfterEmailConfirmation": true,
+  "recoveryEmailAccepted": true,
+  "cleanup": true
+}
