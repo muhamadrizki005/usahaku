@@ -178,7 +178,8 @@ test('foundation accounts through browser, server actions, and hosted RLS', asyn
     await compareZipView(browser, pageB, 'dashboard', '/dashboard', '[TEST UI] Warung B')
     await expect(pageB.locator('main')).not.toContainText('[TEST UI] Warung A')
     await pageA.goto('/onboarding/identity')
-    await expect(pageA).toHaveURL(/\/dashboard$/)
+    await expect(pageA.getByLabel('Nama usaha *', { exact: true })).toHaveValue('[TEST UI] Warung A')
+    await pageA.goto('/dashboard')
     const countA = checked(await admin.from('businesses').select('id').eq('owner_id', a.userId))!
     expect(countA.length).toBe(1)
     results.ownerConfirmationCookieBusiness = true

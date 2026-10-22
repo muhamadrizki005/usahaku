@@ -76,8 +76,7 @@ try {
   assert.equal(check(await loggedIn.from('businesses').select('id')).length, 1);
   assert.equal(check(await loggedIn.from('businesses').select('id').eq('id', b.businessId)).length, 0);
   assert.equal(check(await loggedIn.from('business_members').select('id')).length, 1);
-  const changed = check(await loggedIn.from('businesses').update({ name: 'Forbidden' }).eq('id', a.businessId).select('id'));
-  assert.equal(changed.length, 0);
+  assert.ok((await loggedIn.from('businesses').update({ name: 'Forbidden' }).eq('id', a.businessId).select('id')).error);
   console.log('PASS: ganti kata sandi, login ulang, dan pembatasan akses kasir.');
   stage = 'memeriksa penonaktifan sesi aktif';
   check(await admin.from('business_members').update({ active: false, changed_by: a.id }).eq('user_id', staff.id));
@@ -89,7 +88,7 @@ try {
   assert.equal(check(await adminStaff.client.from('businesses').select('id')).length, 1);
   assert.equal(check(await adminStaff.client.from('business_members').select('id')).length, 1);
   assert.equal(check(await adminStaff.client.from('staff_audit_logs').select('id')).length, 0);
-  assert.equal(check(await adminStaff.client.from('businesses').update({ name: 'Forbidden' }).eq('id', a.businessId).select('id')).length, 0);
+  assert.ok((await adminStaff.client.from('businesses').update({ name: 'Forbidden' }).eq('id', a.businessId).select('id')).error);
   assert.ok((await adminStaff.client.from('business_members').insert({ business_id: a.businessId, user_id: b.id, name: 'Forbidden', role: 'cashier', username: 'forbidden' })).error);
   assert.ok((await newClient().from('businesses').select('id')).error);
   console.log('PASS: admin tidak mengelola staf/pengaturan sensitif; anonim ditolak.');

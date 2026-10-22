@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { logoBucket } from '@/lib/business-logo-server'
+import { randomUUID } from 'node:crypto'
 
 export async function GET(_request: Request, { params }: { params: Promise<{ businessId: string }> }) {
   const headers = { 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' }
@@ -14,7 +15,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ bus
   if (!business?.logo_path) return new Response(null, { status: 404, headers })
   // User JWT + Storage RLS, rather than public or bearer signed URLs. Revocation
   // takes effect on every request, including for an old image URL after logout.
-  const { data, error } = await supabase.storage.from(logoBucket).download(business.logo_path)
+  const { data, error } = await supabase.storage.from(logoBucket).download(business.logo_path, { cacheNonce: randomUUID() })
   if (error || !data) return new Response(null, { status: 404, headers })
   return new Response(await data.arrayBuffer(), { headers: { ...headers, 'Content-Type': 'image/png' } })
 }

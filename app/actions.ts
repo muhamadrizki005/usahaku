@@ -111,7 +111,7 @@ export async function createBusiness(_: ActionState, form: FormData): Promise<Ac
   let logo: Buffer | undefined
   try { if (form.get('logoOperation') === 'replace') logo = await prepareBusinessLogo(form.get('logo')) } catch (error) { return { error: (error as Error).message } }
   const p = parsed.data
-  const { data: id, error } = await supabase.rpc('create_business_profile', { store_name: p.name, owner_name: String(user.user_metadata.full_name || user.user_metadata.name || 'Pemilik usaha'), store_phone: p.phone, store_street: p.address, store_city: p.city, store_province: p.province, store_description: p.description })
+  const { data: id, error } = await supabase.rpc('create_business_profile', { store_name: p.name, owner_name: String(user.user_metadata.full_name || user.user_metadata.name || 'Pemilik usaha'), store_phone: p.phone, store_street: p.address, store_city: p.city, store_province: p.province, store_description: p.description }).abortSignal(AbortSignal.timeout(15000)).retry(false)
   if (error) {
     const { data } = await supabase.from('business_members').select('id').eq('user_id', user.id).maybeSingle()
     if (data) return redirectAfterLogin()
@@ -143,7 +143,7 @@ export async function saveBusinessProfile(_: ActionState, form: FormData): Promi
   let logo: Buffer | undefined
   try { if (operation.data === 'replace') logo = await prepareBusinessLogo(form.get('logo')) } catch (error) { return { error: (error as Error).message } }
   const p = parsed.data
-  const { data, error } = await supabase.rpc('save_business_profile', { target_id: business.id, expected_revision: revision.data, new_name: p.name, new_phone: p.phone, new_street: p.address, new_city: p.city, new_province: p.province, new_description: p.description })
+  const { data, error } = await supabase.rpc('save_business_profile', { target_id: business.id, expected_revision: revision.data, new_name: p.name, new_phone: p.phone, new_street: p.address, new_city: p.city, new_province: p.province, new_description: p.description }).abortSignal(AbortSignal.timeout(15000)).retry(false)
   if (error || !data) return { error: 'Profil belum dapat dipastikan tersimpan atau telah diubah di tab lain. Muat ulang sebelum mencoba lagi.' }
   let saved = data
   let warning: string | undefined
@@ -152,7 +152,7 @@ export async function saveBusinessProfile(_: ActionState, form: FormData): Promi
     saved = result.value || saved
     warning = result.error || result.warning
   } else if (operation.data === 'remove' && saved.logo_path) {
-    const result = await supabase.rpc('set_business_logo', { target_id: business.id, expected_revision: saved.profile_revision, asset_id: null })
+    const result = await supabase.rpc('set_business_logo', { target_id: business.id, expected_revision: saved.profile_revision, asset_id: null }).abortSignal(AbortSignal.timeout(15000)).retry(false)
     if (result.error || !result.data) {
       const current = await supabase.from('businesses').select('*').eq('id', business.id).single()
       if (current.data && !current.data.logo_path) saved = current.data
@@ -172,7 +172,7 @@ export async function saveBusinessHours(_: ActionState, form: FormData): Promise
   if (!parsed.success) return invalid(parsed.error)
   const revision = z.coerce.number().int().nonnegative().safeParse(form.get('revision'))
   if (!revision.success || form.get('revision') === null) return { error: 'Muat ulang jam sebelum menyimpan.' }
-  const { data, error } = await supabase.rpc('save_business_hours', { target_id: business.id, expected_revision: revision.data, schedule: parsed.data })
+  const { data, error } = await supabase.rpc('save_business_hours', { target_id: business.id, expected_revision: revision.data, schedule: parsed.data }).abortSignal(AbortSignal.timeout(15000)).retry(false)
   if (error || !data) return { error: 'Jam belum dapat dipastikan tersimpan atau telah diubah di tab lain. Muat ulang sebelum mencoba lagi.' }
   refreshBusinessViews()
   return { success: 'Jam operasional tersimpan.', business: data }

@@ -41,20 +41,20 @@ export async function cleanupBusinessLogos(businessId?: string) {
 }
 
 export async function uploadBusinessLogo(supabase: SupabaseClient, business: Business, content: Buffer) {
-  const admin = createAdminClient()
   return replaceLogoSafely<Business>({
     reserve: async () => {
       const id = randomUUID()
-      const { data: path, error } = await supabase.rpc('reserve_business_logo', { target_id: business.id, asset_id: id })
+      const { data: path, error } = await supabase.rpc('reserve_business_logo', { target_id: business.id, asset_id: id }).abortSignal(AbortSignal.timeout(15000)).retry(false)
       if (error || !path) throw new Error('Unable to reserve logo')
       return { id, path }
     },
     upload: async path => {
+      const admin = createAdminClient()
       const { error } = await admin.storage.from(logoBucket).upload(path, content, { contentType: 'image/png', upsert: false, cacheControl: '0' })
       if (error) throw new Error('Unable to upload logo')
     },
     activate: async id => {
-      const { data, error } = await supabase.rpc('set_business_logo', { target_id: business.id, expected_revision: business.profile_revision, asset_id: id })
+      const { data, error } = await supabase.rpc('set_business_logo', { target_id: business.id, expected_revision: business.profile_revision, asset_id: id }).abortSignal(AbortSignal.timeout(15000)).retry(false)
       if (error || !data) throw new Error('Unable to activate logo')
       return data as Business
     },
