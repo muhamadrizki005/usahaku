@@ -16,7 +16,7 @@ Konteks: 20 Oktober 2026, Asia/Jakarta. Implementasi berada di `usahaku-design-s
 
 - [x] Form registrasi/login owner dan kirim ulang konfirmasi; callback kode PKCE dan token_hash.
 - [x] Alur aktivasi OTP: pendaftaran sukses menuju halaman verifikasi; kode salah/terpakai ditolak, kode benar membuat sesi server. Atas permintaan pengguna, env/form diubah ke 6 digit; tampilan tetap mendukung 6/8 tanpa mengganti palet.
-- [ ] Samakan **Email OTP Length = 6** pada provider Email di dashboard Supabase, lalu uji ulang kode baru. Pengujian inbox sebelumnya lulus saat konfigurasi masih 8 digit.
+- [x] Pengguna mengonfirmasi OTP email sudah menjadi 6 digit pada 21 Oktober 2026. Pengujian inbox sebelumnya dilakukan ketika konfigurasi masih 8 digit; konfirmasi perubahan panjang ini berasal dari pengguna.
 - [x] Pembuatan usaha melalui RPC atomik; satu usaha per owner, kategori toko/warung.
 - [x] Pemeriksaan sesi, membership, status aktif, wajib ganti sandi, dan role di server.
 - [x] Owner membuat admin/kasir dengan username unik per usaha tanpa email pribadi staf.
