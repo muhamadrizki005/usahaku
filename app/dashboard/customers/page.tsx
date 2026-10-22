@@ -1,7 +1,7 @@
-import { requireBusiness } from '@/lib/access'
-import { rolesForPath } from '@/lib/auth/permissions'
-import DashboardSection from '@/components/dashboard-section'
-type Props = { searchParams: Promise<{ category?: string }> }
-export default async function CustomersPage({ searchParams }: Props) {
-  await requireBusiness(rolesForPath('/dashboard/customers'))
- const { category } = await searchParams; return <DashboardSection title="Pelanggan" category={category} /> }
+import {requireBusiness} from '@/lib/access'
+import {readCustomers} from '@/lib/customers-server'
+import CustomerManagement from '@/components/customer-management'
+export default async function CustomersPage(){
+ const {supabase,business,member}=await requireBusiness(['owner','admin'])
+ return <CustomerManagement member={member} initialCustomers={await readCustomers(supabase,business.id)}/>
+}

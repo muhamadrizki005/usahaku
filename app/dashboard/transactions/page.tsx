@@ -1,7 +1,7 @@
-import { requireBusiness } from '@/lib/access'
-import { rolesForPath } from '@/lib/auth/permissions'
-import DashboardSection from '@/components/dashboard-section'
-type Props = { searchParams: Promise<{ category?: string }> }
-export default async function TransactionsPage({ searchParams }: Props) {
-  await requireBusiness(rolesForPath('/dashboard/transactions'))
- const { category } = await searchParams; return <DashboardSection title="Transaksi" category={category} /> }
+import {requireBusiness} from '@/lib/access'
+import {readSales} from '@/lib/pos-server'
+import {TransactionHistory} from '@/components/transaction-management'
+export default async function TransactionsPage(){
+ const {supabase,business,member}=await requireBusiness(['owner','admin','cashier'])
+ return <TransactionHistory member={member} sales={await readSales(supabase,business.id)}/>
+}
