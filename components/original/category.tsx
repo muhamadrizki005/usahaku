@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, BriefcaseBusiness, Check, ChevronDown, CircleHelp, Gauge, LayoutGrid, Scissors, ShoppingBag, Store, Utensils, UsersRound } from 'lucide-react'
 import { UsahakuLogo } from '@/components/usahaku-logo'
+import { LegalModal, type LegalModalType } from '@/components/legal-modal'
 
 const categories = [
   { id: 'toko', title: 'Toko / Minimarket / Kios', description: 'Kelola produk, stok harian, dan penjualan langsung di kasir.', features: 'Produk & stok • Kasir • Pembayaran', icon: ShoppingBag },
@@ -14,6 +15,7 @@ const categories = [
 
 export default function OriginalCategory({ ownerName, userId }: { ownerName: string; userId: string }) {
   const router = useRouter()
+  const [legalModal, setLegalModal] = useState<LegalModalType>(null)
   const [selected, setSelected] = useState<(typeof categories)[number]['id']>('toko')
   const active = categories.find((category) => category.id === selected) ?? categories[0]
 
@@ -30,6 +32,6 @@ export default function OriginalCategory({ ownerName, userId }: { ownerName: str
         <div className="mt-5 rounded-2xl border border-[#cbd7f6] bg-[#f2f5ff] p-5"><div className="flex gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[#dce5ff] text-[#1835d9]"><BriefcaseBusiness className="size-4" /></span><div><h2 className="font-semibold">Satu usaha, satu kategori utama</h2><p className="mt-1 text-sm leading-6 text-[#667085]">Pilih berdasarkan aktivitas utama usaha. Pengaturan selanjutnya hanya menampilkan kebutuhan kategori yang dipilih.</p></div></div></div>
         <div className="mt-5 rounded-2xl border border-[#e5eaf2] bg-white p-5"><p className="text-sm font-semibold text-[#1835d9]">{active.title} dipilih</p><p className="mt-1 text-sm text-[#667085]">Berikutnya, lengkapi identitas usaha sebelum menyiapkan {active.id === 'toko' ? 'produk dan stok' : active.id === 'restoran' ? 'menu dan reservasi' : 'layanan dan janji temu'}.</p></div>
         <div className="mt-8 flex flex-col gap-4 border-t border-[#e5eaf2] pt-6 sm:flex-row sm:items-center sm:justify-between"><button type="button" onClick={() => window.history.back()} className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#d0d5dd] bg-white px-5 py-3 text-sm font-semibold text-[#667085] hover:border-[#1835d9] hover:text-[#1835d9]"><ArrowLeft className="size-4" />Kembali</button><p className="order-first text-center text-xs text-[#667085] sm:order-none">Kategori utama dapat diubah nanti dari pengaturan usaha.</p><button type="button" onClick={continueOnboarding} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#1835d9] px-6 py-3 text-sm font-semibold text-white hover:bg-[#132c9e] focus:outline-none focus:ring-2 focus:ring-[#24cbc5]">Lanjutkan<ArrowRight className="size-4" /></button></div>
-      </div></div><footer className="mx-auto flex max-w-[1180px] flex-col gap-3 border-t border-[#e5eaf2] px-5 py-6 text-xs text-[#667085] sm:flex-row sm:items-center sm:justify-between sm:px-8"><span>© 2026 Usahaku. Semua hak dilindungi.</span><div className="flex gap-5"><Link href="/privacy" className="hover:text-[#1835d9]">Kebijakan Privasi</Link><Link href="/terms" className="hover:text-[#1835d9]">Syarat Penggunaan</Link></div></footer>
+      </div></div><footer className="mx-auto flex max-w-[1180px] flex-col gap-3 border-t border-[#e5eaf2] px-5 py-6 text-xs text-[#667085] sm:flex-row sm:items-center sm:justify-between sm:px-8"><span>© 2026 Usahaku. Semua hak dilindungi.</span><div className="flex gap-5"><button type="button" onClick={() => setLegalModal('privacy')} className="hover:text-[#1835d9]">Kebijakan Privasi</button><button type="button" onClick={() => setLegalModal('terms')} className="hover:text-[#1835d9]">Syarat Penggunaan</button></div></footer><LegalModal type={legalModal} onClose={() => setLegalModal(null)} onSwitchType={(type) => setLegalModal(type)} />
   </main>
 }
