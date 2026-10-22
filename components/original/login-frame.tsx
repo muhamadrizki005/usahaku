@@ -1,9 +1,13 @@
-import type { ReactNode } from 'react'
+'use client'
+
+import { useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, ShieldCheck, Store, CalendarDays, UsersRound } from 'lucide-react'
 import { UsahakuLogo } from '@/components/usahaku-logo'
+import { LegalModal, type LegalModalType } from '@/components/legal-modal'
 
 export function LoginFrame({title = 'Masuk ke Usahaku', description = 'Lanjutkan mengelola aktivitas usaha Anda dengan akun yang sudah terdaftar.', children}: {title?: string; description?: string; children: ReactNode}) {
+  const [legalModal, setLegalModal] = useState<LegalModalType>(null)
   return (
     <main className="min-h-screen bg-[#1c222e] text-white">
       <header className="border-b border-white/10 bg-[#1c222e]">
@@ -45,8 +49,9 @@ export function LoginFrame({title = 'Masuk ke Usahaku', description = 'Lanjutkan
       </div>
 
       <footer className="border-t border-white/10 bg-[#1c222e]">
-        <div className="mx-auto flex min-h-16 max-w-[1440px] flex-col justify-center gap-3 px-5 py-4 text-sm text-[#c5cbd5] sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-12"><span>© 2026 Usahaku</span><div className="flex flex-wrap gap-5"><Link href="/" className="hover:text-[#1835d9]">Kebijakan Privasi</Link><Link href="/" className="hover:text-[#1835d9]">Syarat Penggunaan</Link></div></div>
+        <div className="mx-auto flex min-h-16 max-w-[1440px] flex-col justify-center gap-3 px-5 py-4 text-sm text-[#c5cbd5] sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-12"><span>© 2026 Usahaku</span><div className="flex flex-wrap gap-5"><button type="button" onClick={() => setLegalModal('privacy')} className="hover:text-[#1835d9]">Kebijakan Privasi</button><button type="button" onClick={() => setLegalModal('terms')} className="hover:text-[#1835d9]">Syarat Penggunaan</button></div></div>
       </footer>
+      <LegalModal type={legalModal} onClose={() => setLegalModal(null)} onSwitchType={(type) => setLegalModal(type)} />
     </main>
   )
 }
