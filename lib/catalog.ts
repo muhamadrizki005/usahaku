@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+export const productCategories = ['Makanan', 'Minuman', 'Bahan Pokok']
+
 export function quantity(value: unknown, signed=false): string {
   const text=String(value).trim().replace(',','.')
   if(!/^-?(0|[1-9]\d*)(\.\d{1,3})?$/.test(text)||text.length>20)throw Error('Jumlah harus angka dengan maksimal 3 desimal.')

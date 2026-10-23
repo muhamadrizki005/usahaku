@@ -1,0 +1,194 @@
+import { test, expect } from '@playwright/test'
+import { createClient } from '@supabase/supabase-js'
+import { randomBytes, randomUUID } from 'node:crypto'
+import { mkdir, writeFile } from 'node:fs/promises'
+import sharp from 'sharp'
+
+test('setup categories, activate every day, QRIS preview and payment controls', async ({ browser, baseURL }) => {
+  test.setTimeout(180000)
+  const options = { auth: { persistSession: false, autoRefreshToken: false } }
+  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, options)
+  const client = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, options)
+  const ok = (result: any) => { if (result.error) throw Error('Fixture request failed: ' + result.error.code); return result.data }
+  const legacy = ok(await admin.from('businesses').select('*').order('id'))
+  const context = await browser.newContext({ baseURL, viewport: { width: 1440, height: 1000 } })
+  const page = await context.newPage(), dir = 'artifacts/setup-controls', results: string[] = []
+  let userId = '', businessId = '', passed = false
+  const pass = (message: string) => { results.push(message); console.log('PASS: ' + message) }
+  try {
+    await mkdir(dir, { recursive: true })
+    const email = `usahaku-setup-${randomUUID()}@example.com`, password = randomBytes(24).toString('base64url')
+    userId = ok(await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { full_name: 'Uji Setup' } })).user.id
+    ok(await client.auth.signInWithPassword({ email, password }))
+    businessId = ok(await client.rpc('create_business_profile', { store_name: 'Toko Uji Setup', owner_name: 'Uji Setup', store_phone: '081234567890', store_street: 'Jalan Uji', store_city: 'Bandung', store_province: 'Jawa Barat', store_description: '' }))
+    await page.goto('/login')
+    await page.getByLabel('Email', { exact: true }).fill(email)
+    await page.getByLabel('Kata sandi', { exact: true }).fill(password)
+    await page.getByRole('button', { name: 'Masuk', exact: true }).click()
+    await expect(page).toHaveURL(/\/onboarding\/summary$/)
+    await page.goto('/onboarding/setup')
+    await expect(page.getByText('Tambahkan foto sampul halaman reservasi', { exact: true })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Tambahkan foto', exact: true })).toHaveCount(0)
+
+    await page.getByRole('button', { name: 'Kelola produk', exact: true }).click()
+    const productDialog = page.getByRole('dialog', { name: 'Kelola produk', exact: true })
+    const category = productDialog.getByLabel('Kategori *', { exact: true })
+    for (const value of ['Makanan', 'Minuman', 'Bahan Pokok']) {
+      await category.selectOption(value)
+      await expect(category).toHaveValue(value)
+      await expect(productDialog.getByLabel('Kategori lainnya *', { exact: true })).toHaveCount(0)
+    }
+    await category.selectOption('Lainnya')
+    await productDialog.getByLabel('Nama produk *', { exact: true }).fill('Produk Kategori Manual')
+    await productDialog.getByLabel('Harga jual *', { exact: true }).fill('10000')
+    await productDialog.getByLabel('Stok *', { exact: true }).fill('1.250')
+    await productDialog.getByRole('button', { name: 'Simpan produk', exact: true }).click()
+    await expect(productDialog.getByText('Kategori wajib diisi.', { exact: true })).toBeVisible()
+    await productDialog.getByLabel('Kategori lainnya *', { exact: true }).fill('Perlengkapan Rumah')
+    await page.screenshot({ path: dir + '/category.png', fullPage: true })
+    await productDialog.getByRole('button', { name: 'Simpan produk', exact: true }).click()
+    await expect(productDialog).toHaveCount(0)
+    const row = () => admin.from('catalog_products').select('category,stock').eq('business_id', businessId).single()
+    await expect.poll(async () => ok(await row()).category).toBe('Perlengkapan Rumah')
+    await page.reload()
+    await page.getByRole('button', { name: 'Kelola produk', exact: true }).click()
+    await productDialog.getByRole('button', { name: 'Edit', exact: true }).click()
+    await expect(category).toHaveValue('Lainnya')
+    await expect(productDialog.getByLabel('Kategori lainnya *', { exact: true })).toHaveValue('Perlengkapan Rumah')
+    await category.selectOption('Minuman')
+    await expect(productDialog.getByLabel('Kategori lainnya *', { exact: true })).toHaveCount(0)
+    await productDialog.getByRole('button', { name: 'Simpan produk', exact: true }).click()
+    await expect(productDialog).toHaveCount(0)
+    expect(ok(await row()).category).toBe('Minuman')
+    expect(Number(ok(await row()).stock)).toBe(1.25)
+    pass('Pilihan kategori dan Lainnya, validasi kosong, simpan/edit/reload dan stok pecahan berhasil')
+
+    await page.getByRole('button', { name: 'Ubah jam', exact: true }).click()
+    const hoursDialog = page.getByRole('dialog', { name: 'Ubah jam operasional', exact: true })
+    await expect(hoursDialog.locator('input[type=time]:disabled')).toHaveCount(14)
+    expect(await hoursDialog.locator('input[type=time]').first().evaluate(el => Number(getComputedStyle(el).opacity))).toBeLessThan(0.5)
+    await page.screenshot({ path: dir + '/hours-closed.png', fullPage: true })
+    const activate = hoursDialog.getByRole('button', { name: 'Aktifkan semua hari', exact: true })
+    expect(await activate.evaluate(el => Number.parseFloat(getComputedStyle(el).borderRadius))).toBeGreaterThan(100)
+    await activate.click()
+    await expect(hoursDialog.locator('input[type=time]:disabled')).toHaveCount(0)
+    await hoursDialog.locator('input[type=time]').nth(0).fill('08:00')
+    await hoursDialog.locator('input[type=time]').nth(1).fill('17:00')
+    await hoursDialog.getByRole('button', { name: 'Minggu ditutup', exact: true }).click()
+    await activate.click()
+    await hoursDialog.getByRole('button', { name: 'Simpan jam operasional', exact: true }).click()
+    await expect(hoursDialog).toHaveCount(0)
+    const schedule = ok(await admin.from('businesses').select('operating_hours').eq('id', businessId).single()).operating_hours
+    expect(Object.values(schedule)).toHaveLength(7)
+    for (const day of Object.values(schedule)) expect(day).toEqual({ open: '08:00', close: '17:00', closed: false })
+    await page.reload()
+    await page.getByRole('button', { name: 'Ubah jam', exact: true }).click()
+    await expect(hoursDialog.locator('input[type=time]:disabled')).toHaveCount(0)
+    await page.screenshot({ path: dir + '/hours.png', fullPage: true })
+    await hoursDialog.getByRole('button', { name: 'Tutup', exact: true }).click()
+    pass('Semua hari yang semula tutup menjadi aktif; jam sumber, bentuk pil, database dan reload teruji')
+
+    await page.getByRole('button', { name: 'Atur pembayaran', exact: true }).click()
+    const payments = page.getByRole('dialog', { name: 'Atur pembayaran', exact: true })
+    const aligned = async () => {
+      const positions = []
+      for (const name of ['QRIS', 'Transfer bank', 'E-wallet']) positions.push((await payments.getByRole('switch', { name, exact: true }).boundingBox())!.x)
+      expect(Math.max(...positions) - Math.min(...positions)).toBeLessThan(1)
+    }
+    await aligned()
+    await payments.getByRole('switch', { name: 'QRIS', exact: true }).click()
+    const upload = payments.locator('input[type=file]')
+    await upload.setInputFiles({ name: 'not-image.png', mimeType: 'image/png', buffer: Buffer.from('invalid image') })
+    await expect(payments.getByRole('alert')).toContainText('tidak dapat dibaca')
+    await upload.setInputFiles({ name: 'large.png', mimeType: 'image/png', buffer: Buffer.alloc(2 * 1024 * 1024 + 1) })
+    await expect(payments.getByRole('alert')).toContainText('maksimal 2 MB')
+    for (const format of ['png', 'jpeg', 'webp'] as const) {
+      const image = await sharp({ create: { width: 120, height: 200, channels: 3, background: '#ffffff' } })[format]().toBuffer()
+      await upload.setInputFiles({ name: 'qris.' + format, mimeType: 'image/' + format, buffer: image })
+      await expect(payments.getByRole('alert')).toHaveCount(0)
+      await expect(payments.getByAltText('Preview QRIS')).toHaveAttribute('src', new RegExp('^data:image/' + format))
+      await expect.poll(() => payments.getByAltText('Preview QRIS').evaluate((el: HTMLImageElement) => el.naturalHeight)).toBe(200)
+      expect(await payments.getByAltText('Preview QRIS').evaluate(el => getComputedStyle(el).objectFit)).toBe('contain')
+    }
+    await payments.getByRole('switch', { name: 'Tunai', exact: true }).click()
+    await payments.getByRole('button', { name: 'Tambah rekening', exact: true }).click()
+    await payments.getByPlaceholder('Nama bank', { exact: true }).fill('Bank Uji')
+    await payments.getByPlaceholder('Nama pemilik', { exact: true }).fill('Pemilik Uji')
+    await payments.getByPlaceholder('Nomor rekening', { exact: true }).fill('00123456789')
+    await payments.getByRole('button', { name: 'Tambah rekening', exact: true }).click()
+    await payments.getByRole('button', { name: 'Hapus rekening', exact: true }).last().click()
+    await payments.getByRole('button', { name: 'Tambah akun e-wallet', exact: true }).click()
+    await payments.getByPlaceholder('Provider', { exact: true }).fill('Dompet Uji')
+    await payments.getByPlaceholder('Nama akun', { exact: true }).fill('Pemilik Uji')
+    await payments.getByPlaceholder('Nomor e-wallet', { exact: true }).fill('081234567890')
+    await expect(page.getByText('2 dari 4 langkah utama selesai', { exact: true })).toBeVisible()
+    await page.screenshot({ path: dir + '/payments-desktop.png', fullPage: true })
+    for (const width of [320, 768]) {
+      await page.setViewportSize({ width, height: 900 })
+      await aligned()
+      expect(await payments.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+      await page.screenshot({ path: `${dir}/payments-${width}.png`, fullPage: true })
+    }
+    await payments.getByRole('button', { name: 'Simpan pembayaran', exact: true }).click()
+    await expect(payments).toHaveCount(0)
+    await expect(page.getByText('3 dari 4 langkah utama selesai', { exact: true })).toBeVisible()
+    const paymentTask = page.getByText('Siapkan metode pembayaran', { exact: true }).locator('../..')
+    await expect(paymentTask.locator('svg.lucide-check')).toHaveCount(1)
+    await page.reload()
+    await expect(page.getByText('3 dari 4 langkah utama selesai', { exact: true })).toBeVisible()
+    await page.getByRole('button', { name: 'Atur pembayaran', exact: true }).click()
+    await expect(payments.getByAltText('Preview QRIS')).toBeVisible()
+    await expect(payments.getByPlaceholder('Nomor rekening', { exact: true })).toHaveValue('00123456789')
+    for (const name of ['QRIS', 'Tunai', 'Transfer bank', 'E-wallet']) await expect(payments.getByRole('switch', { name, exact: true })).toHaveAttribute('aria-checked', 'true')
+    pass('QRIS PNG/JPEG/WebP tampil utuh; file rusak/besar ditolak; alignment desktop/320/768, tambah/hapus rekening, e-wallet dan reload berhasil')
+
+    await page.evaluate(() => {
+      const original = Storage.prototype.setItem
+      ;(window as any).restoreSetupStorage = () => { Storage.prototype.setItem = original }
+      Storage.prototype.setItem = function (key, value) { if (key.endsWith(':usahaku_payments')) throw new DOMException('quota', 'QuotaExceededError'); original.call(this, key, value) }
+    })
+    await payments.getByPlaceholder('Nama bank', { exact: true }).fill('Perubahan belum tersimpan')
+    await payments.getByRole('button', { name: 'Simpan pembayaran', exact: true }).click()
+    await expect(payments).toBeVisible()
+    await expect(payments.getByText(/Pengaturan belum tersimpan/)).toBeVisible()
+    await page.evaluate(() => (window as any).restoreSetupStorage())
+    await payments.getByRole('button', { name: 'Batal', exact: true }).click()
+    await page.getByRole('button', { name: 'Atur pembayaran', exact: true }).click()
+    await expect(payments.getByPlaceholder('Nama bank', { exact: true })).toHaveValue('Bank Uji')
+    pass('Kegagalan penyimpanan browser tidak menutup modal atau mengganti pengaturan tersimpan; container sampul dihapus')
+
+    let fileChooserOpened = false
+    page.on('filechooser', () => { fileChooserOpened = true })
+    await payments.getByRole('button', { name: 'Hapus gambar QRIS', exact: true }).click()
+    await expect(payments.getByAltText('Preview QRIS')).toHaveCount(0)
+    await expect(payments.getByRole('switch', { name: 'QRIS', exact: true })).toHaveAttribute('aria-checked', 'true')
+    await payments.getByRole('button', { name: 'Batal', exact: true }).click()
+    await page.getByRole('button', { name: 'Atur pembayaran', exact: true }).click()
+    await expect(payments.getByAltText('Preview QRIS')).toBeVisible()
+    await payments.getByRole('button', { name: 'Hapus gambar QRIS', exact: true }).click()
+    await payments.getByRole('button', { name: 'Simpan pembayaran', exact: true }).click()
+    await page.reload()
+    await expect(page.getByText('3 dari 4 langkah utama selesai', { exact: true })).toBeVisible()
+    await page.getByRole('button', { name: 'Atur pembayaran', exact: true }).click()
+    await expect(payments.getByAltText('Preview QRIS')).toHaveCount(0)
+    await expect(payments.getByRole('button', { name: 'Hapus gambar QRIS', exact: true })).toHaveCount(0)
+    expect(fileChooserOpened).toBe(false)
+    await payments.getByRole('button', { name: 'Tutup', exact: true }).click()
+    await page.getByRole('button', { name: 'Masuk ke ringkasan', exact: true }).click()
+    const paymentSummary = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Pembayaran', exact: true }) })
+    await expect(paymentSummary.getByText('QRIS (belum ada gambar)', { exact: true })).toBeVisible()
+    await expect(page.getByText('Selesai', { exact: true })).toHaveCount(3)
+    pass('Tombol X menghapus preview tanpa membuka pemilih file; Batal mempertahankan foto; hapus+Simpan persisten; checklist/progres dan ringkasan pembayaran konsisten')
+    passed = true
+  } finally {
+    await context.close()
+    if (businessId) {
+      for (const table of ['staff_audit_logs', 'business_members']) ok(await admin.from(table).delete().eq('business_id', businessId))
+      ok(await admin.from('businesses').delete().eq('id', businessId))
+    }
+    if (userId) ok(await admin.auth.admin.deleteUser(userId))
+    expect(ok(await admin.from('businesses').select('*').in('id', legacy.map((business: any) => business.id)).order('id'))).toEqual(legacy)
+    await writeFile(dir + '/results.json', JSON.stringify({ passed, results, cleanup: true, legacyBusinessesUnchanged: true }, null, 2))
+  }
+})
