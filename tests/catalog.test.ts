@@ -23,7 +23,7 @@ test('catalog SQL enforces exact stock, idempotency, revisions, audit and tenant
     create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text,name text,metadata jsonb);
     alter table storage.objects enable row level security;grant usage on schema storage to authenticated,service_role;
     grant select,insert,update,delete on storage.objects to authenticated;grant all on storage.objects,storage.buckets to service_role;`)
-    for(const file of ['202610200001_foundation.sql','202610210001_profile_setup.sql','202610220001_catalog_inventory.sql','202610220002_bulk_catalog.sql','202610220003_product_image_policy.sql'])await db.exec(await readFile('supabase/migrations/'+file,'utf8'))
+    for(const file of ['202610200001_foundation.sql','202610210001_profile_setup.sql','202610220001_catalog_inventory.sql','202610220002_bulk_catalog.sql','202610220003_product_image_policy.sql','202610230003_auto_product_sku.sql'])await db.exec(await readFile('supabase/migrations/'+file,'utf8'))
     const a=randomUUID(),b=randomUUID(),admin=randomUUID(),cashier=randomUUID()
     for(const id of [a,b,admin,cashier])await db.query('insert into auth.users(id) values($1)',[id])
     const as=async(id:string)=>{await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id]);await db.exec('set role authenticated')}

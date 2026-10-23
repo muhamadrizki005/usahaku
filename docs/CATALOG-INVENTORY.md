@@ -8,7 +8,7 @@
 
 - [x] Migrasi tambahan tanpa reset atau penyalinan data demo.
 - [x] CRUD katalog berupa tambah/edit/aktif/nonaktif; tidak ada hard delete. Nama, kategori bebas, satuan, harga, minimum, SKU/barcode opsional, dan gambar opsional.
-- [x] SKU unik tanpa membedakan huruf besar/kecil per usaha; SKU kosong saat pembuatan diisi otomatis. Barcode disimpan sebagai teks (nol di depan dipertahankan), unik bila tidak kosong di usaha yang sama. SKU/barcode produk nonaktif tetap dicadangkan.
+- [x] SKU unik tanpa membedakan huruf besar/kecil per usaha; SKU kosong saat pembuatan diisi otomatis. Setelah migrasi `202610230003_auto_product_sku.sql`, formatnya kategori–inisial–nomor, misalnya `MIN-KS-001` untuk Minuman/Kopi Susu. SKU custom dan SKU produk lama dipertahankan; lihat `PRODUCT-SKU.md`. Barcode disimpan sebagai teks (nol di depan dipertahankan), unik bila tidak kosong di usaha yang sama. SKU/barcode produk nonaktif tetap dicadangkan.
 - [x] Stok awal tercatat bersama pembuatan produk dalam satu transaksi. Stok awal 0 dan harga Rp0 diperbolehkan. Harga rupiah bulat, maksimal 999.999.999.999.
 - [x] Kuantitas numerik eksak di database, maksimal 999.999.999,999 dan 3 desimal. Input terlalu presisi ditolak sebelum penyimpanan; tidak memakai tipe kolom yang diam-diam membulatkan input.
 - [x] Stok masuk, keluar, dan koreksi selisih dengan alasan wajib, pelaku, snapshot nama/satuan, waktu, saldo sebelum/sesudah.
