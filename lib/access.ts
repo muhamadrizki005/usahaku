@@ -38,3 +38,17 @@ export async function redirectAfterLogin(): Promise<never> {
   if (!business.onboarding_completed_at) redirect(member.role === 'owner' ? '/onboarding/summary' : '/account?notice=setup')
   redirect(homeForRole(member.role))
 }
+
+export async function requireOnboardingDraft() {
+  const context = await requireAccount()
+  const { member, user, supabase } = context
+  if (member) {
+    if (!member.active || member.must_change_password || member.role !== 'owner') return redirectAfterLogin()
+    const { data: business, error } = await supabase.from('businesses').select('*').eq('id', member.business_id).single()
+    if (error || !business) throw new Error('Profil usaha belum dapat dibaca. Coba muat ulang halaman.')
+    if (business.onboarding_completed_at) redirect('/dashboard')
+    return { ...context, member, business: business as Business }
+  }
+  if (user.app_metadata.account_type === 'staff') redirect('/account')
+  return { ...context, member: null, business: null }
+}
