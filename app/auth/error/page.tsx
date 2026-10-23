@@ -2,7 +2,7 @@ export default function AuthErrorPage() {
   return (
     <main className="grid min-h-screen place-items-center bg-background px-6 text-foreground">
       <section className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-sm">
-        <p className="text-sm font-semibold text-primary">Usahaku</p>
+        <p className="text-sm font-semibold text-accent">Usahaku</p>
         <h1 className="mt-3 text-2xl font-semibold tracking-tight">Tautan tidak dapat digunakan</h1>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
           Sesi autentikasi sudah kedaluwarsa atau tautannya tidak valid. Silakan mulai lagi dari halaman masuk.

@@ -5,7 +5,7 @@ import { loginWithGoogle } from '@/app/actions'
 
 export function GoogleSignIn() {
   const [state, action, pending] = useActionState(loginWithGoogle, {})
-  return <div className="mt-6"><div className="mb-5 flex items-center gap-3 text-xs text-[#94a3b8]"><span className="h-px flex-1 bg-white/15" />atau<span className="h-px flex-1 bg-white/15" /></div><form action={action} className="space-y-3">{state.error && <p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-800">{state.error}</p>}<button disabled={pending} className="flex w-full items-center justify-center gap-3 rounded-xl border border-[#d0d5dd] bg-white px-5 py-3 font-semibold text-[#1c222e] hover:bg-[#f1f5f9] disabled:opacity-60"><GoogleMark />{pending ? 'Menghubungkan ke Google…' : 'Lanjutkan dengan Google'}</button></form></div>
+  return <div className="mt-6"><div className="mb-5 flex items-center gap-3 text-xs text-[#94a3b8]"><span className="h-px flex-1 bg-white/15" />atau<span className="h-px flex-1 bg-white/15" /></div><form action={action} className="space-y-3">{state.error && <p role="alert" className="rounded-xl border border-red-300 bg-[#4a252b] p-4 text-sm text-[#ffb4ae]">{state.error}</p>}<button disabled={pending} className="flex w-full items-center justify-center gap-3 rounded-xl border border-[#454d5b] bg-[#273242] px-5 py-3 font-semibold text-[#ffffff] hover:bg-[#303640] disabled:opacity-60"><GoogleMark />{pending ? 'Menghubungkan ke Google…' : 'Lanjutkan dengan Google'}</button></form></div>
 }
 
 function GoogleMark() {

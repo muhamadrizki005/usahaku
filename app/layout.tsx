@@ -1,6 +1,7 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import './palette.css'
 
 export const metadata: Metadata = {
   title: 'Usahaku — Operasional usaha lebih teratur',
@@ -13,11 +14,8 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  colorScheme: 'light dark',
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f7f9fc' },
-    { media: '(prefers-color-scheme: dark)', color: '#1c222e' },
-  ],
+  colorScheme: 'dark',
+  themeColor: '#1c222e',
 }
 
 export default function RootLayout({

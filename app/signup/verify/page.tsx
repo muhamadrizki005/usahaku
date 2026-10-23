@@ -116,21 +116,21 @@ export default function VerifyEmailPage() {
         </div>
       </header>
       <section className="mx-auto flex min-h-[calc(100vh-136px)] max-w-xl items-center px-5 py-14">
-        <div className="w-full rounded-2xl border border-white/10 bg-[#202938] p-6 sm:p-10">
+        <div className="w-full rounded-2xl border border-white/10 bg-[#273242] p-6 sm:p-10">
           <div className="grid size-12 place-items-center rounded-2xl bg-[#273242] text-[#24cbc5]"><MailCheck aria-hidden="true" /></div>
           <h1 className="mt-6 text-3xl font-semibold tracking-tight">Verifikasi email Anda</h1>
           <p className="mt-3 leading-7 text-[#c5cbd5]">Kami telah mengirim kode verifikasi ke email Anda. Masukkan kode tersebut untuk melanjutkan.</p>
           <p className="mt-3 rounded-lg bg-[#273242] px-3 py-2 text-sm text-[#24cbc5]">{email || 'Email pendaftaran Anda'}</p>
           <form onSubmit={handleVerify} className="mt-8">
             <div className="flex justify-between gap-2" aria-label="Kode verifikasi email">
-              {code.map((digit, index) => <input key={index} ref={(element) => { refs.current[index] = element }} value={digit} disabled={pending} autoComplete={index === 0 ? 'one-time-code' : 'off'} onFocus={event => event.currentTarget.select()} onChange={(event) => updateCode(index, event.target.value)} onKeyDown={(event) => handleKeyDown(index, event)} inputMode="numeric" maxLength={OTP_LENGTH} aria-label={`Digit ${index + 1} dari ${OTP_LENGTH}`} className={`h-14 ${OTP_LENGTH === 8 ? 'min-w-0 flex-1 max-w-12 sm:max-w-14' : 'w-12 sm:w-14'} rounded-xl border border-white/10 bg-[#1c222e] text-center text-xl font-semibold outline-none focus:border-[#1835d9] focus:ring-2 focus:ring-[#1835d9]/30`} />)}
+              {code.map((digit, index) => <input key={index} ref={(element) => { refs.current[index] = element }} value={digit} disabled={pending} autoComplete={index === 0 ? 'one-time-code' : 'off'} onFocus={event => event.currentTarget.select()} onChange={(event) => updateCode(index, event.target.value)} onKeyDown={(event) => handleKeyDown(index, event)} inputMode="numeric" maxLength={OTP_LENGTH} aria-label={`Digit ${index + 1} dari ${OTP_LENGTH}`} className={`h-14 ${OTP_LENGTH === 8 ? 'min-w-0 flex-1 max-w-12 sm:max-w-14' : 'w-12 sm:w-14'} rounded-xl border border-white/10 bg-[#1c222e] text-center text-xl font-semibold outline-none focus:border-[#24cbc5] focus:ring-2 focus:ring-[#1835d9]/30`} />)}
             </div>
             {error && <p role="alert" className="mt-4 rounded-lg border border-[#f56f6a]/30 bg-[#4a252b] p-3 text-sm text-[#ffb4ae]">{error}</p>}
             {message && <p role="status" className="mt-4 rounded-lg bg-[#173d3c] p-3 text-sm text-[#7de3dc]">{message}</p>}
             <button disabled={pending || code.join('').length !== OTP_LENGTH || !email} className="mt-6 h-12 w-full rounded-xl bg-[#1835d9] font-semibold text-white hover:bg-[#132c9e] disabled:cursor-not-allowed disabled:opacity-60">{pending ? 'Memproses...' : 'Verifikasi Email'}</button>
           </form>
           <button type="button" disabled={pending || cooldown > 0 || !email} onClick={resendCode} className="mt-4 w-full text-sm font-semibold text-[#24cbc5] disabled:cursor-not-allowed disabled:opacity-50">{cooldown ? `Kirim ulang kode (${cooldown} dtk)` : 'Kirim ulang kode'}</button>
-          <p className="mt-5 text-center text-sm text-[#98a2b3]">Periksa kotak masuk atau folder spam jika email belum terlihat.</p>
+          <p className="mt-5 text-center text-sm text-[#a4a7ac]">Periksa kotak masuk atau folder spam jika email belum terlihat.</p>
         </div>
       </section>
     </main>

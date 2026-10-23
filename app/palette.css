@@ -1,0 +1,67 @@
+:root:not(.light), :root.light, :root.dark {
+  color-scheme: dark;
+  --background: #1c222e;
+  --foreground: #ffffff;
+  --card: #273242;
+  --card-foreground: #ffffff;
+  --popover: #273242;
+  --popover-foreground: #ffffff;
+  --primary: #1835d9;
+  --primary-foreground: #ffffff;
+  --secondary: #303640;
+  --secondary-foreground: #ffffff;
+  --muted: #303640;
+  --muted-foreground: #c5cbd5;
+  --accent: #24cbc5;
+  --accent-foreground: #1c222e;
+  --destructive: #ffb4ae;
+  --destructive-foreground: #1c222e;
+  --border: #454d5b;
+  --input: #454d5b;
+  --ring: #24cbc5;
+  --sidebar: #273242;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #24cbc5;
+  --sidebar-primary-foreground: #1c222e;
+  --sidebar-accent: #24cbc51a;
+  --sidebar-accent-foreground: #24cbc5;
+  --sidebar-border: #454d5b;
+  --sidebar-ring: #24cbc5;
+  --chart-1: #24cbc5;
+  --chart-2: #1665cf;
+  --chart-3: #1835d9;
+  --chart-4: #349cb8;
+  --chart-5: #93a9db;
+  --shadow-color: #000000;
+}
+
+input:not([type='checkbox']):not([type='radio']):not([type='file']), select, textarea {
+  color-scheme: dark;
+  background-color: #273242;
+  color: #ffffff;
+  border-color: #454d5b;
+}
+input::placeholder, textarea::placeholder { color: #a4a7ac; opacity: 1; }
+select option { background-color: #273242; color: #ffffff; }
+input[type='checkbox'], input[type='radio'] { accent-color: #24cbc5; }
+
+::selection { background: #24cbc54d; color: white; }
+
+@media print {
+  html, body {
+    color-scheme: light !important;
+    background: white !important;
+    color: #1c222e !important;
+  }
+  #report-print-root, #pos-print-root {
+    background: white !important;
+    color: #1c222e !important;
+    color-scheme: light;
+  }
+  :is(#report-print-root, #pos-print-root) :is(section,div,span,p,h1,h2,h3,dl,dt,dd,table,thead,tbody,tr,th,td,a,ul,li) {
+    color: inherit !important;
+    background-color: transparent !important;
+    border-color: #dfe6f0 !important;
+    box-shadow: none !important;
+  }
+}

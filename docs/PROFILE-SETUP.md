@@ -36,7 +36,7 @@ Riwayat migrasi Supabase CLI dan katalog SQL remote penuh belum diinspeksi langs
 
 ## Keamanan dan kegagalan parsial logo
 
-1. Server memeriksa PNG/JPEG asli, ukuran input maksimal 2 MiB, dimensi maksimal 4096×4096, dan gambar statis. Sharp menormalisasi orientasi, membatasi dimensi output 512px, menghapus metadata, dan menghasilkan PNG. Nama file pengguna tidak dipakai sebagai path.
+1. Server memeriksa PNG/JPEG/WebP asli, ukuran input maksimal 2 MiB, dimensi maksimal 4096×4096, dan gambar statis. Sharp menormalisasi orientasi, membatasi dimensi output 512px, menghapus metadata, dan menghasilkan PNG. Nama file pengguna tidak dipakai sebagai path.
 2. Owner memesan ID/path UUID milik usahanya, lalu server mengunggah file baru tanpa overwrite. Akun browser tidak memiliki izin insert/update/delete Storage atau akses langsung registry.
 3. RPC mengunci profil dan kandidat, memeriksa revisi serta keberadaan/metadata objek, kemudian secara atomik mengganti pointer. Logo lama baru menjadi `retired` sesudah commit.
 4. Bila respons aktivasi hilang, server membaca ulang pointer. Jika hasil belum pasti, kandidat tidak langsung dihapus: transaksi remote mungkin masih berjalan. Profil/usahanya tidak dibatalkan atau dihapus.
@@ -73,3 +73,5 @@ Script memproses maksimal 100 kandidat per eksekusi melalui claim yang sama. Jal
 Tes hanya membuat akun dan usaha baru. Cleanup memilih ID milik run tersebut, termasuk ID yang mungkin sudah ter-commit sebelum assertion gagal. Data demo dan usaha pengguna dipertahankan.
 
 Operasi tulis profil, jam, dan aktivasi logo diberi batas waktu 15 detik serta tidak dicoba ulang otomatis. Respons yang terputus bukan bukti transaksi dibatalkan: form meminta pemeriksaan ulang, dan siklus logo mempertahankan kandidat untuk rekonsiliasi/cleanup yang terkunci. Lockfile npm dan pnpm diselaraskan; Sharp adalah dependensi langsung, bukan hanya dependensi transitif Next.
+
+Dukungan WebP (23 Oktober 2026): input WebP statis diterima bersama PNG/JPEG, tetap maksimal 2 MiB dan 4096 x 4096. Server menormalisasi ke PNG; storage, policy akses, dan lifecycle penggantian gambar tetap sama. Verifikasi aktual fungsi server: WebP/PNG/JPEG berhasil diproses, transparansi WebP dipertahankan, isi palsu/MIME lain/file terlalu besar/dimensi berlebih ditolak; TypeScript lulus.

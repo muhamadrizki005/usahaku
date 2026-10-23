@@ -133,7 +133,7 @@ function refreshBusinessViews() {
 }
 
 export async function saveBusinessProfile(_: ActionState, form: FormData): Promise<ActionState> {
-  const { supabase, business } = await requireBusiness(['owner'])
+  const { supabase, business } = await requireBusiness(['owner'], true)
   const parsed = profileSchema.safeParse(fields(form))
   if (!parsed.success) return invalid(parsed.error)
   const revision = z.coerce.number().int().nonnegative().safeParse(form.get('revision'))
@@ -161,11 +161,20 @@ export async function saveBusinessProfile(_: ActionState, form: FormData): Promi
   }
   try { if (!await cleanupBusinessLogos(business.id)) warning ||= 'Profil tersimpan. Pembersihan logo lama akan dicoba kembali.' } catch { warning ||= 'Profil tersimpan. Pembersihan logo lama akan dicoba kembali.' }
   refreshBusinessViews()
+  if (form.get('next') === 'setup') redirect(`/onboarding/setup?category=toko${warning ? '&notice=logo' : ''}`)
   return { success: 'Profil usaha tersimpan.', business: saved, warning }
 }
 
+export async function completeOnboarding(_: ActionState, _form: FormData): Promise<ActionState> {
+  const { supabase, business } = await requireBusiness(['owner'], true)
+  const { data, error } = await supabase.rpc('complete_business_onboarding', { target_id: business.id }).abortSignal(AbortSignal.timeout(15000)).retry(false)
+  if (error || !data?.onboarding_completed_at) return { error: 'Pengaturan belum dapat dikonfirmasi selesai. Coba lagi; data yang tersimpan tetap aman.' }
+  refreshBusinessViews()
+  redirect('/dashboard')
+}
+
 export async function saveBusinessHours(_: ActionState, form: FormData): Promise<ActionState> {
-  const { supabase, business } = await requireBusiness(['owner'])
+  const { supabase, business } = await requireBusiness(['owner'], true)
   let raw: unknown
   try { raw = JSON.parse(String(form.get('schedule'))) } catch { return { error: 'Format jam tidak valid.' } }
   const parsed = businessHoursSchema.safeParse(raw)
@@ -179,7 +188,7 @@ export async function saveBusinessHours(_: ActionState, form: FormData): Promise
 }
 
 export async function createStaff(_: ActionState, form: FormData): Promise<ActionState> {
-  const { business, user } = await requireBusiness(['owner'])
+  const { business, user } = await requireBusiness(['owner'], true)
   const parsed = staffSchema.safeParse(fields(form))
   if (!parsed.success) return invalid(parsed.error)
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return { error: 'Pengelolaan staf belum dikonfigurasi pada server.' }
@@ -204,7 +213,7 @@ export async function createStaff(_: ActionState, form: FormData): Promise<Actio
 }
 
 export async function manageStaff(_: ActionState, form: FormData): Promise<ActionState> {
-  const { business, user } = await requireBusiness(['owner'])
+  const { business, user } = await requireBusiness(['owner'], true)
   const parsed = z.object({ id: z.uuid(), operation: z.enum(['activate', 'deactivate', 'reset']) }).safeParse(fields(form))
   if (!parsed.success) return invalid(parsed.error)
   const admin = createAdminClient()

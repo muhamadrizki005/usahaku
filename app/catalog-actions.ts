@@ -9,7 +9,7 @@ import { replaceProductImage,cleanupProductImages } from '@/lib/product-images'
 function refresh(){revalidatePath('/dashboard','layout');revalidatePath('/onboarding','layout')}
 function failure(code?:string):CatalogResult{return{error:code==='23505'?'SKU atau barcode sudah dipakai produk lain di usaha ini.':code==='PT409'?'Data telah berubah di tab lain. Muat ulang sebelum menyimpan.':code==='22023'?'Data tidak valid. Periksa jumlah, alasan, dan satuan produk; satuan tetap setelah dibuat.':'Penyimpanan belum dapat dipastikan. Muat ulang untuk memeriksa; jangan kirim operasi baru sebelum hasilnya jelas.'}}
 export async function saveCatalogProduct(form:FormData):Promise<CatalogResult>{
-  const {supabase,business}=await requireBusiness(['owner','admin'])
+  const {supabase,business}=await requireBusiness(['owner','admin'], true)
   const ids=z.object({id:z.uuid(),request:z.uuid(),revision:z.number().int().nonnegative().nullable()}).safeParse({id:form.get('id'),request:form.get('request'),revision:form.get('revision')===''?null:Number(form.get('revision'))})
   if(!ids.success)return{error:'Identitas permintaan tidak valid. Muat ulang formulir.'}
   let raw:unknown;try{raw=JSON.parse(String(form.get('details')))}catch{return{error:'Data produk tidak valid.'}}
@@ -33,7 +33,7 @@ export async function saveCatalogProduct(form:FormData):Promise<CatalogResult>{
   refresh();return{success:'Produk berhasil disimpan.',warning,product:catalogView(saved)}
 }
 export async function moveCatalogStock(form:FormData):Promise<CatalogResult>{
-  const {supabase,business}=await requireBusiness(['owner','admin'])
+  const {supabase,business}=await requireBusiness(['owner','admin'], true)
   const parsed=z.object({id:z.uuid(),request:z.uuid(),revision:z.coerce.number().int().nonnegative(),kind:z.enum(['in','out','adjustment']),reason:z.string().trim().min(3,'Alasan minimal 3 karakter.').max(300)}).safeParse(Object.fromEntries(form))
   if(!parsed.success)return{error:parsed.error.issues[0].message}
   let delta:string;try{delta=quantity(form.get('delta'),true);if(Number(delta)===0)throw Error('Perubahan stok tidak boleh nol.')}catch(e){return{error:(e as Error).message}}
@@ -45,7 +45,7 @@ export async function moveCatalogStock(form:FormData):Promise<CatalogResult>{
 }
 
 export async function bulkCatalogProducts(form:FormData):Promise<CatalogResult>{
-  const {supabase,business}=await requireBusiness(['owner','admin'])
+  const {supabase,business}=await requireBusiness(['owner','admin'], true)
   let raw:unknown;try{raw={request:form.get('request'),items:JSON.parse(String(form.get('items'))),category:JSON.parse(String(form.get('category'))),active:JSON.parse(String(form.get('active')))}}catch{return{error:'Pilihan tidak valid.'}}
   const parsed=z.object({request:z.uuid(),items:z.array(z.object({id:z.uuid(),revision:z.number().int().nonnegative()})).min(1).max(500),category:z.string().trim().min(1).max(100).nullable(),active:z.boolean().nullable()}).safeParse(raw)
   if(!parsed.success)return{error:parsed.error.issues[0].message}

@@ -285,7 +285,7 @@ export default function LandingPage() {
               transition={{ duration: 0.45, delay: idx * 0.1 }}
               className="flex items-center gap-3 text-sm font-medium"
             >
-              <Check className="text-primary" aria-hidden="true" />
+              <Check className="text-accent" aria-hidden="true" />
               {item}
             </motion.div>
           ))}
@@ -301,7 +301,7 @@ export default function LandingPage() {
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         className="mx-auto max-w-[1800px] px-5 py-20 sm:px-8 lg:px-12"
       >
-        <p className="text-xs font-semibold tracking-[0.18em] text-primary">SATU PLATFORM, LIMA KATEGORI</p>
+        <p className="text-xs font-semibold tracking-[0.18em] text-accent">SATU PLATFORM, LIMA KATEGORI</p>
         <h2 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight">Usaha Anda punya cara kerja sendiri. Kami mengikutinya.</h2>
         <p className="mt-5 max-w-2xl leading-7 text-muted-foreground">Pilih satu kategori utama saat menyiapkan usaha. Navigasi, data ringkasan, dan modul yang tampil akan menyesuaikan kebutuhan operasionalnya.</p>
         <div className="mt-10 grid gap-5 lg:grid-cols-3">
@@ -314,7 +314,7 @@ export default function LandingPage() {
               transition={{ duration: 0.55, delay: index * 0.12, ease: [0.22, 1, 0.36, 1] }}
               className="rounded-2xl border border-border bg-card p-6"
             >
-              <div className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary">
+              <div className="grid size-11 place-items-center rounded-xl bg-accent/10 text-accent">
                 <Icon aria-hidden="true" />
               </div>
               <h3 className="mt-6 text-xl font-semibold">{label}</h3>
@@ -322,12 +322,12 @@ export default function LandingPage() {
               <ul className="mt-6 flex flex-col gap-3 text-sm">
                 {items.map((item) => (
                   <li key={item} className="flex items-center gap-2">
-                    <Check className="text-primary" aria-hidden="true" />
+                    <Check className="text-accent" aria-hidden="true" />
                     {item}
                   </li>
                 ))}
               </ul>
-              <a href="#fitur" className="mt-7 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
+              <a href="#fitur" className="mt-7 inline-flex items-center gap-2 text-sm font-semibold text-accent hover:underline">
                 {link} <ArrowRight aria-hidden="true" />
               </a>
             </motion.article>
@@ -433,7 +433,7 @@ export default function LandingPage() {
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         className="mx-auto max-w-[1800px] px-5 py-20 sm:px-8 lg:px-12"
       >
-        <p className="text-xs font-semibold tracking-[0.18em] text-primary">DARI AKTIVITAS MENJADI PEMAHAMAN</p>
+        <p className="text-xs font-semibold tracking-[0.18em] text-accent">DARI AKTIVITAS MENJADI PEMAHAMAN</p>
         <h2 className="mt-4 max-w-xl text-4xl font-semibold leading-tight">Bukan hanya mengelola hari ini.<br />Kenali usaha Anda lebih baik.</h2>
         <div className="mt-10 grid gap-5 lg:grid-cols-3">
           {[
@@ -451,8 +451,8 @@ export default function LandingPage() {
             >
               <h3 className="text-xl font-semibold">{title}</h3>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">{description}</p>
-              <div className="mt-8 rounded-xl bg-primary/5 p-4">
-                <p className="text-[10px] font-semibold tracking-[0.16em] text-primary">{label}</p>
+              <div className="mt-8 rounded-xl bg-accent/10 p-4">
+                <p className="text-[10px] font-semibold tracking-[0.16em] text-accent">{label}</p>
                 <p className="mt-3 text-sm font-medium">{preview}</p>
               </div>
             </motion.article>
@@ -471,7 +471,7 @@ export default function LandingPage() {
         className="border-y border-border bg-card/50 px-5 py-20 sm:px-8 lg:px-12"
       >
         <div className="mx-auto max-w-[1800px]">
-          <p className="text-xs font-semibold tracking-[0.18em] text-primary">CARA MEMULAI</p>
+          <p className="text-xs font-semibold tracking-[0.18em] text-accent">CARA MEMULAI</p>
           <h2 className="mt-4 text-4xl font-semibold">Mulai dari akun, lanjut sesuai usaha Anda.</h2>
           <p className="mt-5 text-muted-foreground">Tidak perlu menyiapkan semuanya sekaligus. Ikuti langkah yang relevan untuk usaha Anda.</p>
           <div className="mt-10 grid gap-5 lg:grid-cols-3">
@@ -484,7 +484,7 @@ export default function LandingPage() {
                 transition={{ duration: 0.55, delay: index * 0.12, ease: [0.22, 1, 0.36, 1] }}
                 className="rounded-2xl border border-border bg-background p-6"
               >
-                <span className="text-sm font-semibold text-primary">{number}</span>
+                <span className="text-sm font-semibold text-accent">{number}</span>
                 <h3 className="mt-8 font-semibold">{title}</h3>
                 <p className="mt-3 text-sm leading-6 text-muted-foreground">{description}</p>
               </motion.article>
@@ -506,7 +506,7 @@ export default function LandingPage() {
         <Link href="/signup" className="mt-8 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3.5 font-semibold text-primary-foreground">
           Mulai Sekarang <ArrowRight aria-hidden="true" />
         </Link>
-        <p className="mt-5 text-sm text-muted-foreground">Sudah punya akun? <Link href="/login" className="font-semibold text-primary hover:underline">Masuk</Link></p>
+        <p className="mt-5 text-sm text-muted-foreground">Sudah punya akun? <Link href="/login" className="font-semibold text-accent hover:underline">Masuk</Link></p>
       </motion.section>
 
       {/* Demos Modal */}
@@ -515,7 +515,7 @@ export default function LandingPage() {
           <div className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-3xl border border-border bg-background p-6 shadow-2xl sm:p-8">
             <div className="flex items-start justify-between gap-5">
               <div>
-                <p className="text-sm font-medium text-primary">Demo berdasarkan kategori usaha</p>
+                <p className="text-sm font-medium text-accent">Demo berdasarkan kategori usaha</p>
                 <h2 id="demo-title" className="mt-2 text-3xl font-semibold tracking-tight">Pilih alur kerja usaha Anda.</h2>
               </div>
               <button type="button" onClick={() => setShowDemos(false)} className="rounded-lg p-2 text-muted-foreground hover:bg-secondary" aria-label="Tutup demo">×</button>
@@ -529,7 +529,7 @@ export default function LandingPage() {
                   </div>
                   <h3 className="mt-7 text-xl font-semibold">{label}</h3>
                   <p className="mt-3 flex-1 text-sm leading-6 text-muted-foreground">{description}</p>
-                  <Link href={`/dashboard?category=${type}`} className="mt-7 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
+                  <Link href={`/dashboard?category=${type}`} className="mt-7 inline-flex items-center gap-2 text-sm font-semibold text-accent hover:underline">
                     Lihat demo {type === 'toko' ? 'toko' : type === 'restoran' ? 'restoran' : 'salon'} <ArrowRight aria-hidden="true" />
                   </Link>
                 </article>

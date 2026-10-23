@@ -1,5 +1,7 @@
 # Usahaku — preserve the user's UI
 
+- Current palette authorization, 23 October 2026: the user approved the dark dashboard example and requested its palette on every page/component, including authentication and onboarding. Use navy `#1C222E`, panels `#273242`/`#303640`, white/`#C5CBD5` text, turquoise `#24CBC5` accents, and blue `#1835D9` primary actions. This supersedes the historical page-palette preservation rules below. Preserve layouts, typography, copy, assets, backend, role and tenant isolation. Landing's explicitly white illustrative dashboard remains a light variant; receipts/reports print with white paper and dark text. The user subsequently authorized merging `feat/landing-palette-app` into main; preserve existing local onboarding/WebP work during integration. See `docs/PALETTE-APP.md`.
+
 - The user owns the visual design. Use `C:\Projek Software\usahaku-design-system.zip` as the original UI reference; `components/original/` contains adapted views from it.
 - The user supplied the official Usahaku logo on 21 October 2026. Use `public/brand/usahaku-logo.png` (unaltered source PNG) in place of the ZIP's temporary brand marks and favicon. Preserve its original colors and transparency; it does not authorize recoloring page palettes.
 - Preserve the ZIP's palette separately for each page. Dashboard teal (`#0f766e`) and login/onboarding blue (`#1835d9`) both belong to the ZIP. Do not unify them. The user revoked palette instructions from the old handoff; the revised handoff confirms this ZIP takes precedence.
@@ -15,3 +17,18 @@
 - The user then authorized store customer profiles and purchase history: owner/admin manage name, optional phone/notes and activation; cashiers only search/select active customers at checkout. Keep customer notes and full purchase history restricted to owner/admin; cashiers still see only their own transactions. General customers remain supported. Snapshot the customer name at checkout, do not relink historical sales by matching names or phone numbers, and never delete customer purchase history when deactivating. No customer login, points or loyalty in this stage. See `docs/CUSTOMERS.md`.
 - On 23 October 2026 the user authorized store sales reports and CSV/PDF export. Owner/admin only; cashiers retain only their own transaction history, not business reports or report exports. Preserve the existing dashboard/table/form styles. Filter dates in WIB and payment method. Exclude cancelled sales from their original sale period; report manual refunds separately by cancellation date without subtracting them twice. Never imply profit without cost/HPP data or automatic bank/QRIS refunds. Report/export data must come from verified server/database reads. See `docs/SALES-REPORTS.md`.
 - Keep Supabase demo accounts/data unchanged. Tests use new accounts and clean up only IDs created by that run.
+
+<!-- antislop:start -->
+## antislop
+For UI, copy, people, mobile layout, or code comments work, read these installed skill files directly (use these paths even if a same-named global skill exists):
+- Core filter, always on: `antislop`: `.codex/skills/antislop/SKILL.md`
+- UI / visual: `antislop-ui`: `.codex/skills/antislop-ui/SKILL.md`
+- Code comments: `antislop-code`: `.codex/skills/antislop-code/SKILL.md`
+- Mobile / responsive: `antislop-layoutmobile`: `.codex/skills/antislop-layoutmobile/SKILL.md`
+- People: `antislop-human`: `.codex/skills/antislop-human/SKILL.md`
+- Copy & text: `antislop-copywriting`: `.codex/skills/antislop-copywriting/SKILL.md`
+Before starting, follow the core's "Two Usage Modes" section in strict order: explicit session instruction first, then global preference, then ask. A session instruction always wins. For a resolved mode, say `antislop active: <mode> (session override).` or `antislop active: <mode> (global preference).` once before presenting findings or making edits, using the actual mode and source. Acknowledging the user's request without naming the source does not replace this notice.
+Only an explicit choice of antislop during or after selects a session mode. A request to review, audit, or avoid file edits does not select a mode; read the global preference in that case. Another skill's mode does not select antislop's mode.
+If the mode is unresolved, ask during/after and end the response; wait for the answer before any UI review, planning, or concept. For read-only tasks, put the active-mode notice only at the start of the final answer, never in progress messages. For editing tasks, announce before the first edit and omit it from the final answer.
+To update antislop later: `npx antislop-ai --update`, or run `npx antislop-ai` and pick Overwrite them.
+<!-- antislop:end -->

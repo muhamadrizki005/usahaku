@@ -8,16 +8,16 @@ import type { Business } from '@/lib/validation'
 
 export const logoBucket = 'business-logos'
 export async function prepareBusinessLogo(entry: FormDataEntryValue | null): Promise<Buffer> {
-  if (!(entry instanceof File) || !['image/png', 'image/jpeg'].includes(entry.type) || entry.size < 1 || entry.size > 2 * 1024 * 1024) throw new Error('Logo harus PNG/JPG, maksimal 2 MB.')
+  if (!(entry instanceof File) || !['image/png', 'image/jpeg', 'image/webp'].includes(entry.type) || entry.size < 1 || entry.size > 2 * 1024 * 1024) throw new Error('Logo harus PNG/JPG/WebP, maksimal 2 MB.')
   try {
     const input = Buffer.from(await entry.arrayBuffer())
     const image = sharp(input, { limitInputPixels: 4096 * 4096, animated: false })
     const metadata = await image.metadata()
-    if (!['png', 'jpeg'].includes(metadata.format || '') || !metadata.width || !metadata.height || metadata.width > 4096 || metadata.height > 4096 || (metadata.pages || 1) > 1) throw new Error('Invalid image')
+    if (!['png', 'jpeg', 'webp'].includes(metadata.format || '') || !metadata.width || !metadata.height || metadata.width > 4096 || metadata.height > 4096 || (metadata.pages || 1) > 1) throw new Error('Invalid image')
     const output = await image.rotate().resize({ width: 512, height: 512, fit: 'inside', withoutEnlargement: true }).png().toBuffer()
     if (output.length > 2 * 1024 * 1024) throw new Error('Image too large')
     return output
-  } catch { throw new Error('Isi gambar tidak valid. Gunakan PNG/JPG statis dengan dimensi maksimal 4096×4096.') }
+  } catch { throw new Error('Isi gambar tidak valid. Gunakan PNG/JPG/WebP statis dengan dimensi maksimal 4096×4096.') }
 }
 
 export async function cleanupBusinessLogos(businessId?: string) {

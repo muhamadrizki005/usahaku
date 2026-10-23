@@ -17,7 +17,7 @@
 - [x] Perubahan massal kategori/nonaktif mengikuti pilihan yang sudah ada pada UI. Jika satu produk berubah versi atau milik usaha lain, seluruh batch dibatalkan. Maksimal 500 pilihan per permintaan.
 - [x] RLS dan RPC memeriksa business, role, aktif, dan wajib ganti sandi. Tidak ada izin browser untuk menulis tabel langsung. Kasir hanya boleh membaca katalog aktif milik usahanya sebagai fondasi kebutuhan POS mendatang; tidak dapat membaca ledger/audit inventori.
 - [x] Audit metadata tersimpan di `catalog_audit`; ledger stok terlihat pada panel riwayat inventori yang sudah ada. Audit metadata belum memiliki halaman tersendiri.
-- [x] Gambar privat: server memvalidasi PNG/JPEG maksimal 2 MiB, maksimal 4096×4096, menormalisasi PNG 512px dan menghapus metadata. Staging/promosi/cleanup mengikuti pola aman logo profil: tidak menimpa file lama, pointer diganti dahulu, cleanup memakai claim dan melindungi file aktif.
+- [x] Gambar privat: server memvalidasi PNG/JPEG/WebP maksimal 2 MiB, maksimal 4096×4096, menormalisasi PNG 512px dan menghapus metadata. Staging/promosi/cleanup mengikuti pola aman logo profil: tidak menimpa file lama, pointer diganti dahulu, cleanup memakai claim dan melindungi file aktif.
 - [x] Gambar disajikan lewat proxy yang memeriksa sesi/membership setiap permintaan, `private, no-store`, download Storage memakai nonce baru. Tidak memakai URL publik/signed URL.
 - [x] Pencarian, filter, ekspor CSV, dan pagination produk (50 baris) memakai data katalog terverifikasi. Pembacaan server mengambil batch agar tidak diam-diam terpotong batas default REST.
 - [x] Produk/inventori/dashboard/checklist/ringkasan memakai katalog server yang sama. Modal produk onboarding dipertahankan, memakai satuan default `pcs` untuk produk baru; gunakan halaman produk untuk membuat satuan lain. Edit stok dari editor produk dinonaktifkan agar melewati pencatatan alasan di inventori.
@@ -70,3 +70,5 @@ node --env-file=.env.local scripts/cleanup-product-images.mjs
 Cleanup harus melalui `claim_product_image_cleanup`: mengunci business/produk/asset, menandai `deleting`, menolak file aktif, lalu menghapus Storage dan menyimpan tombstone. Kegagalan cleanup tidak membatalkan gambar baru yang telah commit. Jadwal rutin pada hosting produksi belum dipasang, sama seperti cleanup logo profil.
 
 Belum tersedia: migrasi data draft browser, buka 24 jam/multi-shift dari tahap sebelumnya, konversi satuan, stok antar-gudang, pengadaan, atau transaksi POS. Hak kasir melihat transaksi sendiri tetap dipertahankan untuk modul transaksi nanti.
+
+Dukungan WebP (23 Oktober 2026): input WebP statis diterima bersama PNG/JPEG, tetap maksimal 2 MiB dan 4096 x 4096. Server menormalisasi ke PNG; storage, policy akses, dan lifecycle penggantian gambar tetap sama. Verifikasi aktual fungsi server: WebP/PNG/JPEG berhasil diproses, transparansi WebP dipertahankan, isi palsu/MIME lain/file terlalu besar/dimensi berlebih ditolak; TypeScript lulus.

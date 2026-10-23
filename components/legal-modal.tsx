@@ -43,22 +43,22 @@ export function LegalModal({ type, onClose, onSwitchType }: LegalModalProps) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/10 bg-[#202938] px-6 py-4">
+        <div className="flex items-center justify-between border-b border-white/10 bg-[#273242] px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="grid size-9 place-items-center rounded-xl bg-[#1835d9]/20 text-[#1835d9]">
+            <div className="grid size-9 place-items-center rounded-xl bg-[#1835d9]/20 text-[#24cbc5]">
               {isPrivacy ? <ShieldCheck className="size-5" /> : <FileText className="size-5" />}
             </div>
             <div>
               <h2 id="legal-modal-title" className="text-lg font-semibold tracking-tight text-white">
                 {isPrivacy ? 'Kebijakan Privasi' : 'Syarat & Ketentuan Penggunaan'}
               </h2>
-              <p className="text-xs text-[#98a2b3]">Platform Usahaku • Berlaku mulai Oktober 2026</p>
+              <p className="text-xs text-[#a4a7ac]">Platform Usahaku • Berlaku mulai Oktober 2026</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="grid size-8 place-items-center rounded-lg text-[#98a2b3] transition-colors hover:bg-white/10 hover:text-white"
+            className="grid size-8 place-items-center rounded-lg text-[#a4a7ac] transition-colors hover:bg-white/10 hover:text-white"
             aria-label="Tutup jendela"
           >
             <X className="size-5" />
@@ -74,7 +74,7 @@ export function LegalModal({ type, onClose, onSwitchType }: LegalModalProps) {
               className={`border-b-2 px-4 py-2.5 text-xs font-semibold transition-colors ${
                 isPrivacy
                   ? 'border-[#1835d9] text-white'
-                  : 'border-transparent text-[#98a2b3] hover:text-white'
+                  : 'border-transparent text-[#a4a7ac] hover:text-white'
               }`}
             >
               Kebijakan Privasi
@@ -85,7 +85,7 @@ export function LegalModal({ type, onClose, onSwitchType }: LegalModalProps) {
               className={`border-b-2 px-4 py-2.5 text-xs font-semibold transition-colors ${
                 !isPrivacy
                   ? 'border-[#1835d9] text-white'
-                  : 'border-transparent text-[#98a2b3] hover:text-white'
+                  : 'border-transparent text-[#a4a7ac] hover:text-white'
               }`}
             >
               Syarat Penggunaan
@@ -97,7 +97,7 @@ export function LegalModal({ type, onClose, onSwitchType }: LegalModalProps) {
         <div className="overflow-y-auto px-6 py-6 text-sm leading-relaxed text-[#c5cbd5] space-y-6">
           {isPrivacy ? (
             <>
-              <section className="rounded-xl border border-white/5 bg-[#202938]/60 p-4 text-xs text-[#98a2b3]">
+              <section className="rounded-xl border border-white/5 bg-[#273242]/60 p-4 text-xs text-[#a4a7ac]">
                 Kebijakan Privasi ini mengatur bagaimana platform <span className="font-semibold text-white">Usahaku</span> mengumpulkan, memproses, menyimpan, dan menjaga kerahasiaan data pribadi pemilik usaha, operasional usaha, dan pelanggan Anda.
               </section>
 
@@ -149,7 +149,7 @@ export function LegalModal({ type, onClose, onSwitchType }: LegalModalProps) {
             </>
           ) : (
             <>
-              <section className="rounded-xl border border-white/5 bg-[#202938]/60 p-4 text-xs text-[#98a2b3]">
+              <section className="rounded-xl border border-white/5 bg-[#273242]/60 p-4 text-xs text-[#a4a7ac]">
                 Syarat Penggunaan ini merupakan perjanjian hukum antara Anda (pemilik usaha atau perwakilan yang sah) dengan platform <span className="font-semibold text-white">Usahaku</span>. Dengan menggunakan layanan kami, Anda menyetujui seluruh ketentuan di bawah ini.
               </section>
 
@@ -197,8 +197,8 @@ export function LegalModal({ type, onClose, onSwitchType }: LegalModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-white/10 bg-[#202938] px-6 py-4">
-          <p className="text-xs text-[#98a2b3]">
+        <div className="flex items-center justify-between border-t border-white/10 bg-[#273242] px-6 py-4">
+          <p className="text-xs text-[#a4a7ac]">
             Perlu bantuan lebih lanjut? Hubungi dukungan Usahaku.
           </p>
           <button
