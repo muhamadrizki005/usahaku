@@ -1,5 +1,7 @@
 # Usahaku — preserve the user's UI
 
+- Shut down every server started by the agent for testing when testing finishes. Do not leave test/preview servers running after the task; do not stop unrelated user-managed servers.
+
 - Current palette authorization, 23 October 2026: the user approved the dark dashboard example and requested its palette on every page/component, including authentication and onboarding. Use navy `#1C222E`, panels `#273242`/`#303640`, white/`#C5CBD5` text, turquoise `#24CBC5` accents, and blue `#1835D9` primary actions. This supersedes the historical page-palette preservation rules below. Preserve layouts, typography, copy, assets, backend, role and tenant isolation. Landing's explicitly white illustrative dashboard remains a light variant; receipts/reports print with white paper and dark text. The user subsequently authorized merging `feat/landing-palette-app` into main; preserve existing local onboarding/WebP work during integration. See `docs/PALETTE-APP.md`.
 
 - The user owns the visual design. Use `C:\Projek Software\usahaku-design-system.zip` as the original UI reference; `components/original/` contains adapted views from it.
