@@ -2,11 +2,11 @@
 
 import { useState, type ReactNode } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, ArrowRight, ShieldCheck, Store, CalendarDays, UsersRound } from 'lucide-react'
+import { ArrowLeft, ShieldCheck, Store, CalendarDays, UsersRound } from 'lucide-react'
 import { UsahakuLogo } from '@/components/usahaku-logo'
 import { LegalModal, type LegalModalType } from '@/components/legal-modal'
 
-export function LoginFrame({title = 'Masuk ke Usahaku', description = 'Lanjutkan mengelola aktivitas usaha Anda dengan akun yang sudah terdaftar.', children}: {title?: string; description?: string; children: ReactNode}) {
+export function LoginFrame({title = 'Masuk ke Usahaku', description = 'Lanjutkan mengelola aktivitas usaha Anda dengan akun yang sudah terdaftar.', mode = 'owner', children}: {title?: string; description?: string; mode?: 'owner' | 'staff'; children: ReactNode}) {
   const [legalModal, setLegalModal] = useState<LegalModalType>(null)
   return (
     <main className="min-h-screen bg-[#1c222e] text-white">
@@ -39,7 +39,10 @@ export function LoginFrame({title = 'Masuk ke Usahaku', description = 'Lanjutkan
 
         <section className="flex items-center bg-[#1c222e] px-5 py-14 sm:px-10 lg:px-16 xl:px-24">
           <div className="mx-auto w-full max-w-[610px]">
-            <div className="grid size-12 place-items-center rounded-2xl bg-[#273242] text-[#24cbc5]"><ArrowRight aria-hidden="true" /></div>
+            <nav className="flex gap-3 text-sm" aria-label="Jenis akun">
+              <Link href="/login" aria-current={mode === 'owner' ? 'page' : undefined} className={`rounded-lg px-4 py-2 ${mode === 'owner' ? 'bg-white/10 text-[#24cbc5]' : 'text-white'}`}>Pemilik</Link>
+              <Link href="/login?mode=staff" aria-current={mode === 'staff' ? 'page' : undefined} className={`rounded-lg px-4 py-2 ${mode === 'staff' ? 'bg-white/10 text-[#24cbc5]' : 'text-white'}`}>Staf</Link>
+            </nav>
             <h2 className="mt-6 text-3xl font-semibold tracking-tight text-white sm:text-4xl">{title}</h2>
             <p className="mt-3 max-w-lg leading-7 text-[#c5cbd5]">{description}</p>
 
