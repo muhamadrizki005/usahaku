@@ -13,9 +13,9 @@ export function UsahakuLogo({
 }) {
   return (
     <span className={cn('inline-flex items-center gap-2.5', className)}>
-      <img src="/brand/usahaku-logo.png" alt={showWordmark ? '' : 'Usahaku'} width={36} height={36} className="size-9 shrink-0 object-contain" />
+      <img src="/brand/usahaku-logo.png" alt={showWordmark ? '' : 'Usahaku'} width={36} height={36} className="size-[34px] shrink-0 object-contain" />
       {showWordmark && (
-        <span className={cn('font-semibold tracking-tight', wordmarkClassName)}>
+        <span className={cn('text-[17px] font-bold tracking-tight text-white leading-none translate-y-[0.5px]', wordmarkClassName)}>
           Usahaku
         </span>
       )}

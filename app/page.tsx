@@ -9,6 +9,8 @@ import { LegalModal, type LegalModalType } from '@/components/legal-modal'
 import { TextEffect } from '@/components/core/text-effect'
 import { NumberTicker } from '@/registry/magicui/number-ticker'
 import { MenuBars } from '@reui/icons/default/filled/menu-bars'
+import { ShapeGrid } from '@/components/shape-grid'
+import TiltedCard, { TiltedCardLayer } from '@/components/tilted-card'
 
 const categories = [
   { label: 'Toko / Minimarket / Kios', type: 'toko', icon: Store, description: 'Dari kasir ke stok, jaga catatan barang dan penjualan tetap rapi.', features: ['Kasir & transaksi', 'Stok produk & persediaan', 'Laporan penjualan'], link: 'Tentang modul penjualan' },
@@ -147,8 +149,31 @@ export default function LandingPage() {
       </motion.header>
 
       {/* Hero Section */}
-      <section className="relative bg-[#1c222e] px-5 pt-28 pb-20 text-white sm:px-8 sm:pt-36 sm:pb-24 lg:px-12 lg:pt-40 lg:pb-28">
-        <div className="mx-auto grid max-w-[1800px] items-center gap-10 xl:grid-cols-[1.05fr_.95fr] 2xl:gap-16">
+      <section className="relative overflow-hidden bg-[#1c222e] px-5 pt-24 pb-16 text-white sm:px-8 sm:pt-28 sm:pb-20 lg:px-12 lg:pt-32 lg:pb-24">
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <ShapeGrid
+            shape="square"
+            direction="diagonal"
+            lineColor="#283344"
+            hoverColor="#24cbc5"
+            hoverFillColor="#24cbc5"
+            fillOpacity={0.15}
+            cellSize={40}
+            speed={0.5}
+            tiltX={0}
+            tiltY={0}
+            rainbow={false}
+            lineWidth={1}
+            radius={1.5}
+            trail={0.6}
+            glow={0.35}
+            twinkle={0}
+            fade={1}
+            clickCascade
+            intro
+          />
+        </div>
+        <div className="relative z-10 mx-auto grid max-w-[1800px] items-center gap-10 xl:grid-cols-[1.05fr_.95fr] 2xl:gap-16">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
@@ -188,81 +213,128 @@ export default function LandingPage() {
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 30 }}
+            initial={{ opacity: 0, scale: 0.96, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="rounded-[1.75rem] border border-[#454d5b] bg-[#303640] p-3 shadow-2xl"
+            className="w-full xl:self-center xl:-translate-y-6 2xl:-translate-y-8"
           >
-            <div className="overflow-hidden rounded-[1.25rem] bg-[#f7f9fc] text-[#1c222e]">
-              <div className="flex items-center justify-between border-b border-[#dfe6f0] bg-white px-4 py-3">
-                <div className="flex items-center gap-2 text-sm">
-                  <Coffee className="text-[#168d86]" aria-hidden="true" />
-                  <span className="font-semibold">Kopi Senja</span>
-                  <span className="text-[#667085]">/ Restoran/Cafe</span>
+            <TiltedCard
+              containerHeight="auto"
+              containerWidth="100%"
+              imageHeight="auto"
+              imageWidth="100%"
+              rotateAmplitude={12}
+              scaleOnHover={1.03}
+              glare={0.4}
+              shadow={0.5}
+              radius={28}
+              showTooltip={false}
+              flipOnClick={true}
+              backContent={
+                <div className="flex h-full w-full flex-col justify-between rounded-[1.75rem] border border-[#454d5b] bg-[#273242] p-6 text-white shadow-2xl">
+                  <div>
+                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                      <div className="flex items-center gap-2 text-sm font-semibold text-[#24cbc5]">
+                        <Coffee className="size-4" /> Kopi Senja
+                      </div>
+                      <span className="rounded-lg bg-[#24cbc5]/15 px-2 py-0.5 text-[10px] font-semibold text-[#24cbc5]">
+                        Modul Restoran
+                      </span>
+                    </div>
+                    <p className="mt-4 text-xl font-medium text-white">Operasional Kopi Senja</p>
+                    <p className="mt-2 text-xs leading-relaxed text-white/70">
+                      Kasir POS, menu & ketersediaan, reservasi meja dengan DP terverifikasi, serta pencatatan omzet harian otomatis sesuai alur usaha kafe.
+                    </p>
+                    <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                      <div className="rounded-xl border border-white/10 bg-white/5 p-2.5">
+                        <p className="text-[10px] text-white/50">Status Kasir</p>
+                        <p className="mt-0.5 font-medium text-[#24cbc5]">Contoh kasir aktif (ilustrasi)</p>
+                      </div>
+                      <div className="rounded-xl border border-white/10 bg-white/5 p-2.5">
+                        <p className="text-[10px] text-white/50">Kategori</p>
+                        <p className="mt-0.5 font-medium text-white">F&B / Restoran</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="border-t border-white/10 pt-3 text-center text-[10px] text-white/50">
+                    Klik untuk membalik kembali ke tampilan ilustrasi
+                  </div>
                 </div>
-                <span className="rounded-lg bg-[#e9fbf8] px-2 py-1 text-[10px] font-semibold text-[#168d86]">Data demo ilustratif</span>
-              </div>
-              <div className="grid xl:grid-cols-[8.5rem_1fr]">
-                <aside className="hidden border-r border-[#dfe6f0] bg-white p-3 xl:block">
-                  <div className="flex flex-col gap-1 text-[10px] text-[#52627a]">
-                    <div className="rounded-lg bg-[#e9fbf8] px-2 py-2 font-semibold text-[#168d86]">▦ Ringkasan</div>
-                    <div className="px-2 py-2">☷ Menu & layanan</div>
-                    <div className="px-2 py-2">▣ Kasir (POS)</div>
-                    <div className="px-2 py-2">▦ Reservasi</div>
-                    <div className="px-2 py-2">◉ Verifikasi DP</div>
-                    <div className="px-2 py-2">♧ Pelanggan</div>
-                    <div className="px-2 py-2">⌁ Laporan</div>
+              }
+            >
+              <div className="w-full rounded-[1.75rem] border border-[#454d5b] bg-[#303640] p-3 shadow-2xl">
+                <div className="overflow-hidden rounded-[1.25rem] bg-[#f7f9fc] text-[#1c222e]">
+                  <div className="flex items-center justify-between border-b border-[#dfe6f0] bg-white px-4 py-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Coffee className="text-[#168d86]" aria-hidden="true" />
+                      <span className="font-semibold">Kopi Senja</span>
+                      <span className="text-[#667085]">/ Restoran/Cafe</span>
+                    </div>
+                    <span className="rounded-lg bg-[#e9fbf8] px-2 py-1 text-[10px] font-semibold text-[#168d86]">Data demo ilustratif</span>
                   </div>
-                </aside>
-                <div className="min-w-0 bg-[#f7f9fc] p-4 2xl:p-6">
-                  <p className="text-xl font-medium">Selamat siang, Pak Arief</p>
-                  <p className="mt-1 text-[10px] text-[#667085]">Senin, 19 Oktober 2026 • 14.30 WIB</p>
-                  
-                  {/* Number Ticker Cards */}
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <div className="rounded-lg border border-[#dfe6f0] bg-white p-3">
-                      <p className="text-[10px] text-[#667085]">Omzet hari ini</p>
-                      <p className="mt-1 text-lg font-medium text-[#1c222e]">
-                        Rp<NumberTicker value={2450000} className="text-lg font-medium text-[#1c222e] dark:text-[#1c222e]" />
-                      </p>
-                    </div>
-                    <div className="rounded-lg border border-[#dfe6f0] bg-white p-3">
-                      <p className="text-[10px] text-[#667085]">Transaksi hari ini</p>
-                      <p className="mt-1 text-lg font-medium text-[#1c222e]">
-                        <NumberTicker value={38} className="text-lg font-medium text-[#1c222e] dark:text-[#1c222e]" />
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-3 rounded-lg border border-[#dfe6f0] bg-white p-3">
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs font-semibold">Tren omzet</p>
-                      <span className="text-[9px] text-[#667085]">13–19 Oktober 2026</span>
-                    </div>
-                    <div className="mt-3 flex h-20 items-end gap-1 2xl:mt-5 2xl:h-28">
-                      {[42, 58, 50, 76, 92, 82, 65].map((height, index) => (
-                        <div key={index} className="flex flex-1 flex-col items-center gap-1">
-                          <span
-                            className={`w-full rounded-t ${index === 6 ? 'bg-[#117c75]' : 'bg-[#b7ddd8]'}`}
-                            style={{ height: `${Math.round(height * 0.7)}px` }}
-                          />
-                          <span className="text-[7px] text-[#667085]">
-                            {['13 Okt', '14 Okt', '15 Okt', '16 Okt', '17 Okt', '18 Okt', '19 Okt'][index]}
-                          </span>
+                  <div className="grid xl:grid-cols-[8.5rem_1fr]">
+                    <aside className="hidden border-r border-[#dfe6f0] bg-white p-3 xl:block">
+                      <div className="flex flex-col gap-1 text-[10px] text-[#52627a]">
+                        <div className="rounded-lg bg-[#e9fbf8] px-2 py-2 font-semibold text-[#168d86]">▦ Ringkasan</div>
+                        <div className="px-2 py-2">☷ Menu & layanan</div>
+                        <div className="px-2 py-2">▣ Kasir (POS)</div>
+                        <div className="px-2 py-2">▦ Reservasi</div>
+                        <div className="px-2 py-2">◉ Verifikasi DP</div>
+                        <div className="px-2 py-2">♧ Pelanggan</div>
+                        <div className="px-2 py-2">⌁ Laporan</div>
+                      </div>
+                    </aside>
+                    <div className="min-w-0 bg-[#f7f9fc] p-4 2xl:p-6">
+                      <p className="text-xl font-medium">Selamat siang, Pak Arief</p>
+                      <p className="mt-1 text-[10px] text-[#667085]">Senin, 19 Oktober 2026 • 14.30 WIB</p>
+                      
+                      {/* Number Ticker Cards */}
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        <div className="rounded-lg border border-[#dfe6f0] bg-white p-3">
+                          <p className="text-[10px] text-[#667085]">Omzet hari ini</p>
+                          <p className="mt-1 text-lg font-medium text-[#1c222e]">
+                            Rp<NumberTicker value={2450000} className="text-lg font-medium text-[#1c222e] dark:text-[#1c222e]" />
+                          </p>
                         </div>
-                      ))}
+                        <div className="rounded-lg border border-[#dfe6f0] bg-white p-3">
+                          <p className="text-[10px] text-[#667085]">Transaksi hari ini</p>
+                          <p className="mt-1 text-lg font-medium text-[#1c222e]">
+                            <NumberTicker value={38} className="text-lg font-medium text-[#1c222e] dark:text-[#1c222e]" />
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 rounded-lg border border-[#dfe6f0] bg-white p-3">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-semibold">Tren omzet</p>
+                          <span className="text-[9px] text-[#667085]">13–19 Oktober 2026</span>
+                        </div>
+                        <div className="mt-3 flex h-20 items-end gap-1 2xl:mt-5 2xl:h-28">
+                          {[42, 58, 50, 76, 92, 82, 65].map((height, index) => (
+                            <div key={index} className="flex flex-1 flex-col items-center gap-1">
+                              <span
+                                className={`w-full rounded-t ${index === 6 ? 'bg-[#117c75]' : 'bg-[#b7ddd8]'}`}
+                                style={{ height: `${Math.round(height * 0.7)}px` }}
+                              />
+                              <span className="text-[7px] text-[#667085]">
+                                {['13 Okt', '14 Okt', '15 Okt', '16 Okt', '17 Okt', '18 Okt', '19 Okt'][index]}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="mt-2 text-[9px] text-[#667085]">Penjualan selesai • Tidak termasuk DP</p>
+                      </div>
+                      <div className="mt-3 flex items-center gap-1 rounded-lg bg-[#fff8e6] px-2 py-2 text-[9px] text-[#a65200]">
+                        ⓘ 2 bukti DP perlu diperiksa secara manual
+                      </div>
                     </div>
-                    <p className="mt-2 text-[9px] text-[#667085]">Penjualan selesai • Tidak termasuk DP</p>
                   </div>
-                  <div className="mt-3 flex items-center gap-1 rounded-lg bg-[#fff8e6] px-2 py-2 text-[9px] text-[#a65200]">
-                    ⓘ 2 bukti DP perlu diperiksa secara manual
+                  <div className="border-t border-[#dfe6f0] bg-white px-3 py-2 text-[9px] text-[#667085]">
+                    Ilustrasi antarmuka • Tidak terhubung ke aktivitas usaha nyata
                   </div>
                 </div>
               </div>
-              <div className="border-t border-[#dfe6f0] bg-white px-3 py-2 text-[9px] text-[#667085]">
-                Ilustrasi antarmuka • Tidak terhubung ke aktivitas usaha nyata
-              </div>
-            </div>
+            </TiltedCard>
           </motion.div>
         </div>
       </section>
@@ -275,7 +347,7 @@ export default function LandingPage() {
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         className="border-b border-border bg-card"
       >
-        <div className="mx-auto grid max-w-[1800px] gap-4 px-5 py-8 sm:px-8 md:grid-cols-3 lg:px-12">
+        <div className="mx-auto flex max-w-[1800px] flex-col items-center justify-center gap-6 px-5 py-8 sm:flex-row sm:flex-wrap sm:gap-10 lg:gap-16">
           {['Operasional sesuai kategori', 'Pelanggan dan data usaha', 'Akses dari berbagai perangkat'].map((item, idx) => (
             <motion.div
               key={item}
@@ -283,7 +355,7 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.45, delay: idx * 0.1 }}
-              className="flex items-center gap-3 text-sm font-medium"
+              className="flex items-center justify-center gap-3 text-sm font-medium"
             >
               <Check className="text-accent" aria-hidden="true" />
               {item}
