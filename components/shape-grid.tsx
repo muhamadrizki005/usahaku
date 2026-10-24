@@ -1,4 +1,5 @@
 'use client';
+import { useReducedMotionPreference } from '@/lib/use-reduced-motion';
 
 import { useEffect, useRef, type CSSProperties } from 'react';
 
@@ -402,13 +403,14 @@ export default function ShapeGrid({
     dpr
   };
 
+  const reducedMotion = useReducedMotionPreference();
   useEffect(() => {
     const container = containerRef.current;
     const canvas = canvasRef.current;
     if (!container || !canvas) return undefined;
     const ctx = canvas.getContext('2d');
     if (!ctx) return undefined;
-    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    const reduce = reducedMotion;
 
     const state = {
       alive: true,
@@ -743,7 +745,7 @@ export default function ShapeGrid({
     };
 
     const wake = () => {
-      if (!state.raf && state.alive && state.visible) state.raf = requestAnimationFrame(frame);
+      if (!reduce && !state.raf && state.alive && state.visible) state.raf = requestAnimationFrame(frame);
     };
 
     const pointFrom = (event: PointerEvent) => {
@@ -755,6 +757,7 @@ export default function ShapeGrid({
     };
 
     const onMove = (event: PointerEvent) => {
+      if (reduce) return;
       const point = pointFrom(event);
       if (point && !state.inside && state.spotPower < 0.02) {
         state.spotX = point[0];
@@ -776,7 +779,7 @@ export default function ShapeGrid({
 
     const onDown = (event: PointerEvent) => {
       const s = settingsRef.current;
-      if (!s.clickCascade) return;
+      if (reduce || !s.clickCascade) return;
       const point = pointFrom(event);
       if (!point) return;
       state.cascades.push({
@@ -818,6 +821,7 @@ export default function ShapeGrid({
     };
 
     resize();
+    draw();
     wake();
 
     return () => {
@@ -831,7 +835,7 @@ export default function ShapeGrid({
       window.removeEventListener('blur', onLeave);
       engineRef.current = null;
     };
-  }, []);
+  }, [reducedMotion]);
 
   useEffect(() => {
     engineRef.current?.redraw();

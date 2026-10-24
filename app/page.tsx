@@ -248,7 +248,7 @@ export default function LandingPage() {
                     <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
                       <div className="rounded-xl border border-white/10 bg-white/5 p-2.5">
                         <p className="text-[10px] text-white/50">Status Kasir</p>
-                        <p className="mt-0.5 font-medium text-[#24cbc5]">Aktif & Terhubung</p>
+                        <p className="mt-0.5 font-medium text-[#24cbc5]">Contoh kasir aktif (ilustrasi)</p>
                       </div>
                       <div className="rounded-xl border border-white/10 bg-white/5 p-2.5">
                         <p className="text-[10px] text-white/50">Kategori</p>

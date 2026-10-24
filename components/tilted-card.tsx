@@ -1,4 +1,5 @@
 'use client';
+import { useReducedMotionPreference } from '@/lib/use-reduced-motion';
 
 import {
   useEffect,
@@ -209,6 +210,7 @@ export const TiltedCard = ({
     flipped: isFlipped,
     tooltip: showTooltip && Boolean(captionText)
   };
+  const reducedMotion = useReducedMotionPreference();
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
 
@@ -221,7 +223,7 @@ export const TiltedCard = ({
     const body = bodyRef.current;
     if (!figure || !body) return;
 
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduced = reducedMotion;
     const coarse = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
     const state = {
       rx: 0,
@@ -265,6 +267,16 @@ export const TiltedCard = ({
 
     const frame = (now: number) => {
       raf = 0;
+      if (reduced) {
+        body.style.transform = 'none';
+        body.style.opacity = '1';
+        body.style.setProperty('--tc-px', '0');
+        body.style.setProperty('--tc-py', '0');
+        body.style.setProperty('--tc-glare', '0');
+        if (shadowRef.current) shadowRef.current.style.opacity = '0';
+        if (captionRef.current) captionRef.current.style.opacity = '0';
+        return;
+      }
       const s = settingsRef.current;
       const dt = clamp((now - last) / 1000 || 0, 0, 0.05);
       last = Math.max(last, now);
@@ -449,7 +461,7 @@ export const TiltedCard = ({
 
     const askMotion = () => {
       const s = settingsRef.current;
-      if (!s.gyroscope || !coarse || tilt.asked) return;
+      if (reduced || !s.gyroscope || !coarse || tilt.asked) return;
       tilt.asked = true;
       const request = (window.DeviceOrientationEvent as unknown as OrientationRequest | undefined)?.requestPermission;
       if (typeof request === 'function') request.call(window.DeviceOrientationEvent).catch(() => {});
@@ -546,7 +558,7 @@ export const TiltedCard = ({
       document.documentElement.removeEventListener('pointerleave', onWindowLeave);
       window.removeEventListener('deviceorientation', onOrientation);
     };
-  }, []);
+  }, [reducedMotion]);
 
   const flippable = Boolean(backContent) && flipOnClick;
   const interactive = flippable || Boolean(onClick);
@@ -618,6 +630,8 @@ export const TiltedCard = ({
         }
       >
         <div
+          aria-hidden={isFlipped}
+          style={{ visibility: reducedMotion && isFlipped ? 'hidden' : undefined }}
           className={`tilted-card__face tilted-card__front ${
             isAutoHeight ? 'relative w-full' : 'absolute inset-0'
           } isolate overflow-hidden rounded-[var(--tc-radius)] [backface-visibility:hidden] [-webkit-backface-visibility:hidden]`}
@@ -659,6 +673,7 @@ export const TiltedCard = ({
         {backContent && (
           <div
             className="tilted-card__face tilted-card__back absolute inset-0 isolate overflow-hidden rounded-[var(--tc-radius)] [backface-visibility:hidden] [-webkit-backface-visibility:hidden] [transform:rotateY(180deg)]"
+            style={reducedMotion ? { transform: 'none', visibility: isFlipped ? 'visible' : 'hidden' } : undefined}
             aria-hidden={!isFlipped}
           >
             {backContent}
