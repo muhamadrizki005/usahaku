@@ -26,7 +26,7 @@ export default function RootLayout({
   return (
     <html lang="id">
       <head>
-        <link rel="preload" href="/fonts/inter/InterVariable.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="/fonts/urbanist/UrbanistVariable.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
       </head>
       <body className="antialiased">
         {children}
