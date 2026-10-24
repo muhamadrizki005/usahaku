@@ -10,5 +10,5 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
 
   const { category } = await searchParams
   const initialCategory = 'toko' as const
-  return <InventoryManagement initialCategory={initialCategory} business={business} initialProducts={await readProducts(supabase,business.id)} initialMovements={await readStockHistory(supabase,business.id)} memberName={member.name} />
+  return <InventoryManagement role={member.role} initialCategory={initialCategory} business={business} initialProducts={await readProducts(supabase,business.id)} initialMovements={await readStockHistory(supabase,business.id)} memberName={member.name} />
 }

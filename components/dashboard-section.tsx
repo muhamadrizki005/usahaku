@@ -1,32 +1,10 @@
 'use client'
+import { DashboardBrand, DashboardSidebar, DashboardMobileMenu, dashboardItemsForRole } from '@/components/dashboard-chrome'
 
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect, type ReactNode } from 'react'
-import {
-  BarChart3,
-  Bell,
-  ChevronDown,
-  CreditCard,
-  Database,
-  HelpCircle,
-  Lock,
-  LogOut,
-  Menu,
-  Moon,
-  Package,
-  Plus,
-  Search,
-  Settings2,
-  ShoppingBag,
-  Sparkles,
-  Star,
-  Store,
-  User,
-  Users,
-  X,
-} from 'lucide-react'
-import { rolesForPath, roleNames, type Role } from '@/lib/auth/permissions'
-import { dashboardNavigation } from './dashboard-navigation'
+import { Bell, ChevronDown, Lock, LogOut, Menu, Settings2, Store, User, X } from 'lucide-react'
+import { roleNames, type Role } from '@/lib/auth/permissions'
 import { signOut } from '@/app/actions'
 
 const labels: Record<string, string> = {
@@ -64,9 +42,7 @@ export default function DashboardSection({
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
-  const allowedNav = dashboardNavigation.filter(([, , path]) =>
-    rolesForPath(path).includes(role)
-  )
+  const allowedNav = dashboardItemsForRole(role)
 
   const nav = (path: string) => {
     setMobileNav(false)
@@ -76,51 +52,12 @@ export default function DashboardSection({
   return (
     <main className="min-h-screen bg-[#1c222e] text-[#ffffff]">
       {/* Top Header Bar (Full-Width Edge-to-Edge matching Gambar 2) */}
-      <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-[#454d5b]/60 bg-[#1c222e]/95 px-4 sm:px-6 backdrop-blur-md">
+      <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between bg-[#1c222e]/95 px-4 sm:px-6 backdrop-blur-md">
         {/* Left: Brand / Logo */}
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => nav('/dashboard')}
-            className="flex items-center gap-3 text-left transition hover:opacity-90"
-          >
-            <div className="grid size-9 place-items-center rounded-xl bg-black/40 border border-white/10 shadow-xs">
-              <img
-                src="/brand/usahaku-logo.png"
-                alt="Usahaku"
-                width={26}
-                height={26}
-                className="size-6.5 shrink-0 object-contain"
-              />
-            </div>
-            <span className="text-lg font-bold tracking-tight text-white">Usahaku</span>
-          </button>
-        </div>
-
-        {/* Center: Horizontal Pill Navigation (Desktop - Gambar 2) */}
-        <nav
-          className="hidden md:flex items-center gap-1 rounded-full bg-[#273242]/70 p-1 border border-[#454d5b]/60 shadow-inner"
-          aria-label="Navigasi utama"
-        >
-          {allowedNav.map(([label, , path]) => {
-            const isActive = pathname === path || (path !== '/dashboard' && pathname.startsWith(path))
-            return (
-              <button
-                key={label}
-                onClick={() => nav(path)}
-                className={`rounded-full px-4 py-1.5 text-xs transition-all duration-150 ${
-                  isActive
-                    ? 'bg-[#1c222e] text-white font-semibold shadow-sm border border-[#454d5b]'
-                    : 'text-[#c5cbd5] hover:text-white hover:bg-[#303640]/50 font-medium'
-                }`}
-              >
-                {label}
-              </button>
-            )
-          })}
-        </nav>
+        <DashboardBrand onHome={() => nav('/dashboard')} contentMax={1280} />
 
         {/* Right: Actions, Lock, Notifications, Profile */}
-        <div className="flex items-center gap-2.5 sm:gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3 lg:ml-auto">
           {/* Workspace Pill */}
           <div className="hidden sm:flex items-center gap-2 rounded-full border border-[#454d5b]/70 bg-[#273242]/80 px-3 py-1 text-xs text-[#c5cbd5] shadow-xs">
             <span className="size-1.5 rounded-full bg-[#24cbc5] animate-pulse" />
@@ -239,7 +176,7 @@ export default function DashboardSection({
 
           {/* Mobile Menu Hamburger (< md) */}
           <button
-            className="md:hidden rounded-xl border border-[#454d5b]/70 p-2 text-[#c5cbd5] hover:bg-[#273242]"
+            className="lg:hidden rounded-xl border border-[#454d5b]/70 p-2 text-[#c5cbd5] hover:bg-[#273242]"
             onClick={() => setMobileNav(true)}
             aria-label="Buka navigasi"
           >
@@ -250,7 +187,7 @@ export default function DashboardSection({
 
       {/* Mobile Slide-Over Drawer */}
       {mobileNav && (
-        <div className="fixed inset-0 z-50 flex md:hidden">
+        <div className="fixed inset-0 z-50 flex lg:hidden">
           <div
             className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
             onClick={() => setMobileNav(false)}
@@ -279,7 +216,7 @@ export default function DashboardSection({
               </button>
             </div>
 
-            <nav className="mt-6 flex flex-1 flex-col gap-1 overflow-y-auto">
+            <nav aria-label="Navigasi dashboard mobile" className="mt-6 flex flex-1 flex-col gap-1 overflow-y-auto">
               {allowedNav.map(([label, Icon, path]) => {
                 const isActive = pathname === path || (path !== '/dashboard' && pathname.startsWith(path))
                 return (
@@ -303,138 +240,13 @@ export default function DashboardSection({
       )}
 
       {/* Main Container: Floating Left Dock + Content Canvas (Gambar 2 Layout) */}
-      <div className="flex min-h-[calc(100vh-64px)] w-full">
-        {/* Floating Vertical Icon Dock (Sidebar - Gambar 2) */}
-        <aside
-          className="hidden lg:flex shrink-0 py-6 pl-5 pr-2 flex-col items-center justify-start"
-          aria-label="Toolbar pintas"
-        >
-          <div className="sticky top-22 flex flex-col items-center gap-3 rounded-full border border-[#454d5b]/80 bg-[#273242]/90 p-2 shadow-2xl backdrop-blur-md">
-            {/* Quick Search */}
-            <button
-              onClick={() => nav('/dashboard/products')}
-              className="grid size-9.5 place-items-center rounded-full text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition"
-              title="Pencarian Cepat"
-            >
-              <Search className="size-4" />
-            </button>
-
-            {/* Quick Plus Action */}
-            <button
-              onClick={() => nav('/dashboard/products')}
-              className="grid size-9.5 place-items-center rounded-full text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition"
-              title="Tambah Produk / Transaksi"
-            >
-              <Plus className="size-4" />
-            </button>
-
-            {/* Star (Ringkasan / Favorit) */}
-            <button
-              onClick={() => nav('/dashboard')}
-              className={`grid size-9.5 place-items-center rounded-full transition ${
-                pathname === '/dashboard'
-                  ? 'bg-[#1c222e] text-[#24cbc5] border border-[#24cbc5]/30 shadow-xs'
-                  : 'text-[#a4a7ac] hover:bg-[#303640] hover:text-white'
-              }`}
-              title="Ringkasan Usaha"
-            >
-              <Star className="size-4" />
-            </button>
-
-            {/* Calendar / Kasir POS */}
-            <button
-              onClick={() => nav('/dashboard/pos')}
-              className={`grid size-9.5 place-items-center rounded-full transition ${
-                pathname.startsWith('/dashboard/pos')
-                  ? 'bg-[#1c222e] text-[#24cbc5] border border-[#24cbc5]/30 shadow-xs'
-                  : 'text-[#a4a7ac] hover:bg-[#303640] hover:text-white'
-              }`}
-              title="Buka Kasir (POS)"
-            >
-              <ShoppingBag className="size-4" />
-            </button>
-
-            {/* Smartphone / Inventori */}
-            <button
-              onClick={() => nav('/dashboard/inventory')}
-              className={`grid size-9.5 place-items-center rounded-full transition ${
-                pathname.startsWith('/dashboard/inventory')
-                  ? 'bg-[#1c222e] text-[#24cbc5] border border-[#24cbc5]/30 shadow-xs'
-                  : 'text-[#a4a7ac] hover:bg-[#303640] hover:text-white'
-              }`}
-              title="Inventori & Stok"
-            >
-              <Database className="size-4" />
-            </button>
-
-            {/* Plane / AI Assistant */}
-            <button
-              onClick={() => nav('/dashboard/assistant')}
-              className={`grid size-9.5 place-items-center rounded-full transition ${
-                pathname.startsWith('/dashboard/assistant')
-                  ? 'bg-[#1c222e] text-[#24cbc5] border border-[#24cbc5]/30 shadow-xs'
-                  : 'text-[#a4a7ac] hover:bg-[#303640] hover:text-white'
-              }`}
-              title="Asisten Bisnis AI"
-            >
-              <Sparkles className="size-4" />
-            </button>
-
-            {/* Share / Transaksi */}
-            <button
-              onClick={() => nav('/dashboard/transactions')}
-              className={`grid size-9.5 place-items-center rounded-full transition ${
-                pathname.startsWith('/dashboard/transactions')
-                  ? 'bg-[#1c222e] text-[#24cbc5] border border-[#24cbc5]/30 shadow-xs'
-                  : 'text-[#a4a7ac] hover:bg-[#303640] hover:text-white'
-              }`}
-              title="Riwayat Transaksi"
-            >
-              <CreditCard className="size-4" />
-            </button>
-
-            {/* Download / Laporan */}
-            <button
-              onClick={() => nav('/dashboard/reports')}
-              className={`grid size-9.5 place-items-center rounded-full transition ${
-                pathname.startsWith('/dashboard/reports')
-                  ? 'bg-[#1c222e] text-[#24cbc5] border border-[#24cbc5]/30 shadow-xs'
-                  : 'text-[#a4a7ac] hover:bg-[#303640] hover:text-white'
-              }`}
-              title="Laporan Penjualan"
-            >
-              <BarChart3 className="size-4" />
-            </button>
-
-            <div className="h-px w-6 bg-[#454d5b]/60 my-0.5" />
-
-            {/* Settings */}
-            <button
-              onClick={() => nav('/dashboard/settings')}
-              className={`grid size-9.5 place-items-center rounded-full transition ${
-                pathname.startsWith('/dashboard/settings')
-                  ? 'bg-[#1c222e] text-[#24cbc5] border border-[#24cbc5]/30 shadow-xs'
-                  : 'text-[#a4a7ac] hover:bg-[#303640] hover:text-white'
-              }`}
-              title="Pengaturan"
-            >
-              <Settings2 className="size-4" />
-            </button>
-
-            {/* Theme Toggle (Gambar 2 Moon) */}
-            <button
-              className="grid size-9.5 place-items-center rounded-full text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition"
-              title="Mode Tampilan Gelap"
-            >
-              <Moon className="size-4" />
-            </button>
-          </div>
-        </aside>
+      <div className="mx-auto flex min-h-[calc(100vh-64px)] w-full max-w-[1536px]">
+        <DashboardSidebar role={role} onNavigate={nav} />
 
         {/* Content Section */}
         <section className="min-w-0 flex-1 flex flex-col">
           {/* Subheader */}
-          <div className="px-4 pt-6 sm:px-6 lg:px-8">
+          <div className="px-4 pt-6 sm:px-6 lg:px-4">
             <div className="mx-auto max-w-7xl flex flex-col justify-between gap-4 sm:flex-row sm:items-center border-b border-[#454d5b]/50 pb-5">
               <div>
                 <p className="text-xs text-[#a4a7ac] flex items-center gap-1.5">
@@ -450,7 +262,7 @@ export default function DashboardSection({
           </div>
 
           {/* Body Content */}
-          <div className="mx-auto max-w-7xl w-full p-4 sm:p-6 lg:p-8 flex-1">
+          <div className="mx-auto max-w-7xl w-full p-4 sm:p-6 lg:px-4 lg:py-8 flex-1">
             {children || (
               <div className="rounded-2xl border border-[#454d5b] bg-[#273242] p-8 shadow-sm">
                 <h2 className="text-lg font-semibold text-white">{title}</h2>

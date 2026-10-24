@@ -3,41 +3,8 @@
 import { BusinessLogo } from '@/components/business-logo'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import {
-  AlertTriangle,
-  ArrowRight,
-  BarChart3,
-  Bell,
-  CalendarDays,
-  CheckCircle2,
-  ChevronDown,
-  CircleDollarSign,
-  CreditCard,
-  Database,
-  Download,
-  HelpCircle,
-  Info,
-  Lock,
-  LogOut,
-  Menu,
-  Moon,
-  Package,
-  Plus,
-  Search,
-  Send,
-  Settings2,
-  Share2,
-  ShoppingBag,
-  Smartphone,
-  Sparkles,
-  Star,
-  Store,
-  TrendingUp,
-  User,
-  Users,
-  X,
-} from 'lucide-react'
-import { dashboardNavigation } from './dashboard-navigation'
+import { AlertTriangle, Bell, CheckCircle2, ChevronDown, CircleDollarSign, CreditCard, Database, Info, Lock, LogOut, Menu, Package, Plus, Settings2, Store, User, Users, X } from 'lucide-react'
+import { DashboardBrand, DashboardSidebar, dashboardItemsForRole } from './dashboard-chrome'
 import { signOut } from '@/app/actions'
 import { salesSummary, saleCode, paymentLabel, type Sale } from '@/lib/pos'
 import { roleNames } from '@/lib/auth/permissions'
@@ -52,7 +19,7 @@ const labels: Record<Category, string> = {
   restoran: 'Restoran / Cafe',
   barbershop: 'Barbershop / Salon',
 }
-const navItems = dashboardNavigation
+
 const money = (value: number) => `Rp${Math.round(value).toLocaleString('id-ID')}`
 
 function LoadingScreen() {
@@ -87,7 +54,7 @@ function Card({
   subtitle?: string
 }) {
   return (
-    <section className="rounded-2xl border border-[#454d5b] bg-[#273242] p-5 sm:p-6 shadow-sm">
+    <section className="min-w-0 rounded-2xl border border-[#454d5b] bg-[#273242] p-5 sm:p-6 shadow-sm">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-[#454d5b]/60 pb-3">
         <div>
           <h2 className="text-base sm:text-lg font-semibold tracking-tight text-white">{title}</h2>
@@ -243,6 +210,7 @@ export default function UsahakuDashboard({
   members: Member[]
 }) {
   const router = useRouter()
+  const visibleNavItems = dashboardItemsForRole(member.role)
   const [ready, setReady] = useState(false)
   const [mobileNav, setMobileNav] = useState(false)
   const [active, setActive] = useState('Ringkasan')
@@ -540,65 +508,14 @@ export default function UsahakuDashboard({
       <Placeholder label={active} />
     )
 
-  const primaryNavItems = [
-    'Ringkasan',
-    'Produk',
-    'Inventori',
-    'Kasir (POS)',
-    'Transaksi',
-    'Pelanggan',
-    'Laporan',
-    'Pengaturan',
-  ]
-
   return (
     <main className="min-h-screen bg-[#1c222e] text-[#ffffff]">
       {/* Top Header Bar (Full-Width Edge-to-Edge matching Gambar 2) */}
-      <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-[#454d5b]/60 bg-[#1c222e]/95 px-4 sm:px-6 backdrop-blur-md">
-        {/* Left: Logo & Brand */}
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => nav('Ringkasan')}
-            className="flex items-center gap-3 text-left transition hover:opacity-90"
-          >
-            <div className="grid size-9 place-items-center rounded-xl bg-black/40 border border-white/10 shadow-xs">
-              <img
-                src="/brand/usahaku-logo.png"
-                alt="Usahaku"
-                width={26}
-                height={26}
-                className="size-6.5 shrink-0 object-contain"
-              />
-            </div>
-            <span className="text-lg font-bold tracking-tight text-white">Usahaku</span>
-          </button>
-        </div>
-
-        {/* Center: Horizontal Pill Navigation (Desktop - Gambar 2) */}
-        <nav
-          className="hidden md:flex items-center gap-1 rounded-full bg-[#273242]/70 p-1 border border-[#454d5b]/60 shadow-inner"
-          aria-label="Navigasi utama"
-        >
-          {primaryNavItems.map((label) => {
-            const isActive = active === label
-            return (
-              <button
-                key={label}
-                onClick={() => nav(label)}
-                className={`rounded-full px-4 py-1.5 text-xs transition-all duration-150 ${
-                  isActive
-                    ? 'bg-[#1c222e] text-white font-semibold shadow-sm border border-[#454d5b]'
-                    : 'text-[#c5cbd5] hover:text-white hover:bg-[#303640]/50 font-medium'
-                }`}
-              >
-                {label}
-              </button>
-            )
-          })}
-        </nav>
+      <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between bg-[#1c222e]/95 px-4 sm:px-6 backdrop-blur-md">
+        <DashboardBrand onHome={() => nav('Ringkasan')} />
 
         {/* Right: Actions, Notifications, Profile */}
-        <div className="flex items-center gap-2.5 sm:gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3 lg:ml-auto">
           {/* Business Context Pill */}
           <div className="hidden sm:flex items-center gap-2 rounded-full border border-[#454d5b]/70 bg-[#273242]/80 px-3 py-1 text-xs text-[#c5cbd5] shadow-xs">
             <span className="size-1.5 rounded-full bg-[#24cbc5] animate-pulse" />
@@ -728,7 +645,7 @@ export default function UsahakuDashboard({
                 {initials}
               </span>
               <span className="hidden text-left sm:block">
-                <span className="block text-xs font-semibold text-white leading-tight">{ownerName}</span>
+                <span className="block max-w-40 truncate text-xs font-semibold text-white leading-tight">{ownerName}</span>
                 <span className="block text-[10px] text-[#c5cbd5]">{roleNames[member.role]}</span>
               </span>
               <ChevronDown
@@ -788,7 +705,7 @@ export default function UsahakuDashboard({
 
           {/* Mobile Menu Hamburger (< md) */}
           <button
-            className="md:hidden rounded-xl border border-[#454d5b]/70 p-2 text-[#c5cbd5] hover:bg-[#273242]"
+            className="lg:hidden rounded-xl border border-[#454d5b]/70 p-2 text-[#c5cbd5] hover:bg-[#273242]"
             onClick={() => setMobileNav(true)}
             aria-label="Buka navigasi"
           >
@@ -799,7 +716,7 @@ export default function UsahakuDashboard({
 
       {/* Mobile Slide-Over Drawer */}
       {mobileNav && (
-        <div className="fixed inset-0 z-50 flex md:hidden">
+        <div className="fixed inset-0 z-50 flex lg:hidden">
           <div
             className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
             onClick={() => setMobileNav(false)}
@@ -833,8 +750,8 @@ export default function UsahakuDashboard({
               <p className="truncate text-[10px] text-[#c5cbd5] mt-0.5">{labels[category]}</p>
             </div>
 
-            <nav className="mt-4 flex flex-1 flex-col gap-1 overflow-y-auto">
-              {navItems.map(([label, Icon]) => {
+            <nav aria-label="Navigasi dashboard mobile" className="mt-4 flex flex-1 flex-col gap-1 overflow-y-auto">
+              {visibleNavItems.map(([label, Icon]) => {
                 const isActive = active === label
                 return (
                   <button
@@ -861,136 +778,11 @@ export default function UsahakuDashboard({
       )}
 
       {/* Main Container: Floating Left Dock + Content Canvas (Gambar 2 Layout) */}
-      <div className="flex min-h-[calc(100vh-64px)] w-full">
-        {/* Floating Vertical Icon Dock (Sidebar - Gambar 2) */}
-        <aside
-          className="hidden lg:flex shrink-0 py-6 pl-5 pr-2 flex-col items-center justify-start"
-          aria-label="Toolbar pintas"
-        >
-          <div className="sticky top-22 flex flex-col items-center gap-3 rounded-full border border-[#454d5b]/80 bg-[#273242]/90 p-2 shadow-2xl backdrop-blur-md">
-            {/* Quick Search */}
-            <button
-              onClick={() => nav('Produk')}
-              className="grid size-9.5 place-items-center rounded-full text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition"
-              title="Pencarian Cepat"
-            >
-              <Search className="size-4" />
-            </button>
-
-            {/* Quick Plus Action */}
-            <button
-              onClick={() => nav('Produk')}
-              className="grid size-9.5 place-items-center rounded-full text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition"
-              title="Tambah Produk / Transaksi"
-            >
-              <Plus className="size-4" />
-            </button>
-
-            {/* Star (Ringkasan / Favorit) */}
-            <button
-              onClick={() => nav('Ringkasan')}
-              className={`grid size-9.5 place-items-center rounded-full transition ${
-                active === 'Ringkasan'
-                  ? 'bg-[#1c222e] text-[#24cbc5] border border-[#24cbc5]/30 shadow-xs'
-                  : 'text-[#a4a7ac] hover:bg-[#303640] hover:text-white'
-              }`}
-              title="Ringkasan Usaha"
-            >
-              <Star className="size-4" />
-            </button>
-
-            {/* Calendar / Kasir POS */}
-            <button
-              onClick={() => nav('Kasir (POS)')}
-              className={`grid size-9.5 place-items-center rounded-full transition ${
-                active === 'Kasir (POS)'
-                  ? 'bg-[#1c222e] text-[#24cbc5] border border-[#24cbc5]/30 shadow-xs'
-                  : 'text-[#a4a7ac] hover:bg-[#303640] hover:text-white'
-              }`}
-              title="Buka Kasir (POS)"
-            >
-              <ShoppingBag className="size-4" />
-            </button>
-
-            {/* Smartphone / Inventori */}
-            <button
-              onClick={() => nav('Inventori')}
-              className={`grid size-9.5 place-items-center rounded-full transition ${
-                active === 'Inventori'
-                  ? 'bg-[#1c222e] text-[#24cbc5] border border-[#24cbc5]/30 shadow-xs'
-                  : 'text-[#a4a7ac] hover:bg-[#303640] hover:text-white'
-              }`}
-              title="Inventori & Stok"
-            >
-              <Database className="size-4" />
-            </button>
-
-            {/* Plane / AI Assistant */}
-            <button
-              onClick={() => nav('Asisten Bisnis AI')}
-              className={`grid size-9.5 place-items-center rounded-full transition ${
-                active === 'Asisten Bisnis AI'
-                  ? 'bg-[#1c222e] text-[#24cbc5] border border-[#24cbc5]/30 shadow-xs'
-                  : 'text-[#a4a7ac] hover:bg-[#303640] hover:text-white'
-              }`}
-              title="Asisten Bisnis AI"
-            >
-              <Sparkles className="size-4" />
-            </button>
-
-            {/* Share / Transaksi */}
-            <button
-              onClick={() => nav('Transaksi')}
-              className={`grid size-9.5 place-items-center rounded-full transition ${
-                active === 'Transaksi'
-                  ? 'bg-[#1c222e] text-[#24cbc5] border border-[#24cbc5]/30 shadow-xs'
-                  : 'text-[#a4a7ac] hover:bg-[#303640] hover:text-white'
-              }`}
-              title="Riwayat Transaksi"
-            >
-              <CreditCard className="size-4" />
-            </button>
-
-            {/* Download / Laporan */}
-            <button
-              onClick={() => nav('Laporan')}
-              className={`grid size-9.5 place-items-center rounded-full transition ${
-                active === 'Laporan'
-                  ? 'bg-[#1c222e] text-[#24cbc5] border border-[#24cbc5]/30 shadow-xs'
-                  : 'text-[#a4a7ac] hover:bg-[#303640] hover:text-white'
-              }`}
-              title="Laporan Penjualan"
-            >
-              <BarChart3 className="size-4" />
-            </button>
-
-            <div className="h-px w-6 bg-[#454d5b]/60 my-0.5" />
-
-            {/* Settings */}
-            <button
-              onClick={() => nav('Pengaturan')}
-              className={`grid size-9.5 place-items-center rounded-full transition ${
-                active === 'Pengaturan'
-                  ? 'bg-[#1c222e] text-[#24cbc5] border border-[#24cbc5]/30 shadow-xs'
-                  : 'text-[#a4a7ac] hover:bg-[#303640] hover:text-white'
-              }`}
-              title="Pengaturan"
-            >
-              <Settings2 className="size-4" />
-            </button>
-
-            {/* Theme Toggle (Gambar 2 Moon) */}
-            <button
-              className="grid size-9.5 place-items-center rounded-full text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition"
-              title="Mode Tampilan Gelap"
-            >
-              <Moon className="size-4" />
-            </button>
-          </div>
-        </aside>
+      <div className="mx-auto flex min-h-[calc(100vh-64px)] w-full max-w-[1656px]">
+        <DashboardSidebar role={member.role} activePath="/dashboard" onNavigate={path => router.push(`${path}?category=${category}`)} />
 
         {/* Main Content Area */}
-        <div className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
+        <div className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-4">
           <div className="mx-auto max-w-[1400px]">
             {/* Subheader Matching Gambar 2: Title on Left, Horizontal Stat Badges on Right */}
             <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">

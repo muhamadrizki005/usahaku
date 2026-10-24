@@ -1,19 +1,21 @@
 'use client'
+import { DashboardBrand, DashboardSidebar, DashboardMobileMenu, dashboardItemsForRole } from '@/components/dashboard-chrome'
 import { moveCatalogStock } from '@/app/catalog-actions'
 import { adjustedStock, formatQuantity, type CatalogProduct, type StockRow } from '@/lib/catalog'
 import { businessInitials } from '@/lib/business-profile'
+import type { Role } from '@/lib/auth/permissions'
 import type { Business } from '@/lib/validation'
 import { BusinessLogo } from '@/components/business-logo'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, BarChart3, ChevronDown, CreditCard, Database, Info, LayoutDashboard, Lock, Moon, Package, Plus, Search, Settings2, ShoppingBag, Sparkles, Store, X } from 'lucide-react'
+import { Info, Search } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 type Category = 'toko' | 'restoran' | 'barbershop'
 type Product = CatalogProduct
 type Movement = { id: string; product: string; type: 'Masuk' | 'Keluar' | 'Hitung fisik'; reason: string; date: string; quantity: number; unit: string; before: number; after: number }
 
-export default function InventoryManagement({ initialCategory = 'toko', business, initialProducts, initialMovements, memberName }: { initialCategory?: Category; business: Business; initialProducts: Product[]; initialMovements: StockRow[]; memberName: string }) {
+export default function InventoryManagement({ role, initialCategory = 'toko', business, initialProducts, initialMovements, memberName }: { role: Role; initialCategory?: Category; business: Business; initialProducts: Product[]; initialMovements: StockRow[]; memberName: string }) {
   const router = useRouter(); const [products, setProducts] = useState(initialProducts); const [query, setQuery] = useState(''); const [condition, setCondition] = useState('Semua kondisi'); const [category, setCategory] = useState('Semua kategori'); const [selectedId, setSelectedId] = useState(initialProducts[0]?.id||''); const [adjustment, setAdjustment] = useState('0'); const [reason, setReason] = useState(''); const [movements, setMovements] = useState<Movement[]>([]); const [movementFilter, setMovementFilter] = useState('Semua'); const [notice, setNotice] = useState('')
   const [pending,setPending]=useState(false),[mode,setMode]=useState<'in'|'out'|'adjustment'>('adjustment'),[showAll,setShowAll]=useState(false)
   const operation=useRef('')
@@ -25,64 +27,14 @@ export default function InventoryManagement({ initialCategory = 'toko', business
   const chooseMode=(next:'in'|'out'|'adjustment')=>{setMode(next);setAdjustment('0');setReason('');operation.current='';document.getElementById('adjustment')?.scrollIntoView({behavior:'smooth'})}
   const nav = (label: string) => { const routes: Record<string, string> = { 'Ringkasan': '/dashboard', 'Produk': '/dashboard/products', 'Inventori': '/dashboard/inventory', 'Kasir (POS)': '/dashboard/pos', 'Transaksi': '/dashboard/transactions', 'Pelanggan': '/dashboard/customers', 'Poin loyalitas': '/dashboard/loyalty', 'Laporan': '/dashboard/reports', 'Asisten Bisnis AI': '/dashboard/assistant', 'Pengaturan': '/dashboard/settings' }; if (routes[label]) router.push(`${routes[label]}?category=${initialCategory}`) }
 
-  const primaryNavItems = [
-    'Ringkasan',
-    'Produk',
-    'Inventori',
-    'Kasir (POS)',
-    'Transaksi',
-    'Pelanggan',
-    'Laporan',
-    'Pengaturan',
-  ]
-
   return (
     <main className="min-h-screen bg-[#1c222e] text-[#ffffff]">
       {/* Top Header Bar */}
-      <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-[#454d5b]/60 bg-[#1c222e]/95 px-4 sm:px-6 backdrop-blur-md">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.push(`/dashboard?category=${initialCategory}`)}
-            className="flex items-center gap-3 text-left transition hover:opacity-90"
-          >
-            <div className="grid size-9 place-items-center rounded-xl bg-black/40 border border-white/10 shadow-xs">
-              <img
-                src="/brand/usahaku-logo.png"
-                alt="Usahaku"
-                width={26}
-                height={26}
-                className="size-6.5 shrink-0 object-contain"
-              />
-            </div>
-            <span className="text-lg font-bold tracking-tight text-white">Usahaku</span>
-          </button>
-        </div>
-
-        {/* Center: Horizontal Pill Navigation */}
-        <nav
-          className="hidden md:flex items-center gap-1 rounded-full bg-[#273242]/70 p-1 border border-[#454d5b]/60 shadow-inner"
-          aria-label="Navigasi utama"
-        >
-          {primaryNavItems.map((label) => {
-            const isActive = label === 'Inventori'
-            return (
-              <button
-                key={label}
-                onClick={() => nav(label)}
-                className={`rounded-full px-4 py-1.5 text-xs transition-all duration-150 ${
-                  isActive
-                    ? 'bg-[#1c222e] text-white font-semibold shadow-sm border border-[#454d5b]'
-                    : 'text-[#c5cbd5] hover:text-white hover:bg-[#303640]/50 font-medium'
-                }`}
-              >
-                {label}
-              </button>
-            )
-          })}
-        </nav>
+      <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between bg-[#1c222e]/95 px-4 sm:px-6 backdrop-blur-md">
+        <DashboardBrand onHome={() => router.push('/dashboard')} contentMax={1300} />
 
         {/* Right Status */}
-        <div className="flex items-center gap-2.5 sm:gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3 lg:ml-auto">
           <div className="hidden sm:flex items-center gap-2 rounded-full border border-[#454d5b]/70 bg-[#273242]/80 px-3 py-1 text-xs text-[#c5cbd5] shadow-xs">
             <span className="size-1.5 rounded-full bg-[#24cbc5] animate-pulse" />
             <span className="max-w-28 truncate font-medium text-white">{businessName}</span>
@@ -90,47 +42,16 @@ export default function InventoryManagement({ initialCategory = 'toko', business
           <div className="grid size-9 place-items-center rounded-full bg-[#1835d9] text-xs font-bold text-white shadow-xs">
             {businessInitials(memberName)}
           </div>
+          <DashboardMobileMenu role={role} onNavigate={path => router.push(`${path}?category=${initialCategory}`)} />
         </div>
       </header>
 
       {/* Main Container: Floating Dock + Content */}
-      <div className="flex min-h-[calc(100vh-64px)] w-full">
-        {/* Floating Vertical Icon Dock */}
-        <aside
-          className="hidden lg:flex shrink-0 py-6 pl-5 pr-2 flex-col items-center justify-start"
-          aria-label="Toolbar pintas"
-        >
-          <div className="sticky top-22 flex flex-col items-center gap-3 rounded-full border border-[#454d5b]/80 bg-[#273242]/90 p-2 shadow-2xl backdrop-blur-md">
-            <button onClick={() => nav('Inventori')} className="grid size-9.5 place-items-center rounded-full bg-[#1c222e] text-[#24cbc5] border border-[#24cbc5]/30 shadow-xs" title="Inventori">
-              <Database className="size-4" />
-            </button>
-            <button onClick={() => chooseMode('in')} className="grid size-9.5 place-items-center rounded-full text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition" title="Catat Stok Masuk">
-              <Plus className="size-4" />
-            </button>
-            <button onClick={() => nav('Ringkasan')} className="grid size-9.5 place-items-center rounded-full text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition" title="Ringkasan">
-              <LayoutDashboard className="size-4" />
-            </button>
-            <button onClick={() => nav('Produk')} className="grid size-9.5 place-items-center rounded-full text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition" title="Produk">
-              <Package className="size-4" />
-            </button>
-            <button onClick={() => nav('Kasir (POS)')} className="grid size-9.5 place-items-center rounded-full text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition" title="Kasir (POS)">
-              <ShoppingBag className="size-4" />
-            </button>
-            <button onClick={() => nav('Transaksi')} className="grid size-9.5 place-items-center rounded-full text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition" title="Transaksi">
-              <CreditCard className="size-4" />
-            </button>
-            <button onClick={() => nav('Laporan')} className="grid size-9.5 place-items-center rounded-full text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition" title="Laporan">
-              <BarChart3 className="size-4" />
-            </button>
-            <div className="h-px w-6 bg-[#454d5b]/60 my-0.5" />
-            <button onClick={() => nav('Pengaturan')} className="grid size-9.5 place-items-center rounded-full text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition" title="Pengaturan">
-              <Settings2 className="size-4" />
-            </button>
-          </div>
-        </aside>
+      <div className="mx-auto flex min-h-[calc(100vh-64px)] w-full max-w-[1556px]">
+        <DashboardSidebar role={role} onNavigate={path => router.push(`${path}?category=${initialCategory}`)} />
 
         {/* Content */}
-        <div className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
+        <div className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-4">
           <div className="mx-auto max-w-[1300px]">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
               <div>
