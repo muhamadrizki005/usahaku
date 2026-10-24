@@ -6,7 +6,7 @@ import type { Business } from '@/lib/validation'
 import { BusinessLogo } from '@/components/business-logo'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, ChevronDown, Database, Info, Package, Plus, Search, Store, X } from 'lucide-react'
+import { ArrowLeft, BarChart3, ChevronDown, CreditCard, Database, Info, LayoutDashboard, Lock, Moon, Package, Plus, Search, Settings2, ShoppingBag, Sparkles, Store, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 type Category = 'toko' | 'restoran' | 'barbershop'
@@ -24,5 +24,285 @@ export default function InventoryManagement({ initialCategory = 'toko', business
   const saveAdjustment = async () => {if(pending||!selected||!reason.trim()||!Number.isFinite(result)||result<0)return;setPending(true);operation.current ||= crypto.randomUUID();try{const form=new FormData();form.set('id',selected.id);form.set('revision',String(selected.stockRevision));form.set('request',operation.current);form.set('delta',delta);form.set('kind',mode);form.set('reason',reason);const response=await moveCatalogStock(form);setNotice(response.error||response.success||'');if(response.product){setProducts(items=>items.map(p=>p.id===selected.id?response.product!:p));setAdjustment('0');setReason('');operation.current='';router.refresh()}}catch{setNotice('Status belum pasti. Muat ulang sebelum mencoba lagi.')}finally{setPending(false)}}
   const chooseMode=(next:'in'|'out'|'adjustment')=>{setMode(next);setAdjustment('0');setReason('');operation.current='';document.getElementById('adjustment')?.scrollIntoView({behavior:'smooth'})}
   const nav = (label: string) => { const routes: Record<string, string> = { 'Ringkasan': '/dashboard', 'Produk': '/dashboard/products', 'Inventori': '/dashboard/inventory', 'Kasir (POS)': '/dashboard/pos', 'Transaksi': '/dashboard/transactions', 'Pelanggan': '/dashboard/customers', 'Poin loyalitas': '/dashboard/loyalty', 'Laporan': '/dashboard/reports', 'Asisten Bisnis AI': '/dashboard/assistant', 'Pengaturan': '/dashboard/settings' }; if (routes[label]) router.push(`${routes[label]}?category=${initialCategory}`) }
-  return <main className="min-h-screen bg-[#1c222e] text-[#ffffff]"><div className="flex min-h-screen"><aside className="hidden w-[180px] shrink-0 flex-col border-r border-[#454d5b] bg-[#273242] p-4 lg:flex"><button onClick={() => router.push(`/dashboard?category=${initialCategory}`)} className="flex items-center gap-2 text-lg font-bold text-[#24cbc5]"><img src="/brand/usahaku-logo.png" alt="" aria-hidden="true" width={32} height={32} className="size-8 shrink-0 object-contain" />Usahaku</button><div className="mt-6 rounded-xl border border-[#454d5b] p-3"><div className="flex items-center gap-2"><div className="grid size-9 place-items-center overflow-hidden rounded-lg bg-[#24cbc5]/10 text-sm font-bold text-[#24cbc5]"><BusinessLogo business={business} /></div><div className="min-w-0"><p className="truncate text-xs font-semibold">{businessName}</p><p className="truncate text-[10px] text-[#a4a7ac]">Toko / Minimarket / Kios</p></div></div></div><nav className="mt-6 flex flex-1 flex-col gap-1" aria-label="Navigasi dashboard">{['Ringkasan','Produk','Inventori','Kasir (POS)','Transaksi','Pelanggan','Poin loyalitas','Laporan','Asisten Bisnis AI','Pengaturan'].map(label => <button key={label} onClick={() => nav(label)} className={`flex items-center gap-2 rounded-lg px-2 py-2.5 text-left text-xs font-medium ${label === 'Inventori' ? 'bg-[#24cbc5]/10 text-[#24cbc5]' : 'text-[#c5cbd5] hover:bg-[#24cbc5]/10 hover:text-[#24cbc5]'}`}><Database className="size-4" />{label}</button>)}</nav><div className="rounded-xl bg-[#24cbc5]/10 p-3"><p className="text-xs font-semibold">Butuh panduan?</p><p className="mt-1 text-[10px] text-[#c5cbd5]">Pelajari cara mengelola operasional usaha Anda.</p></div></aside><div className="min-w-0 flex-1"><header className="flex h-16 items-center justify-between border-b border-[#454d5b] bg-[#273242] px-4 sm:px-7"><div className="flex items-center gap-2 text-sm"><span className="text-[#a4a7ac]">{businessName}</span><ChevronDown className="size-4 text-[#a4a7ac]" /><span className="font-semibold">Inventori</span><span className="rounded-full bg-[#303640] px-2 py-1 text-[10px] text-[#a4a7ac]">Data usaha</span></div><div className="flex items-center gap-3"><span className="hidden text-xs text-[#c5cbd5] sm:block">{memberName}</span><span className="grid size-9 place-items-center rounded-full bg-[#24cbc5]/10 text-xs font-semibold text-[#24cbc5]">{businessInitials(memberName)}</span></div></header><div className="mx-auto max-w-[1200px] p-5 sm:p-7"><div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-sm text-[#a4a7ac]">{businessName} <span className="mx-1">›</span> <span className="font-semibold text-[#ffffff]">Inventori</span></p><h1 className="mt-7 text-3xl font-semibold tracking-tight">Manajemen stok</h1><p className="mt-2 text-sm text-[#a4a7ac]">Pantau persediaan dan telusuri setiap perubahan jumlah barang.</p></div><button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#1835d9] px-4 text-sm font-semibold text-white hover:bg-[#132c9e]" onClick={() => chooseMode('in')}>＋ Catat stok masuk</button></div><div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-[#a4a7ac]">Senin, 19 Oktober 2026 • Kondisi hingga 14.30 WIB</p><div className="flex flex-wrap gap-3"><button className="h-10 rounded-lg border border-[#454d5b] bg-[#273242] px-4 text-sm font-semibold hover:border-[#0f766e]" onClick={() => chooseMode('out')}>Catat stok keluar</button><button className="h-10 rounded-lg border border-[#454d5b] bg-[#273242] px-4 text-sm font-semibold hover:border-[#0f766e]" onClick={() => chooseMode('adjustment')}>Sesuaikan stok fisik</button></div></div><div className="mt-6 flex items-start gap-3 rounded-xl bg-[#fffbeb] p-4 text-sm text-[#92400e]"><Info className="mt-0.5 size-4 shrink-0" /><div><p className="font-semibold">{lowStock.length} produk perlu diisi ulang</p><p className="mt-1 text-xs">{lowStock.length ? lowStock.slice(0,3).map(p=>p.name).join(', ')+'. Stok menipis berbeda dari status aktif produk.' : 'Semua stok berada di atas batas minimum.'}</p></div></div><section className="mt-6 rounded-2xl border border-[#454d5b] bg-[#273242] p-5 shadow-sm"><h2 className="text-base font-semibold">Persediaan saat ini</h2><p className="mt-1 text-sm text-[#a4a7ac]">Stok fisik tercatat • Sama dengan katalog produk, sebelum keranjang aktif diselesaikan.</p><div className="mt-4 flex flex-col gap-3 lg:flex-row"><label className="relative flex-1"><Search className="absolute left-3 top-3 size-4 text-[#a4a7ac]" /><input aria-label="Cari produk atau SKU" value={query} onChange={e => setQuery(e.target.value)} placeholder="Cari produk atau SKU" className="h-10 w-full rounded-lg border border-[#454d5b] pl-9 pr-3 text-sm outline-none focus:border-[#0f766e]" /></label><select value={condition} onChange={e => setCondition(e.target.value)} className="h-10 rounded-lg border border-[#454d5b] bg-[#273242] px-3 text-sm"><option>Semua kondisi</option><option>Habis</option><option>Menipis</option><option>Cukup</option></select><select value={category} onChange={e => setCategory(e.target.value)} className="h-10 rounded-lg border border-[#454d5b] bg-[#273242] px-3 text-sm"><option value="Semua kategori">Semua kategori</option>{categories.slice(1).map(c => <option key={c}>{c}</option>)}</select></div><div className="mt-4 overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm"><thead className="bg-[#1c222e] text-xs text-[#a4a7ac]"><tr>{['Produk','Stok fisik','Minimum','Kondisi stok','Status produk','Tindakan'].map(h => <th key={h} className="px-3 py-3 font-medium">{h}</th>)}</tr></thead><tbody>{filtered.map(p => <tr key={p.id} className="border-b border-[#454d5b]"><td className="px-3 py-3"><p className="font-semibold">{p.name}</p><p className="mt-1 text-xs text-[#a4a7ac]">{p.sku} • {p.category}</p></td><td className={`px-3 py-3 font-semibold ${p.stock === 0 ? 'text-[#ffb4ae]' : ''}`}>{formatQuantity(p.stock)} {p.unit}</td><td className="px-3 py-3 text-[#c5cbd5]">{formatQuantity(p.minStock)} {p.unit}</td><td className="px-3 py-3"><span className={`rounded-lg px-2 py-1 text-xs ${p.stock === 0 ? 'bg-[#4a252b] text-[#ffb4ae]' : p.stock <= p.minStock ? 'bg-amber-50 text-amber-700' : 'bg-[#24cbc5]/10 text-[#24cbc5]'}`}>{conditionLabel(p)}</span></td><td className="px-3 py-3"><span className="rounded-lg bg-[#1c222e] px-2 py-1 text-xs text-[#c5cbd5]">{p.active ? 'Aktif' : 'Nonaktif'}</span></td><td className="px-3 py-3"><button className="font-semibold text-[#24cbc5] hover:underline" onClick={() => { setSelectedId(p.id); document.getElementById('adjustment')?.scrollIntoView({ behavior: 'smooth' }) }}>Sesuaikan →</button></td></tr>)}</tbody></table></div><p className="mt-4 text-xs text-[#a4a7ac]">{filtered.length} dari {products.length} produk • Stok produk nonaktif tetap tercatat.</p></section><div className="mt-6 grid gap-6 xl:grid-cols-[.9fr_1.1fr]"><section id="adjustment" className="rounded-2xl border border-[#454d5b] bg-[#273242] p-5 shadow-sm"><span className="rounded-lg bg-[#fffbeb] px-2 py-1 text-xs font-semibold text-[#92400e]">Validasi penyesuaian</span><h2 className="mt-4 text-lg font-semibold">{mode==='in'?'Catat stok masuk':mode==='out'?'Catat stok keluar':'Sesuaikan stok fisik'}</h2><p className="mt-2 text-sm text-[#a4a7ac]">{mode==='adjustment'?'Koreksi selisih dari penghitungan fisik, bukan pembelian atau penjualan barang.':'Catat perubahan jumlah barang beserta alasannya. Penjualan POS tercatat otomatis pada riwayat.'}</p><label className="mt-5 block text-xs font-semibold">Produk *<select value={selected?.id} onChange={e => setSelectedId(e.target.value)} className="mt-2 h-11 w-full rounded-lg border border-[#454d5b] bg-[#273242] px-3 text-sm"><option value="">Pilih produk</option>{products.map(p => <option key={p.id} value={p.id}>{p.name} • {p.sku}</option>)}</select></label><div className="mt-4 grid grid-cols-3 rounded-lg bg-[#1c222e] p-3 text-center"><div><p className="text-xs text-[#a4a7ac]">Stok tercatat</p><p className="mt-1 text-lg font-semibold">{formatQuantity(selected?.stock||0)} {selected?.unit}</p></div><div><p className="text-xs text-[#a4a7ac]">Penyesuaian</p><p className="mt-1 text-lg font-semibold">{formatQuantity(Number(delta||0))} {selected?.unit}</p></div><div><p className="text-xs text-[#a4a7ac]">Hasil</p><p className={`mt-1 text-lg font-semibold ${result < 0 ? 'text-[#ffb4ae]' : 'text-[#24cbc5]'}`}>{Number.isFinite(result)?formatQuantity(result):'-'} {selected?.unit}</p></div></div><label className="mt-5 block text-xs font-semibold">Koreksi jumlah (selisih) *<input type="number" step="0.001" value={adjustment} onChange={e => setAdjustment(e.target.value)} className={`mt-2 h-11 w-full rounded-lg border px-3 text-sm ${result < 0 ? 'border-red-500' : 'border-[#454d5b]'}`} /></label>{result < 0 && <p className="mt-2 text-xs text-[#ffb4ae]">Maksimal pengurangan {selected?.stock || 0} {selected?.unit}. Hasil stok tidak boleh di bawah 0.</p>}<label className="mt-4 block text-xs font-semibold">Alasan koreksi *<input value={reason} onChange={e => setReason(e.target.value)} className="mt-2 h-11 w-full rounded-lg border border-[#454d5b] px-3 text-sm" /></label>{result < 0 && <div className="mt-4 rounded-xl bg-[#4a252b] p-3 text-xs text-[#ffb4ae]">Usulan belum dapat disimpan. Periksa kembali jumlah fisik dan ubah koreksi sebelum menyimpan.</div>}<div className="mt-5 flex justify-end gap-3"><button className="h-10 rounded-lg border border-[#454d5b] px-4 text-sm font-semibold" onClick={() => { setAdjustment('0'); setNotice('Perubahan dibatalkan.') }}>Batal</button><button disabled={pending || !selected || !Number.isFinite(result) || result < 0 || Number(delta)===0 || !reason.trim()} className="h-10 rounded-lg bg-[#1835d9] px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50" onClick={saveAdjustment}>Simpan penyesuaian</button></div>{notice && <p className="mt-3 text-xs text-[#24cbc5]">{notice}</p>}<p className="mt-5 text-xs text-[#a4a7ac]">Data demo • Penyesuaian akan tercatat sebagai riwayat stok.</p></section><section className="rounded-2xl border border-[#454d5b] bg-[#273242] p-5 shadow-sm"><div className="flex items-start justify-between"><div><h2 className="text-lg font-semibold">Riwayat pergerakan stok</h2><p className="mt-1 text-sm text-[#a4a7ac]">Cuplikan catatan tersimpan • 19 Oktober 2026, WIB.</p></div><button onClick={()=>setShowAll(v=>!v)} className="text-sm font-semibold text-[#24cbc5]">{showAll?'Ringkas riwayat':'Lihat seluruh riwayat'} →</button></div><div className="mt-5 flex flex-wrap gap-2">{['Semua','Masuk','Keluar','Hitung fisik'].map(tab => <button key={tab} onClick={() => setMovementFilter(tab)} className={`rounded-lg px-3 py-2 text-xs font-semibold ${movementFilter === tab ? 'bg-[#24cbc5]/10 text-[#24cbc5]' : 'bg-[#1c222e] text-[#c5cbd5]'}`}>{tab}</button>)}</div><div className="mt-3 divide-y divide-[#e2e8f0]">{(showAll?filteredMovements:filteredMovements.slice(0,20)).map(m => <div key={m.id} className="flex items-center justify-between gap-4 py-4"><div className="min-w-0"><p className="truncate text-sm font-semibold">{m.product}</p><p className="mt-1 text-xs text-[#a4a7ac]">{m.type} • {m.reason} • {m.date}</p></div><div className="shrink-0 text-right"><p className={`text-sm font-semibold ${m.quantity > 0 ? 'text-[#24cbc5]' : m.type === 'Hitung fisik' ? 'text-amber-700' : 'text-[#334155]'}`}>{m.quantity > 0 ? '+' : ''}{formatQuantity(m.quantity)} {m.unit}</p><p className="mt-1 text-xs text-[#a4a7ac]">{m.before} → {m.after} {m.unit}</p></div></div>)}</div><div className="mt-4 rounded-xl bg-[#24cbc5]/10 p-3 text-xs text-[#24cbc5]"><Info className="mr-2 inline size-4" />Penyesuaian fisik tersimpan akan tampil di riwayat pergerakan.</div></section></div><p className="mt-6 text-xs text-[#a4a7ac]">Data demo • Tersimpan pada usaha ini</p></div></div></div></main>
+
+  const primaryNavItems = [
+    'Ringkasan',
+    'Produk',
+    'Inventori',
+    'Kasir (POS)',
+    'Transaksi',
+    'Pelanggan',
+    'Laporan',
+    'Pengaturan',
+  ]
+
+  return (
+    <main className="min-h-screen bg-[#1c222e] text-[#ffffff]">
+      {/* Top Header Bar */}
+      <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-[#454d5b]/60 bg-[#1c222e]/95 px-4 sm:px-6 backdrop-blur-md">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.push(`/dashboard?category=${initialCategory}`)}
+            className="flex items-center gap-3 text-left transition hover:opacity-90"
+          >
+            <div className="grid size-9 place-items-center rounded-xl bg-black/40 border border-white/10 shadow-xs">
+              <img
+                src="/brand/usahaku-logo.png"
+                alt="Usahaku"
+                width={26}
+                height={26}
+                className="size-6.5 shrink-0 object-contain"
+              />
+            </div>
+            <span className="text-lg font-bold tracking-tight text-white">Usahaku</span>
+          </button>
+        </div>
+
+        {/* Center: Horizontal Pill Navigation */}
+        <nav
+          className="hidden md:flex items-center gap-1 rounded-full bg-[#273242]/70 p-1 border border-[#454d5b]/60 shadow-inner"
+          aria-label="Navigasi utama"
+        >
+          {primaryNavItems.map((label) => {
+            const isActive = label === 'Inventori'
+            return (
+              <button
+                key={label}
+                onClick={() => nav(label)}
+                className={`rounded-full px-4 py-1.5 text-xs transition-all duration-150 ${
+                  isActive
+                    ? 'bg-[#1c222e] text-white font-semibold shadow-sm border border-[#454d5b]'
+                    : 'text-[#c5cbd5] hover:text-white hover:bg-[#303640]/50 font-medium'
+                }`}
+              >
+                {label}
+              </button>
+            )
+          })}
+        </nav>
+
+        {/* Right Status */}
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          <div className="hidden sm:flex items-center gap-2 rounded-full border border-[#454d5b]/70 bg-[#273242]/80 px-3 py-1 text-xs text-[#c5cbd5] shadow-xs">
+            <span className="size-1.5 rounded-full bg-[#24cbc5] animate-pulse" />
+            <span className="max-w-28 truncate font-medium text-white">{businessName}</span>
+          </div>
+          <div className="grid size-9 place-items-center rounded-full bg-[#1835d9] text-xs font-bold text-white shadow-xs">
+            {businessInitials(memberName)}
+          </div>
+        </div>
+      </header>
+
+      {/* Main Container: Floating Dock + Content */}
+      <div className="flex min-h-[calc(100vh-64px)] w-full">
+        {/* Floating Vertical Icon Dock */}
+        <aside
+          className="hidden lg:flex shrink-0 py-6 pl-5 pr-2 flex-col items-center justify-start"
+          aria-label="Toolbar pintas"
+        >
+          <div className="sticky top-22 flex flex-col items-center gap-3 rounded-full border border-[#454d5b]/80 bg-[#273242]/90 p-2 shadow-2xl backdrop-blur-md">
+            <button onClick={() => nav('Inventori')} className="grid size-9.5 place-items-center rounded-full bg-[#1c222e] text-[#24cbc5] border border-[#24cbc5]/30 shadow-xs" title="Inventori">
+              <Database className="size-4" />
+            </button>
+            <button onClick={() => chooseMode('in')} className="grid size-9.5 place-items-center rounded-full text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition" title="Catat Stok Masuk">
+              <Plus className="size-4" />
+            </button>
+            <button onClick={() => nav('Ringkasan')} className="grid size-9.5 place-items-center rounded-full text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition" title="Ringkasan">
+              <LayoutDashboard className="size-4" />
+            </button>
+            <button onClick={() => nav('Produk')} className="grid size-9.5 place-items-center rounded-full text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition" title="Produk">
+              <Package className="size-4" />
+            </button>
+            <button onClick={() => nav('Kasir (POS)')} className="grid size-9.5 place-items-center rounded-full text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition" title="Kasir (POS)">
+              <ShoppingBag className="size-4" />
+            </button>
+            <button onClick={() => nav('Transaksi')} className="grid size-9.5 place-items-center rounded-full text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition" title="Transaksi">
+              <CreditCard className="size-4" />
+            </button>
+            <button onClick={() => nav('Laporan')} className="grid size-9.5 place-items-center rounded-full text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition" title="Laporan">
+              <BarChart3 className="size-4" />
+            </button>
+            <div className="h-px w-6 bg-[#454d5b]/60 my-0.5" />
+            <button onClick={() => nav('Pengaturan')} className="grid size-9.5 place-items-center rounded-full text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition" title="Pengaturan">
+              <Settings2 className="size-4" />
+            </button>
+          </div>
+        </aside>
+
+        {/* Content */}
+        <div className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1300px]">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-xs text-[#a4a7ac] flex items-center gap-1.5">
+                  <span>{businessName}</span>
+                  <span className="text-white/30">›</span>
+                  <span className="text-[#24cbc5] font-medium">Inventori</span>
+                </p>
+                <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl text-white">Manajemen stok</h1>
+                <p className="mt-1 text-xs sm:text-sm text-[#c5cbd5]">Pantau persediaan dan telusuri setiap perubahan jumlah barang.</p>
+              </div>
+              <button className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#1835d9] px-4 text-xs sm:text-sm font-semibold text-white hover:bg-[#132c9e] transition shadow-xs active:scale-95" onClick={() => chooseMode('in')}>
+                ＋ Catat stok masuk
+              </button>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs sm:text-sm text-[#a4a7ac]">Kondisi per hari ini • Waktu dalam WIB</p>
+              <div className="flex flex-wrap gap-2.5">
+                <button className="h-9.5 rounded-xl border border-[#454d5b] bg-[#273242] px-3.5 text-xs sm:text-sm font-semibold text-white hover:bg-[#303640] transition" onClick={() => chooseMode('out')}>
+                  Catat stok keluar
+                </button>
+                <button className="h-9.5 rounded-xl border border-[#454d5b] bg-[#273242] px-3.5 text-xs sm:text-sm font-semibold text-white hover:bg-[#303640] transition" onClick={() => chooseMode('adjustment')}>
+                  Sesuaikan stok fisik
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-5 flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-300">
+              <Info className="mt-0.5 size-4.5 shrink-0 text-amber-400" />
+              <div>
+                <p className="font-semibold text-amber-300">{lowStock.length} produk perlu diisi ulang</p>
+                <p className="mt-1 text-xs text-[#c5cbd5]">{lowStock.length ? lowStock.slice(0, 3).map(p => p.name).join(', ') + '. Stok menipis berbeda dari status aktif produk.' : 'Semua stok berada di atas batas minimum.'}</p>
+              </div>
+            </div>
+
+            <section className="mt-6 rounded-2xl border border-[#454d5b] bg-[#273242] p-5 shadow-sm">
+              <h2 className="text-base font-semibold text-white">Persediaan saat ini</h2>
+              <p className="mt-0.5 text-xs text-[#a4a7ac]">Stok fisik tercatat • Sama dengan katalog produk, sebelum keranjang aktif diselesaikan.</p>
+              <div className="mt-4 flex flex-col gap-3 lg:flex-row">
+                <label className="relative flex-1">
+                  <Search className="absolute left-3 top-3 size-4 text-[#a4a7ac]" />
+                  <input aria-label="Cari produk atau SKU" value={query} onChange={e => setQuery(e.target.value)} placeholder="Cari produk atau SKU" className="h-10 w-full rounded-xl border border-[#454d5b] bg-[#1c222e]/70 pl-9 pr-3 text-sm text-white outline-none focus:border-[#24cbc5]" />
+                </label>
+                <select value={condition} onChange={e => setCondition(e.target.value)} className="h-10 rounded-xl border border-[#454d5b] bg-[#273242] px-3 text-sm text-white">
+                  <option>Semua kondisi</option><option>Habis</option><option>Menipis</option><option>Cukup</option>
+                </select>
+                <select value={category} onChange={e => setCategory(e.target.value)} className="h-10 rounded-xl border border-[#454d5b] bg-[#273242] px-3 text-sm text-white">
+                  <option value="Semua kategori">Semua kategori</option>
+                  {categories.slice(1).map(c => <option key={c}>{c}</option>)}
+                </select>
+              </div>
+
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full min-w-[760px] text-left text-sm">
+                  <thead className="bg-[#1c222e] text-xs text-[#a4a7ac] border-b border-[#454d5b]">
+                    <tr>
+                      {['Produk', 'Stok fisik', 'Minimum', 'Kondisi stok', 'Status produk', 'Tindakan'].map(h => <th key={h} className="px-3 py-3 font-medium">{h}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#454d5b]/50">
+                    {filtered.map(p => (
+                      <tr key={p.id} className="hover:bg-[#1c222e]/40 transition">
+                        <td className="px-3 py-3 font-medium text-white">
+                          <p className="font-semibold">{p.name}</p>
+                          <p className="mt-0.5 text-xs text-[#a4a7ac]">{p.sku} • {p.category}</p>
+                        </td>
+                        <td className={`px-3 py-3 font-semibold ${p.stock === 0 ? 'text-red-400' : 'text-white'}`}>{formatQuantity(p.stock)} {p.unit}</td>
+                        <td className="px-3 py-3 text-[#c5cbd5]">{formatQuantity(p.minStock)} {p.unit}</td>
+                        <td className="px-3 py-3">
+                          <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${p.stock === 0 ? 'bg-red-500/15 border border-red-500/30 text-red-400' : p.stock <= p.minStock ? 'bg-amber-500/15 border border-amber-500/30 text-amber-400' : 'bg-[#24cbc5]/15 border border-[#24cbc5]/30 text-[#24cbc5]'}`}>
+                            {conditionLabel(p)}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3">
+                          <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${p.active ? 'bg-[#24cbc5]/10 text-[#24cbc5]' : 'bg-[#303640] text-[#a4a7ac]'}`}>
+                            {p.active ? 'Aktif' : 'Nonaktif'}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3">
+                          <button className="font-semibold text-[#24cbc5] hover:underline" onClick={() => { setSelectedId(p.id); document.getElementById('adjustment')?.scrollIntoView({ behavior: 'smooth' }) }}>
+                            Sesuaikan →
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-4 text-xs text-[#a4a7ac]">{filtered.length} dari {products.length} produk • Stok produk nonaktif tetap tercatat.</p>
+            </section>
+
+            <div className="mt-6 grid gap-6 xl:grid-cols-[.9fr_1.1fr]">
+              <section id="adjustment" className="rounded-2xl border border-[#454d5b] bg-[#273242] p-5 shadow-sm">
+                <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-3 py-1 text-xs font-semibold text-amber-400">Validasi penyesuaian</span>
+                <h2 className="mt-4 text-lg font-semibold text-white">{mode === 'in' ? 'Catat stok masuk' : mode === 'out' ? 'Catat stok keluar' : 'Sesuaikan stok fisik'}</h2>
+                <p className="mt-1 text-xs sm:text-sm text-[#a4a7ac]">{mode === 'adjustment' ? 'Koreksi selisih dari penghitungan fisik, bukan pembelian atau penjualan barang.' : 'Catat perubahan jumlah barang beserta alasannya. Penjualan POS tercatat otomatis pada riwayat.'}</p>
+                <label className="mt-5 block text-xs font-semibold text-white">Produk *
+                  <select value={selected?.id} onChange={e => setSelectedId(e.target.value)} className="mt-2 h-11 w-full rounded-xl border border-[#454d5b] bg-[#273242] px-3 text-sm text-white">
+                    <option value="">Pilih produk</option>
+                    {products.map(p => <option key={p.id} value={p.id}>{p.name} • {p.sku}</option>)}
+                  </select>
+                </label>
+                <div className="mt-4 grid grid-cols-3 rounded-xl bg-[#1c222e] p-3 text-center border border-[#454d5b]/60">
+                  <div>
+                    <p className="text-xs text-[#a4a7ac]">Stok tercatat</p>
+                    <p className="mt-1 text-base font-semibold text-white">{formatQuantity(selected?.stock || 0)} {selected?.unit}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-[#a4a7ac]">Penyesuaian</p>
+                    <p className="mt-1 text-base font-semibold text-white">{formatQuantity(Number(delta || 0))} {selected?.unit}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-[#a4a7ac]">Hasil</p>
+                    <p className={`mt-1 text-base font-semibold ${result < 0 ? 'text-red-400' : 'text-[#24cbc5]'}`}>{Number.isFinite(result) ? formatQuantity(result) : '-'} {selected?.unit}</p>
+                  </div>
+                </div>
+                <label className="mt-5 block text-xs font-semibold text-white">Koreksi jumlah (selisih) *
+                  <input type="number" step="0.001" value={adjustment} onChange={e => setAdjustment(e.target.value)} className={`mt-2 h-11 w-full rounded-xl border bg-[#1c222e]/70 px-3 text-sm text-white ${result < 0 ? 'border-red-500' : 'border-[#454d5b]'}`} />
+                </label>
+                {result < 0 && <p className="mt-2 text-xs text-red-400">Maksimal pengurangan {selected?.stock || 0} {selected?.unit}. Hasil stok tidak boleh di bawah 0.</p>}
+                <label className="mt-4 block text-xs font-semibold text-white">Alasan koreksi *
+                  <input value={reason} onChange={e => setReason(e.target.value)} className="mt-2 h-11 w-full rounded-xl border border-[#454d5b] bg-[#1c222e]/70 px-3 text-sm text-white" />
+                </label>
+                <div className="mt-5 flex justify-end gap-3">
+                  <button className="h-10 rounded-xl border border-[#454d5b] px-4 text-xs sm:text-sm font-semibold text-[#c5cbd5] hover:text-white hover:bg-[#303640] transition" onClick={() => { setAdjustment('0'); setNotice('Perubahan dibatalkan.') }}>Batal</button>
+                  <button disabled={pending || !selected || !Number.isFinite(result) || result < 0 || Number(delta) === 0 || !reason.trim()} className="h-10 rounded-xl bg-[#1835d9] px-4 text-xs sm:text-sm font-semibold text-white hover:bg-[#132c9e] transition disabled:opacity-40" onClick={saveAdjustment}>Simpan penyesuaian</button>
+                </div>
+                {notice && <p className="mt-3 text-xs text-[#24cbc5]">{notice}</p>}
+              </section>
+
+              <section className="rounded-2xl border border-[#454d5b] bg-[#273242] p-5 shadow-sm">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold text-white">Riwayat pergerakan stok</h2>
+                    <p className="mt-0.5 text-xs text-[#a4a7ac]">Catatan tersimpan operasional</p>
+                  </div>
+                  <button onClick={() => setShowAll(v => !v)} className="text-xs sm:text-sm font-semibold text-[#24cbc5] hover:underline">
+                    {showAll ? 'Ringkas riwayat' : 'Lihat semua'} →
+                  </button>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {['Semua', 'Masuk', 'Keluar', 'Hitung fisik'].map(tab => (
+                    <button key={tab} onClick={() => setMovementFilter(tab)} className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition ${movementFilter === tab ? 'bg-[#24cbc5]/15 border border-[#24cbc5]/30 text-[#24cbc5]' : 'bg-[#1c222e] text-[#c5cbd5] hover:text-white'}`}>
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-3 divide-y divide-[#454d5b]/40">
+                  {(showAll ? filteredMovements : filteredMovements.slice(0, 10)).map(m => (
+                    <div key={m.id} className="flex items-center justify-between gap-4 py-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-white">{m.product}</p>
+                        <p className="mt-0.5 text-xs text-[#a4a7ac]">{m.type} • {m.reason} • {m.date}</p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className={`text-sm font-semibold ${m.quantity > 0 ? 'text-[#24cbc5]' : m.type === 'Hitung fisik' ? 'text-amber-400' : 'text-white'}`}>
+                          {m.quantity > 0 ? '+' : ''}{formatQuantity(m.quantity)} {m.unit}
+                        </p>
+                        <p className="mt-0.5 text-[11px] text-[#a4a7ac]">{m.before} → {m.after} {m.unit}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {filteredMovements.length === 0 && (
+                    <p className="py-8 text-center text-xs text-[#a4a7ac]">Belum ada data pergerakan stok.</p>
+                  )}
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  )
 }

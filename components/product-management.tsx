@@ -32,7 +32,267 @@ export default function ProductManagement({ initialCategory = 'toko', business, 
   const bulkCategory=()=>{const next=window.prompt('Masukkan kategori baru');if(next?.trim())void bulk(null,next.trim())}
   const openNew = () => setEditor({ id: crypto.randomUUID(), name: '', category: '', price: 0, stock: 0, unit: 'pcs', minStock: 0, sku: '', barcode: '', active: true, revision: 0, stockRevision: 0 })
   const nav = (label: string) => { const routes: Record<string, string> = { 'Ringkasan': '/dashboard', 'Produk': '/dashboard/products', 'Inventori': '/dashboard/inventory', 'Kasir (POS)': '/dashboard/pos', 'Transaksi': '/dashboard/transactions', 'Pelanggan': '/dashboard/customers', 'Poin loyalitas': '/dashboard/loyalty', 'Laporan': '/dashboard/reports', 'Asisten Bisnis AI': '/dashboard/assistant', 'Pengaturan': '/dashboard/settings' }; if (routes[label]) router.push(`${routes[label]}?category=${category}`); else setNotice(`${label} akan tersedia setelah modulnya diaktifkan.`) }
-  return <main className="min-h-screen bg-[#1c222e] text-[#ffffff]"><div className="flex min-h-screen"><aside className="hidden w-[180px] shrink-0 flex-col border-r border-[#454d5b] bg-[#273242] p-4 lg:flex"><button className="flex items-center gap-2 text-lg font-bold text-[#24cbc5]" onClick={() => router.push(`/dashboard?category=${category}`)}><img src="/brand/usahaku-logo.png" alt="" aria-hidden="true" width={32} height={32} className="size-8 shrink-0 object-contain" />Usahaku</button><div className="mt-6 rounded-xl border border-[#454d5b] p-3"><div className="flex items-center gap-2"><div className="grid size-9 place-items-center overflow-hidden rounded-lg bg-[#24cbc5]/10 text-sm font-bold text-[#24cbc5]"><BusinessLogo business={business} /></div><div className="min-w-0"><p className="truncate text-xs font-semibold">{businessName}</p><p className="truncate text-[10px] text-[#a4a7ac]">{labels[category]}</p></div></div></div><nav className="mt-6 flex flex-1 flex-col gap-1" aria-label="Navigasi dashboard">{navItems.map(([label, Icon]) => <button key={label} onClick={() => nav(label)} className={`flex items-center gap-2 rounded-lg px-2 py-2.5 text-left text-xs font-medium ${label === 'Produk' ? 'bg-[#24cbc5]/10 text-[#24cbc5]' : 'text-[#c5cbd5] hover:bg-[#24cbc5]/10 hover:text-[#24cbc5]'}`}><Icon className="size-4" />{label}</button>)}</nav><div className="rounded-xl bg-[#24cbc5]/10 p-3"><HelpCircle className="size-4 text-[#24cbc5]" /><p className="mt-2 text-xs font-semibold">Butuh panduan?</p><p className="mt-1 text-[10px] text-[#c5cbd5]">Pelajari cara mengelola operasional usaha Anda.</p></div></aside><div className="min-w-0 flex-1"><header className="flex h-16 items-center justify-between border-b border-[#454d5b] bg-[#273242] px-4 sm:px-7"><div className="flex items-center gap-3"><button className="text-[#c5cbd5] lg:hidden" aria-label="Buka menu"><Store /></button><div><p className="text-xs text-[#a4a7ac]">Dashboard / Produk</p><p className="font-semibold">{businessName}</p></div></div><div className="flex items-center gap-3"><span className="hidden text-xs text-[#a4a7ac] sm:inline">Data katalog terhubung</span><div className="grid size-9 place-items-center rounded-full bg-[#24cbc5]/10 text-sm font-bold text-[#24cbc5]">{businessName[0]}</div></div></header><div className="mx-auto max-w-[1400px] p-4 sm:p-7"><div className="flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><p className="text-sm text-[#a4a7ac]">{businessName} <span className="px-1">›</span> Produk</p><h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">Manajemen produk</h1><p className="mt-1 text-sm text-[#c5cbd5]">Kelola katalog, harga, dan produk yang tampil di kasir.</p></div><div className="flex flex-wrap gap-2"><button onClick={exportCsv} className="inline-flex items-center gap-2 rounded-xl border border-[#454d5b] bg-[#273242] px-4 py-2.5 text-sm font-semibold text-[#334155] hover:border-[#0f766e] hover:text-[#24cbc5]"><Download className="size-4" />Ekspor produk</button><button onClick={openNew} className="inline-flex items-center gap-2 rounded-xl bg-[#1835d9] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#132c9e]"><Plus className="size-4" />Tambah produk</button></div></div><div className="mt-6 flex flex-wrap items-center gap-5 rounded-xl border border-[#454d5b] bg-[#273242] px-4 py-3 text-sm"><span><strong>{products.length}</strong> total produk</span><span className="text-[#24cbc5]"><strong>{activeCount}</strong> aktif</span><span className="text-[#a4a7ac]"><strong>{products.length-activeCount}</strong> nonaktif</span><span className="ml-auto text-xs text-[#a4a7ac]">{new Intl.DateTimeFormat('id-ID',{dateStyle:'full',timeStyle:'short',timeZone:'Asia/Jakarta'}).format(new Date())}</span></div>{notice && <div className="mt-4 flex items-center justify-between rounded-xl border border-[#99f6e4] bg-[#24cbc5]/10 px-4 py-3 text-sm text-[#24cbc5]">{notice}<button onClick={() => setNotice('')} aria-label="Tutup notifikasi"><X className="size-4" /></button></div>}<section className="mt-5 overflow-hidden rounded-2xl border border-[#454d5b] bg-[#273242] shadow-sm"><div className="flex flex-col gap-3 border-b border-[#454d5b] p-4 lg:flex-row"><label className="relative flex-1"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#94a3b8]" /><input aria-label="Cari nama produk, SKU, atau barcode" value={query} onChange={e=>{setQuery(e.target.value);setPage(1)}} placeholder="Cari nama produk, SKU, atau barcode" className="w-full rounded-xl border border-[#454d5b] py-2.5 pl-9 pr-3 text-sm outline-none focus:border-[#0f766e]" /></label><select value={filterCategory} onChange={e=>{setFilterCategory(e.target.value);setPage(1)}} className="rounded-xl border border-[#454d5b] bg-[#273242] px-3 py-2.5 text-sm">{categories.map(c=><option key={c}>{c}</option>)}</select><select value={filterStatus} onChange={e=>{setFilterStatus(e.target.value);setPage(1)}} className="rounded-xl border border-[#454d5b] bg-[#273242] px-3 py-2.5 text-sm"><option>Semua status</option><option>Aktif</option><option>Nonaktif</option></select></div>{selected.length>0 && <div className="flex flex-wrap items-center gap-2 bg-[#24cbc5]/10 px-4 py-3 text-sm text-[#24cbc5]"><strong>{selected.length} dipilih</strong><button onClick={bulkCategory} className="rounded-lg border border-[#99f6e4] bg-[#273242] px-3 py-1.5 font-semibold">Ubah kategori</button><button onClick={()=>bulkStatus(false)} className="rounded-lg border border-[#99f6e4] bg-[#273242] px-3 py-1.5 font-semibold">Nonaktifkan produk</button><button onClick={()=>setSelected([])} className="ml-auto font-semibold">Batalkan pilihan</button></div>}<div className="overflow-x-auto"><table className="w-full min-w-[980px] text-left text-sm"><thead className="border-b border-[#454d5b] bg-[#1c222e] text-xs text-[#a4a7ac]"><tr><th className="w-12 px-4 py-3"><input type="checkbox" checked={selectedAll} onChange={e=>setSelected(e.target.checked ? filtered.map(p=>p.id) : [])} aria-label="Pilih semua produk" /></th><th className="px-4 py-3">Produk / SKU / barcode</th><th className="px-4 py-3">Kategori</th><th className="px-4 py-3">Harga jual</th><th className="px-4 py-3">Stok fisik</th><th className="px-4 py-3">Ketersediaan</th><th className="px-4 py-3">Status produk</th><th className="px-4 py-3">Tindakan</th></tr></thead><tbody>{filtered.slice((page-1)*50,page*50).map(product=><tr key={product.id} className="border-b border-[#454d5b] hover:bg-[#1c222e]"><td className="px-4 py-3"><input type="checkbox" checked={selected.includes(product.id)} onChange={e=>setSelected(e.target.checked ? [...selected,product.id] : selected.filter(id=>id!==product.id))} aria-label={`Pilih ${product.name}`} /></td><td className="px-4 py-3"><div className="flex items-center gap-3"><div className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-lg bg-[#24cbc5]/10 text-[#24cbc5]"><ProductThumbnail src={product.image}/></div><div><p className="font-semibold">{product.name}</p><p className="text-xs text-[#a4a7ac]">SKU {product.sku || '-'} · {product.barcode || 'Tanpa barcode'}</p></div></div></td><td className="px-4 py-3 text-[#c5cbd5]">{product.category || '-'}</td><td className="px-4 py-3 font-medium">{money(product.price)}</td><td className="px-4 py-3">{formatQuantity(product.stock)} {product.unit}</td><td className="px-4 py-3">{product.stock===0?<span className="rounded-full bg-[#4a252b] px-2 py-1 text-xs text-[#ffb4ae]">Habis</span>:product.stock<=product.minStock?<span className="rounded-full bg-[#fffbeb] px-2 py-1 text-xs text-[#b45309]">Menipis</span>:<span className="rounded-full bg-[#24cbc5]/10 px-2 py-1 text-xs text-[#24cbc5]">Tersedia</span>}</td><td className="px-4 py-3">{product.active?<span className="rounded-full bg-[#24cbc5]/10 px-2 py-1 text-xs text-[#24cbc5]">Aktif</span>:<span className="rounded-full bg-[#303640] px-2 py-1 text-xs text-[#a4a7ac]">Nonaktif</span>}</td><td className="px-4 py-3"><button onClick={()=>setEditor(product)} className="font-semibold text-[#24cbc5] hover:text-[#115e59]">Ubah</button></td></tr>)}</tbody></table></div><div className="flex flex-col gap-3 px-4 py-4 text-xs text-[#a4a7ac] sm:flex-row sm:items-center sm:justify-between"><span>Menampilkan {filtered.length} dari {products.length} produk </span><div className="flex items-center gap-2"><button disabled={page<=1} onClick={()=>setPage(p=>p-1)} className="rounded-lg border border-[#454d5b] px-3 py-1.5">Sebelumnya</button><span className="rounded-lg bg-[#1835d9] px-3 py-1.5 text-white">{page}</span><button disabled={page*50>=filtered.length} onClick={()=>setPage(p=>p+1)} className="rounded-lg border border-[#454d5b] px-3 py-1.5">Berikutnya</button></div></div></section>{editor !== false && <ProductEditor key={editor?.id} product={editor} fileRef={fileRef} onCancel={()=>setEditor(false)} onSave={async(p,file,key,imageAction)=>{const data=new FormData();data.set('id',p.id);data.set('request',key);data.set('revision',products.some(x=>x.id===p.id)?String(p.revision):'');data.set('details',JSON.stringify({name:p.name,category:p.category,unit:p.unit,sku:p.sku,barcode:p.barcode,price:p.price,minimum:p.minStock,initialStock:products.some(x=>x.id===p.id)?0:p.stock,active:p.active}));data.set('imageAction',imageAction);if(file)data.set('image',file);const result=await saveCatalogProduct(data);if(!result.error&&result.product){setProducts(items=>[result.product!,...items.filter(x=>x.id!==p.id)]);setEditor(false);setNotice([result.success,result.warning].filter(Boolean).join(' '));router.refresh()}return result}} />}</div></div></div></main>
+  const primaryNavItems = [
+    'Ringkasan',
+    'Produk',
+    'Inventori',
+    'Kasir (POS)',
+    'Transaksi',
+    'Pelanggan',
+    'Laporan',
+    'Pengaturan',
+  ]
+
+  return (
+    <main className="min-h-screen bg-[#1c222e] text-[#ffffff]">
+      {/* Top Header Bar */}
+      <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-[#454d5b]/60 bg-[#1c222e]/95 px-4 sm:px-6 backdrop-blur-md">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.push(`/dashboard?category=${category}`)}
+            className="flex items-center gap-3 text-left transition hover:opacity-90"
+          >
+            <div className="grid size-9 place-items-center rounded-xl bg-black/40 border border-white/10 shadow-xs">
+              <img
+                src="/brand/usahaku-logo.png"
+                alt="Usahaku"
+                width={26}
+                height={26}
+                className="size-6.5 shrink-0 object-contain"
+              />
+            </div>
+            <span className="text-lg font-bold tracking-tight text-white">Usahaku</span>
+          </button>
+        </div>
+
+        {/* Center: Horizontal Pill Navigation */}
+        <nav
+          className="hidden md:flex items-center gap-1 rounded-full bg-[#273242]/70 p-1 border border-[#454d5b]/60 shadow-inner"
+          aria-label="Navigasi utama"
+        >
+          {primaryNavItems.map((label) => {
+            const isActive = label === 'Produk'
+            return (
+              <button
+                key={label}
+                onClick={() => nav(label)}
+                className={`rounded-full px-4 py-1.5 text-xs transition-all duration-150 ${
+                  isActive
+                    ? 'bg-[#1c222e] text-white font-semibold shadow-sm border border-[#454d5b]'
+                    : 'text-[#c5cbd5] hover:text-white hover:bg-[#303640]/50 font-medium'
+                }`}
+              >
+                {label}
+              </button>
+            )
+          })}
+        </nav>
+
+        {/* Right Header Status */}
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          <div className="hidden sm:flex items-center gap-2 rounded-full border border-[#454d5b]/70 bg-[#273242]/80 px-3 py-1 text-xs text-[#c5cbd5] shadow-xs">
+            <span className="size-1.5 rounded-full bg-[#24cbc5] animate-pulse" />
+            <span className="max-w-28 truncate font-medium text-white">{businessName}</span>
+          </div>
+          <div className="grid size-9 place-items-center rounded-full bg-[#1835d9] text-xs font-bold text-white shadow-xs">
+            {businessName[0]}
+          </div>
+        </div>
+      </header>
+
+      {/* Main Container: Floating Dock + Content */}
+      <div className="flex min-h-[calc(100vh-64px)] w-full">
+        {/* Floating Vertical Icon Dock */}
+        <aside
+          className="hidden lg:flex shrink-0 py-6 pl-5 pr-2 flex-col items-center justify-start"
+          aria-label="Toolbar pintas"
+        >
+          <div className="sticky top-22 flex flex-col items-center gap-3 rounded-full border border-[#454d5b]/80 bg-[#273242]/90 p-2 shadow-2xl backdrop-blur-md">
+            <button onClick={() => nav('Produk')} className="grid size-9.5 place-items-center rounded-full bg-[#1c222e] text-[#24cbc5] border border-[#24cbc5]/30 shadow-xs" title="Produk">
+              <Package className="size-4" />
+            </button>
+            <button onClick={openNew} className="grid size-9.5 place-items-center rounded-full text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition" title="Tambah Produk">
+              <Plus className="size-4" />
+            </button>
+            <button onClick={() => nav('Ringkasan')} className="grid size-9.5 place-items-center rounded-full text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition" title="Ringkasan">
+              <LayoutDashboard className="size-4" />
+            </button>
+            <button onClick={() => nav('Kasir (POS)')} className="grid size-9.5 place-items-center rounded-full text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition" title="Kasir (POS)">
+              <ShoppingBag className="size-4" />
+            </button>
+            <button onClick={() => nav('Inventori')} className="grid size-9.5 place-items-center rounded-full text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition" title="Inventori">
+              <Database className="size-4" />
+            </button>
+            <button onClick={() => nav('Transaksi')} className="grid size-9.5 place-items-center rounded-full text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition" title="Transaksi">
+              <CreditCard className="size-4" />
+            </button>
+            <button onClick={() => nav('Laporan')} className="grid size-9.5 place-items-center rounded-full text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition" title="Laporan">
+              <BarChart3 className="size-4" />
+            </button>
+            <div className="h-px w-6 bg-[#454d5b]/60 my-0.5" />
+            <button onClick={() => nav('Pengaturan')} className="grid size-9.5 place-items-center rounded-full text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition" title="Pengaturan">
+              <Settings2 className="size-4" />
+            </button>
+          </div>
+        </aside>
+
+        {/* Content */}
+        <div className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1400px]">
+            <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
+              <div>
+                <p className="text-xs text-[#a4a7ac] flex items-center gap-1.5">
+                  <span>{businessName}</span>
+                  <span className="text-white/30">›</span>
+                  <span className="text-[#24cbc5] font-medium">Produk</span>
+                </p>
+                <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl text-white">Manajemen produk</h1>
+                <p className="mt-1 text-xs sm:text-sm text-[#c5cbd5]">Kelola katalog, harga, dan produk yang tampil di kasir.</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button onClick={exportCsv} className="inline-flex items-center gap-2 rounded-xl border border-[#454d5b] bg-[#273242] px-4 py-2.5 text-xs sm:text-sm font-semibold text-[#c5cbd5] hover:text-white hover:bg-[#303640] transition">
+                  <Download className="size-4" /> Ekspor produk
+                </button>
+                <button onClick={openNew} className="inline-flex items-center gap-2 rounded-xl bg-[#1835d9] px-4 py-2.5 text-xs sm:text-sm font-semibold text-white hover:bg-[#132c9e] transition active:scale-95 shadow-xs">
+                  <Plus className="size-4" /> Tambah produk
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap items-center gap-5 rounded-2xl border border-[#454d5b] bg-[#273242] px-5 py-3.5 text-sm shadow-xs">
+              <span><strong className="text-white">{products.length}</strong> total produk</span>
+              <span className="text-[#24cbc5]"><strong>{activeCount}</strong> aktif</span>
+              <span className="text-[#a4a7ac]"><strong>{products.length - activeCount}</strong> nonaktif</span>
+              <span className="ml-auto text-xs text-[#a4a7ac]">{new Intl.DateTimeFormat('id-ID', { dateStyle: 'full', timeStyle: 'short', timeZone: 'Asia/Jakarta' }).format(new Date())}</span>
+            </div>
+
+            {notice && (
+              <div className="mt-4 flex items-center justify-between rounded-xl border border-[#24cbc5]/30 bg-[#24cbc5]/10 px-4 py-3 text-sm text-[#24cbc5]">
+                {notice}
+                <button onClick={() => setNotice('')} aria-label="Tutup notifikasi"><X className="size-4" /></button>
+              </div>
+            )}
+
+            <section className="mt-5 overflow-hidden rounded-2xl border border-[#454d5b] bg-[#273242] shadow-sm">
+              <div className="flex flex-col gap-3 border-b border-[#454d5b] p-4 lg:flex-row">
+                <label className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#a4a7ac]" />
+                  <input aria-label="Cari nama produk, SKU, atau barcode" value={query} onChange={e => { setQuery(e.target.value); setPage(1) }} placeholder="Cari nama produk, SKU, atau barcode" className="w-full rounded-xl border border-[#454d5b] bg-[#1c222e]/70 py-2.5 pl-9 pr-3 text-sm text-white outline-none focus:border-[#24cbc5]" />
+                </label>
+                <select value={filterCategory} onChange={e => { setFilterCategory(e.target.value); setPage(1) }} className="rounded-xl border border-[#454d5b] bg-[#273242] px-3 py-2.5 text-sm text-white">
+                  {categories.map(c => <option key={c}>{c}</option>)}
+                </select>
+                <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1) }} className="rounded-xl border border-[#454d5b] bg-[#273242] px-3 py-2.5 text-sm text-white">
+                  <option>Semua status</option><option>Aktif</option><option>Nonaktif</option>
+                </select>
+              </div>
+
+              {selected.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2 bg-[#24cbc5]/10 px-4 py-3 text-sm text-[#24cbc5]">
+                  <strong>{selected.length} dipilih</strong>
+                  <button onClick={bulkCategory} className="rounded-lg border border-[#24cbc5]/30 bg-[#273242] px-3 py-1.5 font-semibold text-white">Ubah kategori</button>
+                  <button onClick={() => bulkStatus(false)} className="rounded-lg border border-[#24cbc5]/30 bg-[#273242] px-3 py-1.5 font-semibold text-white">Nonaktifkan produk</button>
+                  <button onClick={() => setSelected([])} className="ml-auto font-semibold">Batalkan pilihan</button>
+                </div>
+              )}
+
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[980px] text-left text-sm">
+                  <thead className="border-b border-[#454d5b] bg-[#1c222e] text-xs text-[#a4a7ac]">
+                    <tr>
+                      <th className="w-12 px-4 py-3"><input type="checkbox" checked={selectedAll} onChange={e => setSelected(e.target.checked ? filtered.map(p => p.id) : [])} aria-label="Pilih semua produk" /></th>
+                      <th className="px-4 py-3">Produk / SKU / barcode</th>
+                      <th className="px-4 py-3">Kategori</th>
+                      <th className="px-4 py-3">Harga jual</th>
+                      <th className="px-4 py-3">Stok fisik</th>
+                      <th className="px-4 py-3">Ketersediaan</th>
+                      <th className="px-4 py-3">Status produk</th>
+                      <th className="px-4 py-3">Tindakan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.slice((page - 1) * 50, page * 50).map(product => (
+                      <tr key={product.id} className="border-b border-[#454d5b]/60 hover:bg-[#1c222e]/40 transition">
+                        <td className="px-4 py-3"><input type="checkbox" checked={selected.includes(product.id)} onChange={e => setSelected(e.target.checked ? [...selected, product.id] : selected.filter(id => id !== product.id))} aria-label={`Pilih ${product.name}`} /></td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-lg bg-[#24cbc5]/10 text-[#24cbc5] border border-[#24cbc5]/20">
+                              <ProductThumbnail src={product.image} />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-white">{product.name}</p>
+                              <p className="text-xs text-[#a4a7ac]">SKU {product.sku || '-'} · {product.barcode || 'Tanpa barcode'}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-[#c5cbd5]">{product.category || '-'}</td>
+                        <td className="px-4 py-3 font-medium text-white">{money(product.price)}</td>
+                        <td className="px-4 py-3">{formatQuantity(product.stock)} {product.unit}</td>
+                        <td className="px-4 py-3">
+                          {product.stock === 0 ? (
+                            <span className="rounded-full bg-red-500/15 border border-red-500/30 px-2.5 py-0.5 text-xs font-semibold text-red-400">Habis</span>
+                          ) : product.stock <= product.minStock ? (
+                            <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 text-xs font-semibold text-amber-400">Menipis</span>
+                          ) : (
+                            <span className="rounded-full bg-[#24cbc5]/15 border border-[#24cbc5]/30 px-2.5 py-0.5 text-xs font-semibold text-[#24cbc5]">Tersedia</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {product.active ? (
+                            <span className="rounded-full bg-[#24cbc5]/15 px-2.5 py-0.5 text-xs font-semibold text-[#24cbc5]">Aktif</span>
+                          ) : (
+                            <span className="rounded-full bg-[#303640] px-2.5 py-0.5 text-xs font-semibold text-[#a4a7ac]">Nonaktif</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <button onClick={() => setEditor(product)} className="font-semibold text-[#24cbc5] hover:underline">Ubah</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="flex flex-col gap-3 px-4 py-4 text-xs text-[#a4a7ac] sm:flex-row sm:items-center sm:justify-between border-t border-[#454d5b]/60">
+                <span>Menampilkan {filtered.length} dari {products.length} produk</span>
+                <div className="flex items-center gap-2">
+                  <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="rounded-lg border border-[#454d5b] px-3 py-1.5 text-white hover:bg-[#303640] transition disabled:opacity-40">Sebelumnya</button>
+                  <span className="rounded-lg bg-[#1835d9] px-3 py-1.5 font-semibold text-white">{page}</span>
+                  <button disabled={page * 50 >= filtered.length} onClick={() => setPage(p => p + 1)} className="rounded-lg border border-[#454d5b] px-3 py-1.5 text-white hover:bg-[#303640] transition disabled:opacity-40">Berikutnya</button>
+                </div>
+              </div>
+            </section>
+
+            {editor !== false && (
+              <ProductEditor
+                key={editor?.id}
+                product={editor}
+                fileRef={fileRef}
+                onCancel={() => setEditor(false)}
+                onSave={async (p, file, key, imageAction) => {
+                  const data = new FormData()
+                  data.set('id', p.id)
+                  data.set('request', key)
+                  data.set('revision', products.some(x => x.id === p.id) ? String(p.revision) : '')
+                  data.set('details', JSON.stringify({ name: p.name, category: p.category, unit: p.unit, sku: p.sku, barcode: p.barcode, price: p.price, minimum: p.minStock, initialStock: products.some(x => x.id === p.id) ? 0 : p.stock, active: p.active }))
+                  data.set('imageAction', imageAction)
+                  if (file) data.set('image', file)
+                  const result = await saveCatalogProduct(data)
+                  if (!result.error && result.product) {
+                    setProducts(items => [result.product!, ...items.filter(x => x.id !== p.id)])
+                    setEditor(false)
+                    setNotice([result.success, result.warning].filter(Boolean).join(' '))
+                    router.refresh()
+                  }
+                  return result
+                }}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    </main>
+  )
 }
 
 function ProductEditor({ product, fileRef, onCancel, onSave }: { product: Product | null; fileRef: React.RefObject<HTMLInputElement | null>; onCancel: () => void; onSave: (product: Product,file:File|null,key:string,imageAction:string) => Promise<CatalogResult> }) { const [draft,setDraft]=useState(product!); const [customCategory,setCustomCategory]=useState(Boolean(product?.category&&!productCategories.includes(product.category))); const [error,setError]=useState('');const [pending,setPending]=useState(false);const [file,setFile]=useState<File|null>(null);const [imageAction,setImageAction]=useState('keep');const [operationId]=useState(()=>crypto.randomUUID()); const isNew=!product?.name; const update=(key:keyof Product,value:string|number|boolean)=>setDraft({...draft,[key]:value}); const removeImage=()=>{update('image','');setFile(null);setImageAction('remove');if(fileRef.current)fileRef.current.value=''}; const handleFile=(file?:File)=>{if(!file)return;if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>2*1024*1024)return setError('Gunakan PNG/JPG/WebP maksimal 2 MB.');setFile(file);setImageAction('replace');setError('');const reader=new FileReader();reader.onload=()=>update('image',String(reader.result));reader.readAsDataURL(file)}; const save=async()=>{if(pending)return;if(!draft.name.trim()||!draft.category.trim()||!draft.unit.trim())return setError('Nama, kategori, dan unit stok wajib diisi.');setPending(true);setError('');try{const result=await onSave(draft,file,operationId,imageAction);if(result.error)setError(result.error)}catch{setError('Status penyimpanan belum pasti. Muat ulang untuk memeriksa.')}finally{setPending(false)}}; return <section className="mt-5 rounded-2xl border border-[#454d5b] bg-[#273242] p-5 shadow-sm"><div className="flex items-start justify-between gap-3"><div><h2 className="text-lg font-semibold">{isNew?'Tambah produk':'Ubah produk'}</h2><p className="mt-1 text-sm text-[#a4a7ac]">Lengkapi informasi katalog dan pengaturan penjualan.</p></div><button onClick={onCancel} aria-label="Tutup editor"><X /></button></div><div className="mt-5 grid gap-6 lg:grid-cols-2"><div className="flex flex-col gap-4"><h3 className="font-semibold">Informasi produk</h3><div className="relative flex min-h-32 flex-col items-center justify-center rounded-xl border border-dashed border-[#99f6e4] bg-[#24cbc5]/10 p-4">{draft.image?<><img src={draft.image} alt="Preview produk" className="size-20 rounded-xl object-cover"/><button onClick={removeImage} aria-label="Hapus gambar produk" className="absolute right-3 top-3 grid size-7 place-items-center rounded-full border border-[#454d5b] bg-[#273242] text-[#a4a7ac] hover:text-[#ffb4ae]"><X /></button></>:<p className="text-sm text-[#a4a7ac]">Unggah gambar produk</p>}<label className="mt-3 inline-flex cursor-pointer items-center rounded-lg border border-[#99f6e4] bg-[#273242] px-3 py-2 text-xs font-semibold text-[#24cbc5] hover:bg-[#24cbc5]/10">Pilih gambar<input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" aria-label="Pilih gambar produk" onChange={e=>handleFile(e.target.files?.[0])} className="sr-only" /></label></div><label className="text-sm font-medium">Nama produk *<input value={draft.name} onChange={e=>update('name',e.target.value)} className="mt-1 w-full rounded-lg border border-[#454d5b] px-3 py-2.5" /></label><div className="space-y-3"><label className="text-sm font-medium">Kategori *<select aria-label="Kategori *" value={customCategory?'Lainnya':draft.category} onChange={e=>{const custom=e.target.value==='Lainnya';setCustomCategory(custom);update('category',custom?'':e.target.value)}} className="mt-1 w-full rounded-lg border border-[#454d5b] bg-[#273242] px-3 py-2.5"><option value="" disabled>Pilih kategori</option>{productCategories.map(value=><option key={value} value={value}>{value}</option>)}<option value="Lainnya">Lainnya</option></select></label>{customCategory&&<label className="block text-sm font-medium">Kategori lainnya *<input maxLength={100} value={draft.category} onChange={e=>update('category',e.target.value)} className="mt-1 w-full rounded-lg border border-[#454d5b] px-3 py-2.5" /></label>}</div><label className="text-sm font-medium">Unit stok *<input value={draft.unit} disabled={!isNew} title="Satuan tetap setelah produk dibuat" onChange={e=>update('unit',e.target.value)} className="mt-1 w-full rounded-lg border border-[#454d5b] px-3 py-2.5" /></label><div className="grid gap-4 sm:grid-cols-2"><div><label className="text-sm font-medium">SKU<input aria-label="SKU" aria-describedby="product-sku-help" maxLength={64} placeholder={isNew?`${productSkuPrefix(draft.category,draft.name)}001`:product?.sku} value={draft.sku} onChange={e=>update('sku',e.target.value)} className="mt-1 w-full rounded-lg border border-[#454d5b] px-3 py-2.5" /></label><p id="product-sku-help" className="mt-1 text-xs text-[#a4a7ac]">{isNew?'Kosongkan untuk SKU otomatis. Nomor ditetapkan saat disimpan; dapat diisi sendiri.':'Kosongkan untuk mempertahankan SKU saat ini.'}</p></div><label className="text-sm font-medium">Barcode<input value={draft.barcode} onChange={e=>update('barcode',e.target.value)} className="mt-1 w-full rounded-lg border border-[#454d5b] px-3 py-2.5" /></label></div></div><div className="flex flex-col gap-4"><h3 className="font-semibold">Harga & pengaturan penjualan</h3><label className="text-sm font-medium">Harga jual *<input type="number" min="0" value={draft.price} onChange={e=>update('price',Number(e.target.value))} className="mt-1 w-full rounded-lg border border-[#454d5b] px-3 py-2.5" /></label><label className="text-sm font-medium">Stok fisik<input type="number" min="0" step="0.001" disabled={!isNew} title="Ubah stok melalui inventori dengan alasan" value={draft.stock} onChange={e=>update('stock',Number(e.target.value))} className="mt-1 w-full rounded-lg border border-[#454d5b] px-3 py-2.5" /></label><label className="text-sm font-medium">Minimum stok *<input type="number" min="0" step="0.001" value={draft.minStock} onChange={e=>update('minStock',Number(e.target.value))} className="mt-1 w-full rounded-lg border border-[#454d5b] px-3 py-2.5" /></label><label className="text-sm font-medium">Status produk<select value={draft.active?'Aktif':'Nonaktif'} onChange={e=>update('active',e.target.value==='Aktif')} className="mt-1 w-full rounded-lg border border-[#454d5b] bg-[#273242] px-3 py-2.5"><option>Aktif</option><option>Nonaktif</option></select></label><div className="rounded-xl bg-[#24cbc5]/10 p-4 text-sm text-[#24cbc5]">{draft.active?'Produk aktif dan tersedia untuk ditampilkan di kasir.':'Produk nonaktif tidak muncul di kasir, tetapi riwayat transaksi dan stok fisiknya tetap dipertahankan.'}</div></div></div>{error&&<p className="mt-4 rounded-lg bg-[#4a252b] p-3 text-sm text-[#ffb4ae]">{error}</p>}<div className="mt-6 flex justify-end gap-2"><button onClick={onCancel} className="rounded-xl border border-[#454d5b] px-4 py-2.5 text-sm font-semibold">Batal</button><button disabled={pending} onClick={save} className="rounded-xl bg-[#1835d9] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#132c9e]">{isNew?'Simpan produk':'Simpan perubahan'}</button></div></section> }
