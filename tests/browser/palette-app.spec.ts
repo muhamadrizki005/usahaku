@@ -28,7 +28,7 @@ test('all page palettes, forms, dialogs and protected routes',async({browser,bas
     const capture=async(p:any,url:string,name:string)=>{
       await p.setViewportSize({width:1440,height:1000});await p.goto(url);await p.evaluate(()=>document.fonts.ready);await expect(p.locator('main').first()).toBeVisible()
       const colors=await p.locator('main').first().evaluate((el:Element)=>{const s=getComputedStyle(el);return{background:s.backgroundColor,text:s.color,font:s.fontFamily}})
-      expect(colors.background,name).toBe('rgb(28, 34, 46)');expect(colors.text,name).toBe('rgb(255, 255, 255)');expect(colors.font).toContain('Inter')
+      expect(colors.background,name).toBe('rgb(28, 34, 46)');expect(colors.text,name).toBe('rgb(255, 255, 255)');expect(colors.font).toContain('Urbanist')
       await p.screenshot({path:`${dir}/${name}-desktop.png`,fullPage:true,animations:'disabled'})
       await p.setViewportSize({width:390,height:844});expect(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),name+' mobile overflow').toBe(true)
       await p.emulateMedia({colorScheme:'dark'});expect(await p.locator('main').first().evaluate((el:Element)=>getComputedStyle(el).backgroundColor)).toBe(colors.background);await p.emulateMedia({colorScheme:'light'})

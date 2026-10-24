@@ -117,7 +117,7 @@ Palet target mengikuti warna eksplisit landing pada screenshot, bukan palet gray
 
 ### Font
 
-- **Font utama: Inter**, dimuat lokal melalui `@font-face` dari `public/fonts/inter/InterVariable.woff2` dan preload pada layout. Pertahankan pemuatan font yang sudah berjalan.
+- **Font utama: Urbanist**, sesuai persetujuan pengguna 24 Oktober 2026 untuk seluruh website. Dimuat lokal melalui `@font-face` dari `public/fonts/urbanist/UrbanistVariable.woff2`, dengan varian italic lokal dan preload font normal pada layout. Pertahankan ukuran, weight, line-height, dan letter-spacing yang sudah ada.
 - Gunakan satu keluarga font utama di Figma untuk UI, form, dashboard, tabel, dan navigasi.
 - Jangan menggunakan Source Serif 4 atau Geist Mono sebagai font UI utama kecuali ada kebutuhan khusus yang jelas. Keduanya tersedia di konfigurasi kode, tetapi tampilan landing page didominasi sans-serif.
 
