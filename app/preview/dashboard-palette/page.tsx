@@ -1,4 +1,6 @@
 import UsahakuDashboard from '@/components/usahaku-dashboard'
+import { DashboardShell } from '@/components/dashboard-shell'
+import { DashboardAmbient } from '@/components/dashboard-ambient'
 import type {Business,Member} from '@/lib/validation'
 import type {CatalogProduct} from '@/lib/catalog'
 import type {Sale} from '@/lib/pos'
@@ -20,5 +22,5 @@ export default function DashboardPalettePreview() {
     const total=lines.reduce((n,l)=>n+l.total,0)
     return{id:`00000000-0000-4000-8000-${String(100+i).padStart(12,'0')}`,business_id:business.id,actor_id:staff.user_id,actor_name:staff.name,customer:'Pelanggan umum',lines,subtotal:total,discount_kind:'none',discount_value:0,discount:0,total,payment:'cash',received:total,change:0,status:'completed',created_at:new Date(now.getTime()-(6-i)*86400000).toISOString(),cancelled_at:null,cancelled_by_name:null,cancellation_reason:null,refund_amount:null}
   })
-  return <><div className="border-b border-[#454d5b] bg-[#1c222e] px-5 py-2 text-center text-xs text-[#c5cbd5]">Preview palet dashboard · Data contoh, tidak terhubung ke aktivitas usaha nyata</div><UsahakuDashboard business={business} member={owner} members={[owner,staff]} initialProducts={products} sales={sales}/></>
+  return <DashboardAmbient><div className="border-b border-[#454d5b] bg-[#1c222e] px-5 py-2 text-center text-xs text-[#c5cbd5]">Preview palet dashboard · Data contoh, tidak terhubung ke aktivitas usaha nyata</div><DashboardShell business={business} member={owner}><UsahakuDashboard business={business} member={owner} members={[owner,staff]} initialProducts={products} sales={sales}/></DashboardShell></DashboardAmbient>
 }

@@ -1,11 +1,8 @@
 'use client'
-import { DashboardBrand, DashboardSidebar, DashboardMobileMenu, dashboardItemsForRole } from '@/components/dashboard-chrome'
 import { moveCatalogStock } from '@/app/catalog-actions'
 import { adjustedStock, formatQuantity, type CatalogProduct, type StockRow } from '@/lib/catalog'
-import { businessInitials } from '@/lib/business-profile'
 import type { Role } from '@/lib/auth/permissions'
 import type { Business } from '@/lib/validation'
-import { BusinessLogo } from '@/components/business-logo'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Info, Search } from 'lucide-react'
@@ -25,34 +22,8 @@ export default function InventoryManagement({ role, initialCategory = 'toko', bu
   const conditionLabel = (p: Product) => p.stock === 0 ? 'Habis' : p.stock <= p.minStock ? 'Menipis' : 'Cukup'
   const saveAdjustment = async () => {if(pending||!selected||!reason.trim()||!Number.isFinite(result)||result<0)return;setPending(true);operation.current ||= crypto.randomUUID();try{const form=new FormData();form.set('id',selected.id);form.set('revision',String(selected.stockRevision));form.set('request',operation.current);form.set('delta',delta);form.set('kind',mode);form.set('reason',reason);const response=await moveCatalogStock(form);setNotice(response.error||response.success||'');if(response.product){setProducts(items=>items.map(p=>p.id===selected.id?response.product!:p));setAdjustment('0');setReason('');operation.current='';router.refresh()}}catch{setNotice('Status belum pasti. Muat ulang sebelum mencoba lagi.')}finally{setPending(false)}}
   const chooseMode=(next:'in'|'out'|'adjustment')=>{setMode(next);setAdjustment('0');setReason('');operation.current='';document.getElementById('adjustment')?.scrollIntoView({behavior:'smooth'})}
-  const nav = (label: string) => { const routes: Record<string, string> = { 'Ringkasan': '/dashboard', 'Produk': '/dashboard/products', 'Inventori': '/dashboard/inventory', 'Kasir (POS)': '/dashboard/pos', 'Transaksi': '/dashboard/transactions', 'Pelanggan': '/dashboard/customers', 'Poin loyalitas': '/dashboard/loyalty', 'Laporan': '/dashboard/reports', 'Asisten Bisnis AI': '/dashboard/assistant', 'Pengaturan': '/dashboard/settings' }; if (routes[label]) router.push(`${routes[label]}?category=${initialCategory}`) }
 
-  return (
-    <main className="min-h-screen bg-[#1c222e] text-[#ffffff]">
-      {/* Top Header Bar */}
-      <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between bg-[#1c222e]/95 px-4 sm:px-6 backdrop-blur-md">
-        <DashboardBrand onHome={() => router.push('/dashboard')} contentMax={1300} />
-
-        {/* Right Status */}
-        <div className="flex items-center gap-2.5 sm:gap-3 lg:ml-auto">
-          <div className="hidden sm:flex items-center gap-2 rounded-full border border-[#454d5b]/70 bg-[#273242]/80 px-3 py-1 text-xs text-[#c5cbd5] shadow-xs">
-            <span className="size-1.5 rounded-full bg-[#24cbc5] animate-pulse" />
-            <span className="max-w-28 truncate font-medium text-white">{businessName}</span>
-          </div>
-          <div className="grid size-9 place-items-center rounded-full bg-[#1835d9] text-xs font-bold text-white shadow-xs">
-            {businessInitials(memberName)}
-          </div>
-          <DashboardMobileMenu role={role} onNavigate={path => router.push(`${path}?category=${initialCategory}`)} />
-        </div>
-      </header>
-
-      {/* Main Container: Floating Dock + Content */}
-      <div className="mx-auto flex min-h-[calc(100vh-64px)] w-full max-w-[1556px]">
-        <DashboardSidebar role={role} onNavigate={path => router.push(`${path}?category=${initialCategory}`)} />
-
-        {/* Content */}
-        <div className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-4">
-          <div className="mx-auto max-w-[1300px]">
+  return <div className="w-full">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="text-xs text-[#a4a7ac] flex items-center gap-1.5">
@@ -222,8 +193,4 @@ export default function InventoryManagement({ role, initialCategory = 'toko', bu
               </section>
             </div>
           </div>
-        </div>
-      </div>
-    </main>
-  )
 }
