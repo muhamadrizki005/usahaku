@@ -1,11 +1,9 @@
 'use client'
-import { DashboardBrand, DashboardSidebar, DashboardMobileMenu, dashboardItemsForRole } from '@/components/dashboard-chrome'
 import { productSkuPrefix } from '@/lib/product-sku'
 import { saveCatalogProduct, bulkCatalogProducts } from '@/app/catalog-actions'
 import { productCategories, formatQuantity, type CatalogProduct, type CatalogResult } from '@/lib/catalog'
 import type { Role } from '@/lib/auth/permissions'
 import type { Business } from '@/lib/validation'
-import { BusinessLogo } from '@/components/business-logo'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -19,7 +17,7 @@ const money = (value: number) => `Rp${value.toLocaleString('id-ID')}`
 
 export default function ProductManagement({ role, initialCategory = 'toko', business, initialProducts }: { role: Role; initialCategory?: Category; business: Business; initialProducts: Product[] }) {
   const router = useRouter(); const fileRef = useRef<HTMLInputElement>(null)
-  const [category] = useState(initialCategory); const [products, setProducts] = useState<Product[]>(initialProducts); const [query, setQuery] = useState(''); const [filterCategory, setFilterCategory] = useState('Semua kategori'); const [filterStatus, setFilterStatus] = useState('Semua status'); const [selected, setSelected] = useState<string[]>([]); const [editor, setEditor] = useState<Product | null | false>(false); const [notice, setNotice] = useState('')
+  const [products, setProducts] = useState<Product[]>(initialProducts); const [query, setQuery] = useState(''); const [filterCategory, setFilterCategory] = useState('Semua kategori'); const [filterStatus, setFilterStatus] = useState('Semua status'); const [selected, setSelected] = useState<string[]>([]); const [editor, setEditor] = useState<Product | null | false>(false); const [notice, setNotice] = useState('')
   useEffect(()=>setProducts(initialProducts),[initialProducts])
   const [bulkPending,setBulkPending]=useState(false)
   const [page,setPage]=useState(1)
@@ -31,33 +29,7 @@ export default function ProductManagement({ role, initialCategory = 'toko', busi
   const bulkStatus=(active:boolean)=>bulk(active,null)
   const bulkCategory=()=>{const next=window.prompt('Masukkan kategori baru');if(next?.trim())void bulk(null,next.trim())}
   const openNew = () => setEditor({ id: crypto.randomUUID(), name: '', category: '', price: 0, stock: 0, unit: 'pcs', minStock: 0, sku: '', barcode: '', active: true, revision: 0, stockRevision: 0 })
-  const nav = (label: string) => { const routes: Record<string, string> = { 'Ringkasan': '/dashboard', 'Produk': '/dashboard/products', 'Inventori': '/dashboard/inventory', 'Kasir (POS)': '/dashboard/pos', 'Transaksi': '/dashboard/transactions', 'Pelanggan': '/dashboard/customers', 'Poin loyalitas': '/dashboard/loyalty', 'Laporan': '/dashboard/reports', 'Asisten Bisnis AI': '/dashboard/assistant', 'Pengaturan': '/dashboard/settings' }; if (routes[label]) router.push(`${routes[label]}?category=${category}`); else setNotice(`${label} akan tersedia setelah modulnya diaktifkan.`) }
-  return (
-    <main className="min-h-screen bg-[#1c222e] text-[#ffffff]">
-      {/* Top Header Bar */}
-      <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between bg-[#1c222e]/95 px-4 sm:px-6 backdrop-blur-md">
-        <DashboardBrand onHome={() => router.push('/dashboard')} contentMax={1400} />
-
-        {/* Right Header Status */}
-        <div className="flex items-center gap-2.5 sm:gap-3 lg:ml-auto">
-          <div className="hidden sm:flex items-center gap-2 rounded-full border border-[#454d5b]/70 bg-[#273242]/80 px-3 py-1 text-xs text-[#c5cbd5] shadow-xs">
-            <span className="size-1.5 rounded-full bg-[#24cbc5] animate-pulse" />
-            <span className="max-w-28 truncate font-medium text-white">{businessName}</span>
-          </div>
-          <div className="grid size-9 place-items-center rounded-full bg-[#1835d9] text-xs font-bold text-white shadow-xs">
-            {businessName[0]}
-          </div>
-          <DashboardMobileMenu role={role} onNavigate={path => router.push(`${path}?category=${category}`)} />
-        </div>
-      </header>
-
-      {/* Main Container: Floating Dock + Content */}
-      <div className="mx-auto flex min-h-[calc(100vh-64px)] w-full max-w-[1656px]">
-        <DashboardSidebar role={role} onNavigate={path => router.push(`${path}?category=${category}`)} />
-
-        {/* Content */}
-        <div className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-4">
-          <div className="mx-auto max-w-[1400px]">
+  return <div className="w-full">
             <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
               <div>
                 <p className="text-xs text-[#a4a7ac] flex items-center gap-1.5">
@@ -208,10 +180,6 @@ export default function ProductManagement({ role, initialCategory = 'toko', busi
               />
             )}
           </div>
-        </div>
-      </div>
-    </main>
-  )
 }
 
 function ProductEditor({ product, fileRef, onCancel, onSave }: { product: Product | null; fileRef: React.RefObject<HTMLInputElement | null>; onCancel: () => void; onSave: (product: Product,file:File|null,key:string,imageAction:string) => Promise<CatalogResult> }) { const [draft,setDraft]=useState(product!); const [customCategory,setCustomCategory]=useState(Boolean(product?.category&&!productCategories.includes(product.category))); const [error,setError]=useState('');const [pending,setPending]=useState(false);const [file,setFile]=useState<File|null>(null);const [imageAction,setImageAction]=useState('keep');const [operationId]=useState(()=>crypto.randomUUID()); const isNew=!product?.name; const update=(key:keyof Product,value:string|number|boolean)=>setDraft({...draft,[key]:value}); const removeImage=()=>{update('image','');setFile(null);setImageAction('remove');if(fileRef.current)fileRef.current.value=''}; const handleFile=(file?:File)=>{if(!file)return;if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>2*1024*1024)return setError('Gunakan PNG/JPG/WebP maksimal 2 MB.');setFile(file);setImageAction('replace');setError('');const reader=new FileReader();reader.onload=()=>update('image',String(reader.result));reader.readAsDataURL(file)}; const save=async()=>{if(pending)return;if(!draft.name.trim()||!draft.category.trim()||!draft.unit.trim())return setError('Nama, kategori, dan unit stok wajib diisi.');setPending(true);setError('');try{const result=await onSave(draft,file,operationId,imageAction);if(result.error)setError(result.error)}catch{setError('Status penyimpanan belum pasti. Muat ulang untuk memeriksa.')}finally{setPending(false)}}; return <section className="mt-5 rounded-2xl border border-[#454d5b] bg-[#273242] p-5 shadow-sm"><div className="flex items-start justify-between gap-3"><div><h2 className="text-lg font-semibold">{isNew?'Tambah produk':'Ubah produk'}</h2><p className="mt-1 text-sm text-[#a4a7ac]">Lengkapi informasi katalog dan pengaturan penjualan.</p></div><button onClick={onCancel} aria-label="Tutup editor"><X /></button></div><div className="mt-5 grid gap-6 lg:grid-cols-2"><div className="flex flex-col gap-4"><h3 className="font-semibold">Informasi produk</h3><div className="relative flex min-h-32 flex-col items-center justify-center rounded-xl border border-dashed border-[#99f6e4] bg-[#24cbc5]/10 p-4">{draft.image?<><img src={draft.image} alt="Preview produk" className="size-20 rounded-xl object-cover"/><button onClick={removeImage} aria-label="Hapus gambar produk" className="absolute right-3 top-3 grid size-7 place-items-center rounded-full border border-[#454d5b] bg-[#273242] text-[#a4a7ac] hover:text-[#ffb4ae]"><X /></button></>:<p className="text-sm text-[#a4a7ac]">Unggah gambar produk</p>}<label className="mt-3 inline-flex cursor-pointer items-center rounded-lg border border-[#99f6e4] bg-[#273242] px-3 py-2 text-xs font-semibold text-[#24cbc5] hover:bg-[#24cbc5]/10">Pilih gambar<input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" aria-label="Pilih gambar produk" onChange={e=>handleFile(e.target.files?.[0])} className="sr-only" /></label></div><label className="text-sm font-medium">Nama produk *<input value={draft.name} onChange={e=>update('name',e.target.value)} className="mt-1 w-full rounded-lg border border-[#454d5b] px-3 py-2.5" /></label><div className="space-y-3"><label className="text-sm font-medium">Kategori *<select aria-label="Kategori *" value={customCategory?'Lainnya':draft.category} onChange={e=>{const custom=e.target.value==='Lainnya';setCustomCategory(custom);update('category',custom?'':e.target.value)}} className="mt-1 w-full rounded-lg border border-[#454d5b] bg-[#273242] px-3 py-2.5"><option value="" disabled>Pilih kategori</option>{productCategories.map(value=><option key={value} value={value}>{value}</option>)}<option value="Lainnya">Lainnya</option></select></label>{customCategory&&<label className="block text-sm font-medium">Kategori lainnya *<input maxLength={100} value={draft.category} onChange={e=>update('category',e.target.value)} className="mt-1 w-full rounded-lg border border-[#454d5b] px-3 py-2.5" /></label>}</div><label className="text-sm font-medium">Unit stok *<input value={draft.unit} disabled={!isNew} title="Satuan tetap setelah produk dibuat" onChange={e=>update('unit',e.target.value)} className="mt-1 w-full rounded-lg border border-[#454d5b] px-3 py-2.5" /></label><div className="grid gap-4 sm:grid-cols-2"><div><label className="text-sm font-medium">SKU<input aria-label="SKU" aria-describedby="product-sku-help" maxLength={64} placeholder={isNew?`${productSkuPrefix(draft.category,draft.name)}001`:product?.sku} value={draft.sku} onChange={e=>update('sku',e.target.value)} className="mt-1 w-full rounded-lg border border-[#454d5b] px-3 py-2.5" /></label><p id="product-sku-help" className="mt-1 text-xs text-[#a4a7ac]">{isNew?'Kosongkan untuk SKU otomatis. Nomor ditetapkan saat disimpan; dapat diisi sendiri.':'Kosongkan untuk mempertahankan SKU saat ini.'}</p></div><label className="text-sm font-medium">Barcode<input value={draft.barcode} onChange={e=>update('barcode',e.target.value)} className="mt-1 w-full rounded-lg border border-[#454d5b] px-3 py-2.5" /></label></div></div><div className="flex flex-col gap-4"><h3 className="font-semibold">Harga & pengaturan penjualan</h3><label className="text-sm font-medium">Harga jual *<input type="number" min="0" value={draft.price} onChange={e=>update('price',Number(e.target.value))} className="mt-1 w-full rounded-lg border border-[#454d5b] px-3 py-2.5" /></label><label className="text-sm font-medium">Stok fisik<input type="number" min="0" step="0.001" disabled={!isNew} title="Ubah stok melalui inventori dengan alasan" value={draft.stock} onChange={e=>update('stock',Number(e.target.value))} className="mt-1 w-full rounded-lg border border-[#454d5b] px-3 py-2.5" /></label><label className="text-sm font-medium">Minimum stok *<input type="number" min="0" step="0.001" value={draft.minStock} onChange={e=>update('minStock',Number(e.target.value))} className="mt-1 w-full rounded-lg border border-[#454d5b] px-3 py-2.5" /></label><label className="text-sm font-medium">Status produk<select value={draft.active?'Aktif':'Nonaktif'} onChange={e=>update('active',e.target.value==='Aktif')} className="mt-1 w-full rounded-lg border border-[#454d5b] bg-[#273242] px-3 py-2.5"><option>Aktif</option><option>Nonaktif</option></select></label><div className="rounded-xl bg-[#24cbc5]/10 p-4 text-sm text-[#24cbc5]">{draft.active?'Produk aktif dan tersedia untuk ditampilkan di kasir.':'Produk nonaktif tidak muncul di kasir, tetapi riwayat transaksi dan stok fisiknya tetap dipertahankan.'}</div></div></div>{error&&<p className="mt-4 rounded-lg bg-[#4a252b] p-3 text-sm text-[#ffb4ae]">{error}</p>}<div className="mt-6 flex justify-end gap-2"><button onClick={onCancel} className="rounded-xl border border-[#454d5b] px-4 py-2.5 text-sm font-semibold">Batal</button><button disabled={pending} onClick={save} className="rounded-xl bg-[#1835d9] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#132c9e]">{isNew?'Simpan produk':'Simpan perubahan'}</button></div></section> }
