@@ -137,8 +137,6 @@ Dashboard boleh menggunakan ambient gradient background yang lembut untuk menamb
 - Pastikan background tetap konsisten dan responsif di desktop, tablet, serta mobile.
 
 **Prinsip utama:** Ambient gradient memperkaya latar navy, bukan menggantikan palet utama Usahaku. Intensitas, posisi, dan perpaduan warnanya harus ditentukan berdasarkan komposisi layout serta kontras visual, bukan meniru warna referensi secara literal.
-<<<<<<< HEAD
-
 =======
 >>>>>>> bff74af8c73e257329988f5819cd9da374ba93ce
 ### Perilaku tema pada implementasi saat ini
