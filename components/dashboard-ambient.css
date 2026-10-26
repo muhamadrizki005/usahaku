@@ -1,0 +1,55 @@
+.dashboard-ambient {
+  --dashboard-glow-teal-size: 68rem 48rem;
+  --dashboard-glow-teal-position: -12rem -8rem;
+  --dashboard-glow-teal-core: 0.48;
+  --dashboard-glow-teal-mid: 0.30;
+  --dashboard-glow-teal-edge: 0.12;
+  --dashboard-glow-blue-size: 70rem 52rem;
+  --dashboard-glow-blue-position: 108% 38rem;
+  --dashboard-glow-blue-core: 0.20;
+  --dashboard-ambient-image:
+    radial-gradient(
+      ellipse var(--dashboard-glow-teal-size) at var(--dashboard-glow-teal-position),
+      rgb(36 203 197 / var(--dashboard-glow-teal-core)) 0%,
+      rgb(36 203 197 / var(--dashboard-glow-teal-mid)) 26%,
+      rgb(36 203 197 / var(--dashboard-glow-teal-edge)) 52%,
+      rgb(36 203 197 / 0) 78%
+    ),
+    radial-gradient(
+      ellipse var(--dashboard-glow-blue-size) at var(--dashboard-glow-blue-position),
+      rgb(24 53 217 / var(--dashboard-glow-blue-core)) 0%,
+      rgb(24 53 217 / 0.085) 44%,
+      rgb(24 53 217 / 0) 78%
+    );
+  min-height: 100dvh;
+  background-color: #1c222e;
+}
+
+.dashboard-ambient > main {
+  background-image: var(--dashboard-ambient-image);
+  background-repeat: no-repeat;
+}
+
+@media (max-width: 767px) {
+  .dashboard-ambient {
+    --dashboard-glow-teal-size: 36rem 40rem;
+    --dashboard-glow-teal-position: -8rem -5rem;
+    --dashboard-glow-teal-core: 0.36;
+    --dashboard-glow-teal-mid: 0.24;
+    --dashboard-glow-teal-edge: 0.09;
+    --dashboard-glow-blue-size: 36rem 46rem;
+    --dashboard-glow-blue-position: 132% 38rem;
+    --dashboard-glow-blue-core: 0.16;
+  }
+}
+
+@media print {
+  .dashboard-ambient {
+    background-color: white;
+  }
+
+  .dashboard-ambient > main {
+    background-color: transparent;
+    background-image: none;
+  }
+}

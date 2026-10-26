@@ -109,6 +109,38 @@ Gunakan hanya untuk area yang sengaja memerlukan permukaan terang, seperti ilust
 - Warna status harus konsisten: sukses/aktif = teal, peringatan = amber, error = merah, informasi/aksi pilihan = biru.
 - Hindari teks abu-abu muda di atas latar putih atau teks navy gelap di atas card gelap.
 
+### Ambient gradient background (dashboard)
+
+Dashboard boleh menggunakan ambient gradient background yang lembut untuk menambahkan kedalaman visual tanpa mengubah identitas warna utama Usahaku.
+
+**Tujuan visual**
+- Mengadaptasi prinsip gradasi atmosferik dari referensi dashboard Rapport, bukan menyalin warna aslinya.
+- Mempertahankan navy sebagai warna dominan dan menjaga tampilan tetap modern, minimalis, profesional, serta nyaman dilihat.
+- Membuat latar terasa lebih hidup tanpa mengurangi keterbacaan konten dashboard.
+
+**Aturan warna**
+- Gunakan `surface.page` (`#1C222E`) sebagai warna dasar.
+- Gunakan turquoise `#24CBC5` sebagai ambient glow dengan opacity rendah.
+- Biru `#1835D9` boleh digunakan sebagai ambient glow sekunder dengan opacity rendah.
+- Turunkan intensitas glow menggunakan transparansi hingga menyatu secara halus dengan warna dasar.
+- Jangan memperkenalkan warna brand baru hanya untuk menghasilkan efek gradasi.
+- Jangan mengubah token warna dasar, panel, teks, atau aksi utama yang sudah ditetapkan.
+
+**Aturan implementasi**
+- Gunakan kombinasi `radial-gradient()` dan warna dasar navy apabila sesuai dengan layout.
+- Tempatkan glow secara strategis, misalnya di area kiri atas dan kanan bawah, dengan ukuran besar dan transisi transparan yang lembut.
+- Gradient merupakan lapisan dekoratif pada background halaman, bukan pengganti warna panel/card.
+- Pertahankan warna panel `#273242` dan `#303640`, border halus, serta kontras teks sesuai token yang berlaku.
+- Hindari gradient yang terlalu terang, saturasi berlebihan, transisi warna yang terlihat keras, atau efek neon.
+- Jangan menerapkan gradient secara otomatis ke setiap card, tabel, modal, input, dan komponen navigasi.
+- Pastikan teks, grafik, angka finansial, dan kontrol interaktif tetap mudah dibaca.
+- Pastikan background tetap konsisten dan responsif di desktop, tablet, serta mobile.
+
+**Prinsip utama:** Ambient gradient memperkaya latar navy, bukan menggantikan palet utama Usahaku. Intensitas, posisi, dan perpaduan warnanya harus ditentukan berdasarkan komposisi layout serta kontras visual, bukan meniru warna referensi secara literal.
+<<<<<<< HEAD
+
+=======
+>>>>>>> bff74af8c73e257329988f5819cd9da374ba93ce
 ### Perilaku tema pada implementasi saat ini
 
 Palet target mengikuti warna eksplisit landing pada screenshot, bukan palet grayscale bawaan perangkat. Kode saat ini masih memiliki aturan `.dark` dan `prefers-color-scheme`; revisi dokumen ini tidak mengubah aturan tersebut. Jika nanti palet diterapkan, bedakan target desain dari perilaku tema yang masih ada dan jangan membiarkan token otomatis mengganti navy/turquoise/biru menjadi grayscale.

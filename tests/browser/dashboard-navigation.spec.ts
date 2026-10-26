@@ -52,7 +52,8 @@ test('Urbanist actually renders globally and dashboard chrome aligns on desktop,
       await expect(nav.getByRole('button')).toHaveText(menuLabels)
       await expect(nav.locator('.lucide-search, .lucide-plus, .lucide-moon')).toHaveCount(0)
       const borderRadius = await nav.locator('..').evaluate(el => Number.parseFloat(getComputedStyle(el).borderRadius))
-      expect(borderRadius).toBe(20)
+      expect(borderRadius).toBe(16)
+      expect((await nav.locator('..').boundingBox())!.width).toBe(216)
       const brandBox = (await brand.boundingBox())!, titleBox = (await page.getByRole('heading', { level: 1 }).boundingBox())!
       expect(Math.abs(brandBox.x - titleBox.x)).toBeLessThan(1)
       const sidebarBox = (await nav.locator('..').boundingBox())!
@@ -119,24 +120,36 @@ test('owner and admin navigation stays scoped across dashboard modules with the 
     results.push('Urbanist renders in all four onboarding pages')
     ok(await client.rpc('complete_business_onboarding', { target_id: businessId }))
     await page.goto('/dashboard')
-    for (const [label, path] of [['Produk', '/dashboard/products'], ['Inventori', '/dashboard/inventory'], ['Pelanggan', '/dashboard/customers'], ['Transaksi', '/dashboard/transactions'], ['Laporan', '/dashboard/reports'], ['Asisten Bisnis AI', '/dashboard/assistant']]) {
+    await page.getByRole('navigation', { name: 'Navigasi dashboard', exact: true }).evaluate(el => el.setAttribute('data-shell-persistence-probe', 'true'))
+    const initialSidebar = (await page.getByRole('navigation', { name: 'Navigasi dashboard', exact: true }).locator('..').boundingBox())!
+    for (const [label, path] of [['Produk', '/dashboard/products'], ['Inventori', '/dashboard/inventory'], ['Pelanggan', '/dashboard/customers'], ['Transaksi', '/dashboard/transactions'], ['Kasir (POS)', '/dashboard/pos'], ['Pengaturan', '/dashboard/settings'], ['Laporan', '/dashboard/reports'], ['Asisten Bisnis AI', '/dashboard/assistant']]) {
       const nav = page.getByRole('navigation', { name: 'Navigasi dashboard', exact: true })
       await nav.getByRole('button', { name: label, exact: true }).click()
       await expect(page).toHaveURL(new RegExp(path + '(\\?|$)'))
       await checkFont(page)
+      const sharedNav = page.getByRole('navigation', { name: 'Navigasi dashboard', exact: true })
+      await expect(sharedNav).toHaveAttribute('data-shell-persistence-probe', 'true')
+      await expect(sharedNav.getByRole('button', { name: label, exact: true })).toHaveAttribute('aria-current', 'page')
+      const sidebar = (await sharedNav.locator('..').boundingBox())!
+      expect(sidebar.x).toBe(initialSidebar.x)
+      expect(sidebar.width).toBe(216)
+      expect(await sharedNav.locator('..').evaluate(el => getComputedStyle(el).borderRadius)).toBe('16px')
       await expect(page.locator('header').getByRole('navigation')).toHaveCount(0)
       await expect(page.getByRole('navigation', { name: 'Navigasi dashboard', exact: true }).getByRole('button')).toHaveText(menuLabels)
       results.push(label + ': sidebar route, labels and Urbanist verified')
     }
-    for (const path of ['/dashboard/products', '/dashboard/inventory', '/dashboard/customers']) {
+    for (const path of ['/dashboard', '/dashboard/products', '/dashboard/inventory', '/dashboard/pos', '/dashboard/transactions', '/dashboard/customers', '/dashboard/reports', '/dashboard/assistant', '/dashboard/settings', '/dashboard/settings/staff']) {
       await page.setViewportSize({ width: 390, height: 844 })
       await page.goto(path)
       await page.getByRole('button', { name: 'Buka navigasi', exact: true }).click()
       const nav = page.getByRole('navigation', { name: 'Navigasi dashboard mobile', exact: true })
       await expect(nav.getByRole('button')).toHaveText(menuLabels)
-      if (path !== '/dashboard/customers') {
+      expect(await page.evaluate(() => getComputedStyle(document.body).overflow)).toBe('hidden')
+      expect((await page.getByRole('dialog', { name: 'Menu dashboard', exact: true }).boundingBox())!.width).toBe(288)
+      {
         await page.keyboard.press('Escape')
         await expect(nav).toHaveCount(0)
+        expect(await page.evaluate(() => getComputedStyle(document.body).overflow)).not.toBe('hidden')
         await expect(page.getByRole('button', { name: 'Buka navigasi', exact: true })).toBeFocused()
         await page.getByRole('button', { name: 'Buka navigasi', exact: true }).click()
       }
