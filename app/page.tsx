@@ -29,6 +29,16 @@ export default function LandingPage() {
   const [legalModal, setLegalModal] = useState<LegalModalType>(null)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
+  const handleAnchorClick = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
+    const targetElement = document.getElementById(targetId)
+    if (targetElement) {
+      e.preventDefault()
+      const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      targetElement.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth' })
+      window.history.pushState(null, '', `#${targetId}`)
+    }
+  }
+
   return (
     <main className="landing-page min-h-screen overflow-x-clip bg-background text-foreground">
       {/* Floating Fully Rounded Pill Navbar with Fade In */}
@@ -38,7 +48,7 @@ export default function LandingPage() {
         transition={{ duration: 0.6, ease: 'easeOut' }}
         className="fixed top-4 sm:top-6 inset-x-0 z-50 flex justify-center px-4 pointer-events-none"
       >
-        <div className="relative pointer-events-auto flex items-center justify-between w-full max-w-4xl lg:max-w-5xl rounded-full border border-white/15 bg-black/90 px-4 py-2 sm:px-6 sm:py-2.5 shadow-2xl backdrop-blur-xl">
+        <div className="relative pointer-events-auto flex items-center justify-between w-full max-w-4xl lg:max-w-5xl rounded-full border border-white/0 bg-black/35 px-4 py-2 sm:px-6 sm:py-2.5 shadow-2xl backdrop-blur-xl">
           {/* Logo */}
           <Link href="/" aria-label="Usahaku beranda" className="flex items-center gap-2">
             <UsahakuLogo wordmarkClassName="text-white" />
@@ -46,13 +56,13 @@ export default function LandingPage() {
 
           {/* Center Navigation Links (Desktop/Laptop) */}
           <nav className="hidden md:flex items-center gap-6 lg:gap-8 text-xs lg:text-sm font-medium text-white/70" aria-label="Navigasi utama">
-            <a href="#kategori-usaha" className="transition-colors hover:text-white">
+            <a href="#kategori-usaha" onClick={(e) => handleAnchorClick(e, 'kategori-usaha')} className="transition-colors hover:text-white">
               Kategori Usaha
             </a>
-            <a href="#fitur" className="transition-colors hover:text-white">
+            <a href="#fitur" onClick={(e) => handleAnchorClick(e, 'fitur')} className="transition-colors hover:text-white">
               Fitur
             </a>
-            <a href="#cara-memulai" className="transition-colors hover:text-white">
+            <a href="#cara-memulai" onClick={(e) => handleAnchorClick(e, 'cara-memulai')} className="transition-colors hover:text-white">
               Cara Memulai
             </a>
           </nav>
@@ -100,26 +110,35 @@ export default function LandingPage() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -8, scale: 0.96 }}
                 transition={{ duration: 0.2, ease: 'easeOut' }}
-                className="absolute top-full left-0 right-0 mt-3 w-full rounded-3xl border border-white/15 bg-black/95 p-5 shadow-2xl backdrop-blur-2xl text-white"
+                className="absolute top-full left-0 right-0 mt-3 w-full rounded-3xl border border-white/15 bg-black/80 p-5 shadow-2xl backdrop-blur-2xl text-white"
               >
                 <div className="flex flex-col gap-2">
                   <a
                     href="#kategori-usaha"
-                    onClick={() => setMobileNavOpen(false)}
+                    onClick={(e) => {
+                      setMobileNavOpen(false)
+                      handleAnchorClick(e, 'kategori-usaha')
+                    }}
                     className="rounded-xl px-4 py-2.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                   >
                     Kategori Usaha
                   </a>
                   <a
                     href="#fitur"
-                    onClick={() => setMobileNavOpen(false)}
+                    onClick={(e) => {
+                      setMobileNavOpen(false)
+                      handleAnchorClick(e, 'fitur')
+                    }}
                     className="rounded-xl px-4 py-2.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                   >
                     Fitur
                   </a>
                   <a
                     href="#cara-memulai"
-                    onClick={() => setMobileNavOpen(false)}
+                    onClick={(e) => {
+                      setMobileNavOpen(false)
+                      handleAnchorClick(e, 'cara-memulai')
+                    }}
                     className="rounded-xl px-4 py-2.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                   >
                     Cara Memulai
@@ -199,10 +218,10 @@ export default function LandingPage() {
             <p className="mt-7 text-lg leading-8 text-white/75">Satu platform untuk mengelola usaha, pelanggan, dan pertumbuhan bisnis.</p>
             <p className="mt-4 max-w-xl leading-7 text-white/60">Dari kasir toko hingga janji temu salon, Usahaku menyesuaikan modul operasional dengan kategori usaha Anda.</p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <Link href="/signup" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#1835d9] px-5 py-3.5 font-semibold text-white">
+              <Link href="/signup" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#1835d9] px-5 py-3.5 font-semibold text-white transition-colors duration-200 hover:bg-[#132c9e]">
                 Mulai Sekarang <ArrowRight aria-hidden="true" />
               </Link>
-              <a href="#fitur" className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/10 px-5 py-3.5 font-semibold text-white">
+              <a href="#fitur" onClick={(e) => handleAnchorClick(e, 'fitur')} className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/10 px-5 py-3.5 font-semibold text-white transition-colors duration-200 hover:border-white/35 hover:bg-white/[0.18]">
                 Jelajahi Fitur
               </a>
             </div>
@@ -293,13 +312,13 @@ export default function LandingPage() {
                         <div className="rounded-lg border border-[#dfe6f0] bg-white p-3">
                           <p className="text-[10px] text-[#667085]">Omzet hari ini</p>
                           <p className="mt-1 text-lg font-medium text-[#1c222e]">
-                            Rp<NumberTicker value={2450000} className="text-lg font-medium text-[#1c222e] dark:text-[#1c222e]" />
+                            Rp<NumberTicker value={2450000} loop className="text-lg font-medium text-[#1c222e] dark:text-[#1c222e]" />
                           </p>
                         </div>
                         <div className="rounded-lg border border-[#dfe6f0] bg-white p-3">
                           <p className="text-[10px] text-[#667085]">Transaksi hari ini</p>
                           <p className="mt-1 text-lg font-medium text-[#1c222e]">
-                            <NumberTicker value={38} className="text-lg font-medium text-[#1c222e] dark:text-[#1c222e]" />
+                            <NumberTicker value={38} loop className="text-lg font-medium text-[#1c222e] dark:text-[#1c222e]" />
                           </p>
                         </div>
                       </div>
@@ -399,7 +418,7 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <a href="#fitur" className="mt-7 inline-flex items-center gap-2 text-sm font-semibold text-accent hover:underline">
+              <a href="#fitur" onClick={(e) => handleAnchorClick(e, 'fitur')} className="mt-7 inline-flex items-center gap-2 text-sm font-semibold text-accent hover:underline">
                 {link} <ArrowRight aria-hidden="true" />
               </a>
             </motion.article>
@@ -575,7 +594,7 @@ export default function LandingPage() {
       >
         <h2 className="text-4xl font-semibold">Usaha Anda, lebih tertata.<br />Mulai dari satu langkah hari ini.</h2>
         <p className="mx-auto mt-5 max-w-xl text-muted-foreground">Buat akun pemilik dan bangun ruang kerja yang sesuai usaha Anda.</p>
-        <Link href="/signup" className="mt-8 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3.5 font-semibold text-primary-foreground">
+        <Link href="/signup" className="mt-8 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3.5 font-semibold text-primary-foreground transition-colors duration-200 hover:bg-[#132c9e]">
           Mulai Sekarang <ArrowRight aria-hidden="true" />
         </Link>
         <p className="mt-5 text-sm text-muted-foreground">Sudah punya akun? <Link href="/login" className="font-semibold text-accent hover:underline">Masuk</Link></p>
@@ -621,9 +640,9 @@ export default function LandingPage() {
           <div>
             <p className="font-semibold">Platform</p>
             <div className="mt-4 flex flex-col gap-3 text-sm text-white/60">
-              <a href="#kategori-usaha">Kategori Usaha</a>
-              <a href="#fitur">Fitur</a>
-              <a href="#cara-memulai">Cara Memulai</a>
+              <a href="#kategori-usaha" onClick={(e) => handleAnchorClick(e, 'kategori-usaha')} className="transition-colors hover:text-white">Kategori Usaha</a>
+              <a href="#fitur" onClick={(e) => handleAnchorClick(e, 'fitur')} className="transition-colors hover:text-white">Fitur</a>
+              <a href="#cara-memulai" onClick={(e) => handleAnchorClick(e, 'cara-memulai')} className="transition-colors hover:text-white">Cara Memulai</a>
             </div>
           </div>
           <div>

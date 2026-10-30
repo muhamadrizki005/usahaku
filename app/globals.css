@@ -20,6 +20,16 @@
   font-display: swap;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 .landing-page section[id] {
   scroll-margin-top: 6rem;
 }
