@@ -49,7 +49,7 @@ export function LegalModal({ type, onClose, onSwitchType }: LegalModalProps) {
               {isPrivacy ? <ShieldCheck className="size-5" /> : <FileText className="size-5" />}
             </div>
             <div>
-              <h2 id="legal-modal-title" className="text-lg font-semibold tracking-tight text-white">
+              <h2 id="legal-modal-title" className="text-lg font-normal tracking-tight text-white">
                 {isPrivacy ? 'Kebijakan Privasi' : 'Syarat & Ketentuan Penggunaan'}
               </h2>
               <p className="text-xs text-[#a4a7ac]">Platform Usahaku • Berlaku mulai Oktober 2026</p>
@@ -71,7 +71,7 @@ export function LegalModal({ type, onClose, onSwitchType }: LegalModalProps) {
             <button
               type="button"
               onClick={() => onSwitchType('privacy')}
-              className={`border-b-2 px-4 py-2.5 text-xs font-semibold transition-colors ${
+              className={`border-b-2 px-4 py-2.5 text-xs font-normal transition-colors ${
                 isPrivacy
                   ? 'border-[#1835d9] text-white'
                   : 'border-transparent text-[#a4a7ac] hover:text-white'
@@ -82,7 +82,7 @@ export function LegalModal({ type, onClose, onSwitchType }: LegalModalProps) {
             <button
               type="button"
               onClick={() => onSwitchType('terms')}
-              className={`border-b-2 px-4 py-2.5 text-xs font-semibold transition-colors ${
+              className={`border-b-2 px-4 py-2.5 text-xs font-normal transition-colors ${
                 !isPrivacy
                   ? 'border-[#1835d9] text-white'
                   : 'border-transparent text-[#a4a7ac] hover:text-white'
@@ -98,11 +98,11 @@ export function LegalModal({ type, onClose, onSwitchType }: LegalModalProps) {
           {isPrivacy ? (
             <>
               <section className="rounded-xl border border-white/5 bg-[#273242]/60 p-4 text-xs text-[#a4a7ac]">
-                Kebijakan Privasi ini mengatur bagaimana platform <span className="font-semibold text-white">Usahaku</span> mengumpulkan, memproses, menyimpan, dan menjaga kerahasiaan data pribadi pemilik usaha, operasional usaha, dan pelanggan Anda.
+                Kebijakan Privasi ini mengatur bagaimana platform <span className="font-normal text-white">Usahaku</span> mengumpulkan, memproses, menyimpan, dan menjaga kerahasiaan data pribadi pemilik usaha, operasional usaha, dan pelanggan Anda.
               </section>
 
               <div>
-                <h3 className="font-semibold text-white text-base">1. Informasi yang Kami Kumpulkan</h3>
+                <h3 className="font-normal text-white text-base">1. Informasi yang Kami Kumpulkan</h3>
                 <p className="mt-1.5">
                   Untuk mendukung kelancaran operasional usaha Anda di platform Usahaku, kami mengumpulkan:
                 </p>
@@ -116,7 +116,7 @@ export function LegalModal({ type, onClose, onSwitchType }: LegalModalProps) {
               </div>
 
               <div>
-                <h3 className="font-semibold text-white text-base">2. Penggunaan & Pemrosesan Data</h3>
+                <h3 className="font-normal text-white text-base">2. Penggunaan & Pemrosesan Data</h3>
                 <p className="mt-1.5">Data yang dikumpulkan dimanfaatkan secara eksklusif untuk:</p>
                 <ul className="mt-2 list-disc pl-5 space-y-1 text-xs sm:text-sm">
                   <li>Memvalidasi pendaftaran dan keamanan akun melalui pengiriman kode OTP email.</li>
@@ -127,21 +127,21 @@ export function LegalModal({ type, onClose, onSwitchType }: LegalModalProps) {
               </div>
 
               <div>
-                <h3 className="font-semibold text-white text-base">3. Keamanan & Enkripsi Data</h3>
+                <h3 className="font-normal text-white text-base">3. Keamanan & Enkripsi Data</h3>
                 <p className="mt-1.5">
                   Kami menerapkan langkah pengamanan berstandar industri dengan teknologi Row-Level Security (RLS) pada basis data terenkripsi. Kata sandi akun tidak pernah disimpan secara terbuka. Akses staf (Admin/Kasir) diatur ketat oleh pemilik usaha sehingga tidak dapat mengakses area di luar kewenangannya.
                 </p>
               </div>
 
               <div>
-                <h3 className="font-semibold text-white text-base">4. Kerahasiaan & Pihak Ketiga</h3>
+                <h3 className="font-normal text-white text-base">4. Kerahasiaan & Pihak Ketiga</h3>
                 <p className="mt-1.5">
                   Usahaku menjunjung tinggi kerahasiaan bisnis Anda. Kami <strong className="text-white">tidak pernah menjual atau menyewakan</strong> data bisnis atau data pelanggan Anda kepada pihak ketiga. Pembagian data ke pihak ketiga hanya dilakukan untuk layanan infrastruktur inti (seperti otentikasi Google atau penyedia pengiriman email OTP).
                 </p>
               </div>
 
               <div>
-                <h3 className="font-semibold text-white text-base">5. Hak Pemilik Usaha</h3>
+                <h3 className="font-normal text-white text-base">5. Hak Pemilik Usaha</h3>
                 <p className="mt-1.5">
                   Anda memiliki hak penuh untuk mengunduh/mengekspor data katalog produk Anda (CSV), memperbarui profil usaha, mencabut akses staf, atau mengajukan permohonan penutupan akun beserta penghapusan data secara permanen.
                 </p>
@@ -150,11 +150,11 @@ export function LegalModal({ type, onClose, onSwitchType }: LegalModalProps) {
           ) : (
             <>
               <section className="rounded-xl border border-white/5 bg-[#273242]/60 p-4 text-xs text-[#a4a7ac]">
-                Syarat Penggunaan ini merupakan perjanjian hukum antara Anda (pemilik usaha atau perwakilan yang sah) dengan platform <span className="font-semibold text-white">Usahaku</span>. Dengan menggunakan layanan kami, Anda menyetujui seluruh ketentuan di bawah ini.
+                Syarat Penggunaan ini merupakan perjanjian hukum antara Anda (pemilik usaha atau perwakilan yang sah) dengan platform <span className="font-normal text-white">Usahaku</span>. Dengan menggunakan layanan kami, Anda menyetujui seluruh ketentuan di bawah ini.
               </section>
 
               <div>
-                <h3 className="font-semibold text-white text-base">1. Ketentuan Akun & Tanggung Jawab Pengguna</h3>
+                <h3 className="font-normal text-white text-base">1. Ketentuan Akun & Tanggung Jawab Pengguna</h3>
                 <ul className="mt-2 list-disc pl-5 space-y-1 text-xs sm:text-sm">
                   <li>Pendaftaran akun pemilik mewajibkan informasi yang akurat dan email aktif untuk verifikasi kode OTP.</li>
                   <li>Pemilik usaha bertanggung jawab penuh atas keamanan kata sandi dan seluruh aktivitas yang terjadi pada akunnya.</li>
@@ -163,14 +163,14 @@ export function LegalModal({ type, onClose, onSwitchType }: LegalModalProps) {
               </div>
 
               <div>
-                <h3 className="font-semibold text-white text-base">2. Hak Milik & Kekayaan Intelektual</h3>
+                <h3 className="font-normal text-white text-base">2. Hak Milik & Kekayaan Intelektual</h3>
                 <p className="mt-1.5">
                   Seluruh hak cipta, merek dagang, desain antarmuka, dan kode aplikasi Usahaku adalah hak milik eksklusif platform Usahaku. Sementara itu, seluruh konten, foto produk, merek dagang toko, dan data transaksi yang diunggah pengguna tetap menjadi hak milik sah pengguna/pemilik usaha.
                 </p>
               </div>
 
               <div>
-                <h3 className="font-semibold text-white text-base">3. Larangan Penggunaan</h3>
+                <h3 className="font-normal text-white text-base">3. Larangan Penggunaan</h3>
                 <p className="mt-1.5">Pengguna dilarang keras untuk:</p>
                 <ul className="mt-2 list-disc pl-5 space-y-1 text-xs sm:text-sm">
                   <li>Menggunakan platform Usahaku untuk pencatatan atau penjualan produk/jasa yang dilarang oleh hukum Republik Indonesia.</li>
@@ -180,14 +180,14 @@ export function LegalModal({ type, onClose, onSwitchType }: LegalModalProps) {
               </div>
 
               <div>
-                <h3 className="font-semibold text-white text-base">4. Ketersediaan Layanan & Pembaruan</h3>
+                <h3 className="font-normal text-white text-base">4. Ketersediaan Layanan & Pembaruan</h3>
                 <p className="mt-1.5">
                   Usahaku berkomitmen menjaga ketersediaan layanan sistem kasir dan pencatatan operasional secara optimal. Pemeliharaan berkala atau pembaruan fitur akan dilakukan secara terencana demi menjaga stabilitas dan kecepatan aplikasi.
                 </p>
               </div>
 
               <div>
-                <h3 className="font-semibold text-white text-base">5. Batasan Tanggung Jawab</h3>
+                <h3 className="font-normal text-white text-base">5. Batasan Tanggung Jawab</h3>
                 <p className="mt-1.5">
                   Usahaku bertindak sebagai sarana pembantu operasional usaha (SaaS). Keputusan operasional, penetapan harga jual, pemenuhan pesanan pelanggan, serta kepatuhan pajak usaha tetap menjadi tanggung jawab mandiri pemilik usaha.
                 </p>
@@ -204,7 +204,7 @@ export function LegalModal({ type, onClose, onSwitchType }: LegalModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl bg-[#1835d9] px-5 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-[#132c9e]"
+            className="rounded-xl bg-[#1835d9] px-5 py-2.5 text-xs font-normal text-white transition-colors hover:bg-[#132c9e]"
           >
             Saya Mengerti
           </button>

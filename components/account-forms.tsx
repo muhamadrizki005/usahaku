@@ -50,7 +50,7 @@ function Feedback({ state }: { state: ActionState }) {
           </p>
           <code
             data-testid="temporary-password"
-            className="mt-3 block select-all break-all text-lg font-semibold"
+            className="mt-3 block select-all break-all text-lg font-normal"
           >
             {state.temporaryPassword}
           </code>
@@ -141,7 +141,7 @@ function Submit({
   return (
     <button
       disabled={pending}
-      className={`${appearance === "setup" ? "rounded-lg px-4 py-2.5 text-sm" : "h-12 w-full rounded-xl"} bg-[#1835d9] font-semibold text-white hover:bg-[#132c9e] disabled:cursor-not-allowed disabled:opacity-60`}
+      className={`${appearance === "setup" ? "rounded-lg px-4 py-2.5 text-sm" : "h-12 w-full rounded-xl"} bg-[#1835d9] font-normal text-white hover:bg-[#132c9e] disabled:cursor-not-allowed disabled:opacity-60`}
     >
       {pending ? "Memproses…" : children}
     </button>
@@ -358,7 +358,7 @@ export function StaffForm({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg border px-4 py-2.5 text-sm font-semibold text-[#a4a7ac]"
+            className="rounded-lg border px-4 py-2.5 text-sm font-normal text-[#a4a7ac]"
           >
             Batal
           </button>

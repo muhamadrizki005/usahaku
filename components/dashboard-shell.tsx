@@ -130,10 +130,10 @@ export function DashboardShell({
     <ActivityPublisher.Provider value={setActivity}>
       <main className="h-full max-h-full w-full flex flex-col overflow-hidden text-white bg-transparent">
         {/* Topbar: 3 parts (Kiri, Tengah, Kanan), outside scroll container, non-sticky, non-fixed */}
-        <header className="shrink-0 w-full z-30 print:hidden bg-transparent pt-4 sm:pt-5 pb-4 sm:pb-5 px-4 sm:px-6 lg:px-8">
-          <div className="relative mx-auto flex w-full max-w-[1680px] items-center justify-between gap-4">
+        <header className="shrink-0 w-full z-30 print:hidden bg-transparent pt-4 sm:pt-5 pb-4 sm:pb-5">
+          <div className="relative mx-auto flex w-full max-w-[1680px] items-center justify-between px-4 sm:px-6 lg:px-8 gap-4">
             {/* 1. KIRI: Logo resmi Usahaku + Teks "Usahaku" (sejajar vertikal dengan blok greeting) */}
-            <div className="flex items-center shrink-0 z-10 lg:pl-[80px]">
+            <div className="flex items-center shrink-0 z-10 lg:pl-[70px]">
               <DashboardBrand onHome={() => navigate('/dashboard')} />
             </div>
 
@@ -192,10 +192,10 @@ export function DashboardShell({
                   <div className="fixed left-4 right-4 top-20 z-50 sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-96 rounded-2xl border border-[#454d5b] bg-[#273242] p-4 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150">
                     <div className="flex items-center justify-between border-b border-[#454d5b] pb-3">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-white">
+                        <span className="text-sm font-normal text-white">
                           Notifikasi
                         </span>
-                        <span className="rounded-full bg-[#24cbc5]/15 px-2 py-0.5 text-[11px] font-semibold text-[#24cbc5]">
+                        <span className="rounded-full bg-[#24cbc5]/15 px-2 py-0.5 text-[11px] font-normal text-[#24cbc5]">
                           {lowStock.length + (sales.length > 0 ? 1 : 0)} aktivitas
                         </span>
                       </div>
@@ -216,7 +216,7 @@ export function DashboardShell({
                     <div className="mt-3 space-y-2.5 max-h-72 overflow-y-auto">
                       {lowStock.length > 0 && (
                         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-[#c5cbd5]">
-                          <div className="flex items-center gap-1.5 font-semibold text-amber-400">
+                          <div className="flex items-center gap-1.5 font-normal text-amber-400">
                             <AlertTriangle className="size-3.5" />
                             <span>Peringatan Stok Menipis</span>
                           </div>
@@ -232,7 +232,7 @@ export function DashboardShell({
                               setShowNotifications(false)
                               nav('Inventori')
                             }}
-                            className="mt-2 text-[11px] font-semibold text-[#24cbc5] hover:underline cursor-pointer"
+                            className="mt-2 text-[11px] font-normal text-[#24cbc5] hover:underline cursor-pointer"
                           >
                             Kelola persediaan stok →
                           </button>
@@ -241,7 +241,7 @@ export function DashboardShell({
 
                       {sales.length > 0 && (
                         <div className="rounded-xl border border-[#454d5b]/60 bg-[#1c222e] p-3 text-xs text-[#c5cbd5]">
-                          <div className="flex items-center gap-1.5 font-semibold text-[#24cbc5]">
+                          <div className="flex items-center gap-1.5 font-normal text-[#24cbc5]">
                             <CheckCircle2 className="size-3.5" />
                             <span>Transaksi Terakhir</span>
                           </div>
@@ -257,7 +257,7 @@ export function DashboardShell({
                               setShowNotifications(false)
                               nav('Transaksi')
                             }}
-                            className="mt-2 text-[11px] font-semibold text-[#24cbc5] hover:underline cursor-pointer"
+                            className="mt-2 text-[11px] font-normal text-[#24cbc5] hover:underline cursor-pointer"
                           >
                             Lihat riwayat transaksi →
                           </button>
@@ -293,11 +293,11 @@ export function DashboardShell({
                     setShowNotifications(false)
                   }}
                 >
-                  <span className="grid size-8 place-items-center rounded-full bg-[#1835d9] text-xs font-bold text-white shadow-xs">
+                  <span className="grid size-8 place-items-center rounded-full bg-[#1835d9] text-xs font-semibold text-white shadow-xs">
                     {initials}
                   </span>
                   <span className="hidden text-left sm:block">
-                    <span className="block max-w-36 truncate text-xs font-semibold text-white leading-tight">
+                    <span className="block max-w-36 truncate text-xs font-normal text-white leading-tight">
                       {ownerName}
                     </span>
                     <span className="block text-[10px] text-[#c5cbd5]">
@@ -314,11 +314,11 @@ export function DashboardShell({
                 {showAccount && (
                   <div className="absolute right-0 top-12 z-50 w-64 rounded-2xl border border-[#454d5b] bg-[#273242] p-2 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150">
                     <div className="border-b border-[#454d5b] px-3 py-2.5 mb-1">
-                      <p className="text-xs font-semibold text-white">{ownerName}</p>
+                      <p className="text-xs font-normal text-white">{ownerName}</p>
                       <p className="text-[11px] text-[#a4a7ac] truncate">
                         {businessName}
                       </p>
-                      <span className="mt-1.5 inline-block rounded-md bg-[#1835d9]/25 border border-[#1835d9]/40 px-2 py-0.5 text-[10px] font-semibold text-[#24cbc5]">
+                      <span className="mt-1.5 inline-block rounded-md bg-[#1835d9]/25 border border-[#1835d9]/40 px-2 py-0.5 text-[10px] font-normal text-[#24cbc5]">
                         {roleNames[member.role]}
                       </span>
                     </div>
@@ -374,7 +374,7 @@ export function DashboardShell({
         </header>
 
         {/* Main Content Area & Capsule Sidebar Rail: Fixed sidebar centered vertically in viewport, vertical scroll solely on main content */}
-        <div className="flex-1 min-h-0 flex items-center overflow-hidden w-full max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 gap-5 lg:gap-6 pt-2 pb-4">
+        <div className="flex-1 min-h-0 flex items-center overflow-hidden w-full max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 gap-5 pt-2 pb-4">
           {/* Vertical Capsule Sidebar (Pill Rail with Asisten Bisnis AI & Pengaturan) */}
           <DashboardSidebar
             role={member.role}
@@ -385,7 +385,7 @@ export function DashboardShell({
           {/* Scrollable Main Content Container (ONLY vertical scroll container) */}
           <div
             id="dashboard-content"
-            className="flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden pr-1 pb-10 focus:outline-none"
+            className="flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden pb-10 focus:outline-none"
             tabIndex={-1}
           >
             {children}

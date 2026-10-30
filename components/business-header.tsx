@@ -7,7 +7,7 @@ export function BusinessHeader({ ownerName }: { ownerName: string }) {
       <Link href="/" aria-label="Usahaku beranda" className="flex shrink-0 items-center"><UsahakuLogo /></Link>
       <div className="pointer-events-none absolute inset-x-0 hidden items-center justify-center md:flex"><span className="text-sm font-medium text-[#a4a7ac]">Pengaturan usaha</span></div>
       <div className="flex min-w-0 items-center gap-3">
-        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#1835d9] text-xs font-bold text-white shadow-sm">{ownerName.split(/\s+/).map(part => part[0]).join('').slice(0, 2).toUpperCase()}</span>
+        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#1835d9] text-xs font-semibold text-white shadow-sm">{ownerName.split(/\s+/).map(part => part[0]).join('').slice(0, 2).toUpperCase()}</span>
         <span title={ownerName} className="hidden max-w-48 truncate text-sm font-medium text-white sm:block">{ownerName}</span>
       </div>
     </div>

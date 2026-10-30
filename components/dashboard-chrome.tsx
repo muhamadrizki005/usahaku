@@ -38,7 +38,7 @@ export function DashboardBrand({ onHome }: { onHome: () => void }) {
           className="size-7 shrink-0 object-contain"
         />
       </div>
-      <span className="text-lg font-bold tracking-tight text-white">Usahaku</span>
+      <span className="text-lg font-semibold tracking-tight text-white">Usahaku</span>
     </button>
   )
 }
@@ -71,7 +71,7 @@ export function DashboardTopNav({
             key={path}
             onClick={() => onNavigate(path)}
             aria-current={active ? 'page' : undefined}
-            className={`relative rounded-full px-4 py-2 text-xs sm:text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5] whitespace-nowrap cursor-pointer ${
+            className={`relative rounded-full px-4 py-2 text-xs sm:text-sm font-normal transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5] whitespace-nowrap cursor-pointer ${
               active ? 'text-[#1c222e]' : 'text-[#c5cbd5] hover:text-white font-medium'
             }`}
           >
@@ -111,7 +111,7 @@ export function DashboardSidebar({
 
   return (
     <aside
-      className="hidden lg:flex flex-col items-center shrink-0 self-center my-auto z-20 print:hidden"
+      className="hidden lg:flex flex-col items-center shrink-0 self-center my-auto z-20 print:hidden lg:-ml-4"
       aria-label="Sidebar navigasi sekunder"
     >
       <div className="flex flex-col items-center gap-3 rounded-full border border-[#454d5b]/80 bg-[#273242]/90 p-2 sm:p-2.5 shadow-2xl backdrop-blur-md">

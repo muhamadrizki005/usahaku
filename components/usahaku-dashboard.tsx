@@ -31,7 +31,7 @@ function LoadingScreen() {
           className="mx-auto size-16 object-contain"
         />
         <div className="mx-auto mt-7 size-7 animate-spin rounded-full border-2 border-[#24cbc5]/20 border-t-[#24cbc5]" />
-        <h1 className="mt-5 text-xl font-semibold">Menyiapkan dashboard usaha Anda</h1>
+        <h1 className="mt-5 text-xl font-normal">Menyiapkan dashboard usaha Anda</h1>
         <p className="mt-2 text-sm text-[#c5cbd5]">Memproses data usaha dan menyiapkan ringkasan operasional...</p>
         <p className="mt-5 text-xs text-[#24cbc5]">Memuat identitas usaha</p>
       </div>
@@ -54,7 +54,7 @@ function Card({
     <section className="min-w-0 rounded-2xl border border-[#454d5b] bg-[#273242] p-5 sm:p-6 shadow-sm">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-[#454d5b]/60 pb-3">
         <div>
-          <h2 className="text-base sm:text-lg font-semibold tracking-tight text-white">{title}</h2>
+          <h2 className="text-base sm:text-lg font-normal tracking-tight text-white">{title}</h2>
           {subtitle && <p className="mt-0.5 text-xs text-[#a4a7ac]">{subtitle}</p>}
         </div>
         {action}
@@ -95,7 +95,7 @@ function Metric({
           <Icon className="size-4.5" />
         </div>
       </div>
-      <p className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight text-white">{value}</p>
+      <p className="mt-3 text-2xl sm:text-3xl font-semibold tracking-tight text-white">{value}</p>
       <div className="mt-2 flex items-center gap-1.5 text-xs text-[#a4a7ac]">
         {warning && <span className="inline-block size-1.5 rounded-full bg-amber-400" />}
         <span>{note}</span>
@@ -120,7 +120,7 @@ function Inventory({ lowStock, onOpen }: { lowStock: Product[]; onOpen: () => vo
     <Card
       title={`${lowStock.length} produk perlu diisi ulang`}
       action={
-        <button className="text-xs sm:text-sm font-semibold text-[#24cbc5] hover:underline" onClick={onOpen}>
+        <button className="text-xs sm:text-sm font-normal text-[#24cbc5] hover:underline" onClick={onOpen}>
           Kelola inventori →
         </button>
       }
@@ -145,11 +145,11 @@ function Inventory({ lowStock, onOpen }: { lowStock: Product[]; onOpen: () => vo
               {lowStock.map((p) => (
                 <tr className="hover:bg-[#1c222e]/40 transition" key={p.name}>
                   <td className="py-3 px-3 font-medium text-white">{p.name}</td>
-                  <td className="py-3 px-3 font-semibold text-white">{p.stock}</td>
+                  <td className="py-3 px-3 font-normal text-white">{p.stock}</td>
                   <td className="py-3 px-3 text-[#c5cbd5]">{p.minStock ?? 0}</td>
                   <td className="py-3 px-3">
                     <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-normal ${
                         Number(p.stock) === 0
                           ? 'bg-red-500/15 border border-red-500/30 text-red-400'
                           : 'bg-amber-500/15 border border-amber-500/30 text-amber-400'
@@ -159,7 +159,7 @@ function Inventory({ lowStock, onOpen }: { lowStock: Product[]; onOpen: () => vo
                     </span>
                   </td>
                   <td className="py-3 px-3 text-right">
-                    <button onClick={onOpen} className="text-xs font-semibold text-[#24cbc5] hover:underline">
+                    <button onClick={onOpen} className="text-xs font-normal text-[#24cbc5] hover:underline">
                       Catat stok masuk
                     </button>
                   </td>
@@ -311,7 +311,7 @@ export default function UsahakuDashboard({
                 const dayAmount = summary.daily[i]
                 return (
                   <div key={i} className="group relative flex flex-1 flex-col items-center gap-2">
-                    <div className="pointer-events-none absolute -top-8 z-10 hidden rounded-md bg-[#1c222e] border border-[#454d5b] px-2 py-1 text-[10px] font-semibold text-white shadow-md group-hover:block whitespace-nowrap">
+                    <div className="pointer-events-none absolute -top-8 z-10 hidden rounded-md bg-[#1c222e] border border-[#454d5b] px-2 py-1 text-[10px] font-normal text-white shadow-md group-hover:block whitespace-nowrap">
                       {money(dayAmount)}
                     </div>
                     <div
@@ -324,7 +324,7 @@ export default function UsahakuDashboard({
                     />
                     <span
                       className={`text-[11px] font-medium ${
-                        isToday ? 'text-[#24cbc5] font-semibold' : 'text-[#c5cbd5]'
+                        isToday ? 'text-[#24cbc5] font-normal' : 'text-[#c5cbd5]'
                       }`}
                     >
                       {summary.labels[i]}
@@ -336,12 +336,12 @@ export default function UsahakuDashboard({
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-[#a4a7ac]">Total selesai:</span>
-                <strong className="text-sm font-semibold text-white">
+                <strong className="text-sm font-normal text-white">
                   {money(summary.daily.reduce((a, b) => a + b, 0))}
                 </strong>
               </div>
               <button
-                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[#24cbc5] hover:underline"
+                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-normal text-[#24cbc5] hover:underline"
                 onClick={() => nav('Laporan')}
               >
                 Lihat laporan lengkap →
@@ -356,7 +356,7 @@ export default function UsahakuDashboard({
             subtitle="Peringkat penjualan produk teratas"
             action={
               <button
-                className="text-xs sm:text-sm font-semibold text-[#24cbc5] hover:underline"
+                className="text-xs sm:text-sm font-normal text-[#24cbc5] hover:underline"
                 onClick={() => nav('Produk')}
               >
                 Lihat semua →
@@ -369,17 +369,17 @@ export default function UsahakuDashboard({
                   key={`${product.name}-${i}`}
                   className="flex items-center gap-3.5 rounded-xl border border-transparent p-2.5 hover:border-[#454d5b]/60 hover:bg-[#1c222e]/40 transition"
                 >
-                  <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-[#303640] text-xs font-bold text-[#c5cbd5]">
+                  <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-[#303640] text-xs font-semibold text-[#c5cbd5]">
                     {i + 1}
                   </span>
                   <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#24cbc5]/10 text-[#24cbc5] border border-[#24cbc5]/20">
                     <Package className="size-4.5" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-white">{product.name}</p>
+                    <p className="truncate text-sm font-normal text-white">{product.name}</p>
                     <p className="text-xs text-[#a4a7ac]">{product.units.toLocaleString('id-ID')} terjual</p>
                   </div>
-                  <span className="text-sm font-semibold text-white">{money(product.gross)}</span>
+                  <span className="text-sm font-normal text-white">{money(product.gross)}</span>
                 </div>
               ))}
               {!summary.best.length && <Empty label="Belum ada produk terlaris" />}
@@ -403,7 +403,7 @@ export default function UsahakuDashboard({
             subtitle="Aktivitas struk dan transaksi yang tercatat hari ini"
             action={
               <button
-                className="text-xs sm:text-sm font-semibold text-[#24cbc5] hover:underline"
+                className="text-xs sm:text-sm font-normal text-[#24cbc5] hover:underline"
                 onClick={() => nav('Transaksi')}
               >
                 Semua transaksi →
@@ -419,7 +419,7 @@ export default function UsahakuDashboard({
                     className="flex w-full items-center justify-between gap-3 py-3.5 text-left text-sm hover:bg-[#1c222e]/40 px-2 rounded-xl transition"
                   >
                     <div className="min-w-0">
-                      <p className="truncate font-semibold text-white">{saleCode(s)}</p>
+                      <p className="truncate font-normal text-white">{saleCode(s)}</p>
                       <p className="mt-0.5 text-xs text-[#a4a7ac]">
                         {s.actor_name} • {paymentLabel[s.payment]} •{' '}
                         <span
@@ -431,7 +431,7 @@ export default function UsahakuDashboard({
                         </span>
                       </p>
                     </div>
-                    <strong className="text-sm font-semibold text-white">{money(Number(s.total))}</strong>
+                    <strong className="text-sm font-normal text-white">{money(Number(s.total))}</strong>
                   </button>
                 ))}
               </div>
@@ -448,12 +448,12 @@ export default function UsahakuDashboard({
           </Card>
           <Card title="Catatan Asisten Bisnis AI" subtitle="Rekomendasi dan evaluasi otomatis">
             <div className="rounded-2xl border border-[#24cbc5]/20 bg-[#24cbc5]/10 p-5">
-              <p className="font-semibold text-[#24cbc5]">Belum ada insight operasional</p>
+              <p className="font-normal text-[#24cbc5]">Belum ada insight operasional</p>
               <p className="mt-1 text-sm text-[#c5cbd5]">
                 Catatan analisis performa usaha akan otomatis muncul setelah data penjualan dan inventori tersedia.
               </p>
               <button
-                className="mt-3.5 inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[#24cbc5] hover:underline"
+                className="mt-3.5 inline-flex items-center gap-1.5 text-xs sm:text-sm font-normal text-[#24cbc5] hover:underline"
                 onClick={() => nav('Asisten Bisnis AI')}
               >
                 Buka asisten bisnis →
@@ -468,7 +468,7 @@ export default function UsahakuDashboard({
             {/* Subheader Matching Gambar 2: Title on Left, Horizontal Stat Badges on Right */}
             <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
               <div>
-                <p className="text-xs font-semibold text-[#24cbc5] uppercase tracking-wider">
+                <p className="text-xs font-normal text-[#24cbc5] uppercase tracking-wider">
                   {new Date().toLocaleDateString('id-ID', {
                     weekday: 'long',
                     day: 'numeric',
@@ -477,11 +477,11 @@ export default function UsahakuDashboard({
                     timeZone: 'Asia/Jakarta',
                   })}
                 </p>
-                <h1 className="mt-1 text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
                   Selamat {hour < 12 ? 'pagi' : hour < 18 ? 'siang' : 'malam'}, {ownerName}
                 </h1>
                 <p className="mt-1 text-xs sm:text-sm text-[#c5cbd5]">
-                  Pantau penjualan dan kelola operasional <span className="font-semibold text-white">{businessName}</span>.
+                  Pantau penjualan dan kelola operasional <span className="font-normal text-white">{businessName}</span>.
                 </p>
               </div>
 
@@ -494,10 +494,10 @@ export default function UsahakuDashboard({
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-white">
+                      <span className="text-sm font-semibold text-white">
                         {configured ? money(revenue) : 'Rp0'}
                       </span>
-                      <span className="rounded-full bg-[#24cbc5]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[#24cbc5]">
+                      <span className="rounded-full bg-[#24cbc5]/15 px-1.5 py-0.5 text-[10px] font-normal text-[#24cbc5]">
                         Hari ini
                       </span>
                     </div>
@@ -511,7 +511,7 @@ export default function UsahakuDashboard({
                     <CreditCard className="size-4" />
                   </div>
                   <div>
-                    <span className="text-sm font-bold text-white">{summary.count} Transaksi</span>
+                    <span className="text-sm font-semibold text-white">{summary.count} Transaksi</span>
                     <p className="text-[10px] text-[#a4a7ac]">
                       Rata-rata {money(summary.count ? Math.round(revenue / summary.count) : 0)}
                     </p>
@@ -532,7 +532,7 @@ export default function UsahakuDashboard({
                     <Package className="size-4" />
                   </div>
                   <div>
-                    <span className="text-sm font-bold text-white">{lowStock.length} Stok Menipis</span>
+                    <span className="text-sm font-semibold text-white">{lowStock.length} Stok Menipis</span>
                     <p className="text-[10px] text-[#a4a7ac]">
                       {lowStock.length ? 'Perlu isi ulang' : 'Semua stok aman'}
                     </p>
@@ -543,13 +543,13 @@ export default function UsahakuDashboard({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => nav('Kasir (POS)')}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-[#1835d9] px-4 py-2 text-xs font-semibold text-white hover:bg-[#132c9e] transition shadow-xs active:scale-95"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-[#1835d9] px-4 py-2 text-xs font-normal text-white hover:bg-[#132c9e] transition shadow-xs active:scale-95"
                   >
                     <Plus className="size-3.5" /> Buka kasir
                   </button>
                   <button
                     onClick={() => nav('Produk')}
-                    className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-[#454d5b] bg-[#273242] px-3.5 py-2 text-xs font-semibold text-[#24cbc5] hover:bg-[#303640] transition shadow-xs"
+                    className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-[#454d5b] bg-[#273242] px-3.5 py-2 text-xs font-normal text-[#24cbc5] hover:bg-[#303640] transition shadow-xs"
                   >
                     <Plus className="size-3.5" /> Tambah produk
                   </button>

@@ -111,7 +111,7 @@ Gunakan hanya untuk area yang sengaja memerlukan permukaan terang, seperti ilust
 
 ### Ambient gradient background (dashboard)
 
-Dashboard boleh menggunakan ambient gradient background yang lembut untuk menambahkan kedalaman visual tanpa mengubah identitas warna utama Usahaku.
+Dashboard dan landing page menggunakan ambient gradient background yang lembut untuk menambahkan kedalaman visual tanpa mengubah identitas warna utama Usahaku.
 
 **Tujuan visual**
 - Mengadaptasi prinsip gradasi atmosferik dari referensi dashboard Rapport, bukan menyalin warna aslinya.
@@ -145,7 +145,7 @@ Palet target mengikuti warna eksplisit landing pada screenshot, bukan palet gray
 
 ### Font
 
-- **Font utama: Urbanist**, sesuai persetujuan pengguna 24 Oktober 2026 untuk seluruh website. Dimuat lokal melalui `@font-face` dari `public/fonts/urbanist/UrbanistVariable.woff2`, dengan varian italic lokal dan preload font normal pada layout. Pertahankan ukuran, weight, line-height, dan letter-spacing yang sudah ada.
+- **Font utama: Poppins**, sesuai persetujuan pengguna 30 Oktober 2026 untuk seluruh website. Dimuat melalui Google Fonts dengan bobot 300, 400, 500, 600, dan 700. Pertahankan ukuran, weight, line-height, dan letter-spacing yang sudah ada.
 - Gunakan satu keluarga font utama di Figma untuk UI, form, dashboard, tabel, dan navigasi.
 - Jangan menggunakan Source Serif 4 atau Geist Mono sebagai font UI utama kecuali ada kebutuhan khusus yang jelas. Keduanya tersedia di konfigurasi kode, tetapi tampilan landing page didominasi sans-serif.
 
@@ -153,14 +153,14 @@ Palet target mengikuti warna eksplisit landing pada screenshot, bukan palet gray
 
 | Gaya | Ukuran acuan | Weight | Penggunaan |
 |---|---:|---:|---|
-| Display/Hero | 56–72 px desktop; 38–48 px mobile | 600–700 | Headline utama landing page |
-| H1 halaman | 32–40 px | 600–700 | Judul halaman |
-| H2 section | 28–36 px | 600–700 | Judul section |
-| H3/card | 18–22 px | 600 | Judul card |
+| Display/Hero | 56–72 px desktop; 38–48 px mobile | 600 | Headline utama landing page (semibold) |
+| H1 halaman | 32–40 px | 600 | Judul halaman (semibold) |
+| H2 section | 28–36 px | 600 | Judul section (semibold) |
+| H3/card | 18–22 px | 400 | Judul card (regular) |
 | Body | 14–16 px | 400 | Isi utama |
 | Body small | 12–14 px | 400 | Deskripsi, helper text |
-| Caption/metadata | 11–12 px | 400–500 | Tanggal, label tambahan |
-| Eyebrow/overline | 10–12 px | 600 | Label kecil dengan letter spacing |
+| Caption/metadata | 11–12 px | 400 | Tanggal, label tambahan (regular) |
+| Eyebrow/overline | 10–12 px | 400 | Label kecil dengan letter spacing (regular) |
 
 - Gunakan line-height yang nyaman: body sekitar 1.5–1.75; heading sekitar 1.05–1.25.
 - Hero dapat memakai tracking negatif yang halus; jangan terapkan tracking ketat pada semua teks.
