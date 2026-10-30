@@ -203,8 +203,8 @@ html {
   --accent: #1e3a8a;
   --accent-foreground: #bfdbfe;
   --destructive: #ef4444;
-  --border: #404040;
-  --input: #404040;
+  --border: rgba(69, 77, 91, 0.65);
+  --input: rgba(69, 77, 91, 0.65);
   --ring: #24cbc5;
   --chart-1: #24cbc5;
   --chart-2: #349cb8;
@@ -263,6 +263,10 @@ html {
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
   }
+}
+
+.border-\[\#454d5b\] {
+  border-color: var(--border) !important;
 }
 
 @layer base {

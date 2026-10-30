@@ -266,7 +266,7 @@ export default function LandingPage() {
               showTooltip={false}
               flipOnClick={true}
               backContent={
-                <div className="flex h-full w-full flex-col justify-between rounded-[1.75rem] border border-[#454d5b] bg-[#273242] p-6 text-white shadow-2xl">
+                <div className="flex h-full w-full flex-col justify-between rounded-[1.75rem] border border-border bg-[#273242] p-6 text-white shadow-2xl">
                   <div>
                     <div className="flex items-center justify-between border-b border-white/10 pb-3">
                       <div className="flex items-center gap-2 text-sm font-normal text-[#24cbc5]">
@@ -297,7 +297,7 @@ export default function LandingPage() {
                 </div>
               }
             >
-              <div className="w-full rounded-[1.75rem] border border-[#454d5b] bg-[#303640] p-3 shadow-2xl">
+              <div className="w-full rounded-[1.75rem] border border-border bg-[#303640] p-3 shadow-2xl">
                 <div className="overflow-hidden rounded-[1.25rem] bg-[#f7f9fc] text-[#1c222e]">
                   <div className="flex items-center justify-between border-b border-[#dfe6f0] bg-white px-4 py-3">
                     <div className="flex items-center gap-2 text-sm">
@@ -322,7 +322,7 @@ export default function LandingPage() {
                     <div className="min-w-0 bg-[#f7f9fc] p-4 2xl:p-6">
                       <p className="text-xl font-medium">Selamat siang, Pak Arief</p>
                       <p className="mt-1 text-[10px] text-[#667085]">Senin, 19 Oktober 2026 • 14.30 WIB</p>
-                      
+
                       {/* Number Ticker Cards */}
                       <div className="mt-3 grid grid-cols-2 gap-2">
                         <div className="rounded-lg border border-[#dfe6f0] bg-white p-3">
@@ -480,7 +480,7 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, scale: 1, y: 0 }}
             viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="rounded-3xl border border-white/15 bg-[#1c222e] p-5 text-white sm:p-6"
+            className="rounded-3xl border border-border bg-[#1c222e] p-5 text-white sm:p-6"
           >
             <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 pb-5">
               <div>
