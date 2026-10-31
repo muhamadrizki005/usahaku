@@ -2,7 +2,7 @@
 
 import { productSkuPrefix } from '@/lib/product-sku'
 import { saveCatalogProduct, bulkCatalogProducts } from '@/app/catalog-actions'
-import { productCategories, formatQuantity, type CatalogProduct, type CatalogResult } from '@/lib/catalog'
+import { productCategories, productSchema, formatQuantity, type CatalogProduct, type CatalogResult } from '@/lib/catalog'
 import type { Role } from '@/lib/auth/permissions'
 import type { Business } from '@/lib/validation'
 
@@ -507,6 +507,9 @@ function ProductEditor({
   onSave: (product: Product, file: File | null, key: string, imageAction: string) => Promise<CatalogResult>
 }) {
   const [draft, setDraft] = useState(product!)
+  const [priceText, setPriceText] = useState(product?.name ? String(product.price) : '')
+  const [stockText, setStockText] = useState(product?.name ? String(product.stock) : '')
+  const [minimumText, setMinimumText] = useState(product?.name ? String(product.minStock) : '')
   const [customCategory, setCustomCategory] = useState(
     Boolean(product?.category && !productCategories.includes(product.category))
   )
@@ -558,10 +561,14 @@ function ProductEditor({
     if (!draft.name.trim() || !draft.category.trim() || !draft.unit.trim()) {
       return setError('Nama, kategori, dan unit stok wajib diisi.')
     }
+    if (!priceText.trim()) return setError('Harga jual wajib diisi. Isi 0 jika harganya nol.')
+    if (!minimumText.trim()) return setError('Minimum stok wajib diisi. Isi 0 jika tidak ada batas minimum.')
+    const parsed = productSchema.safeParse({ name: draft.name, category: draft.category, unit: draft.unit, sku: draft.sku, barcode: draft.barcode, price: priceText, minimum: minimumText, initialStock: isNew ? stockText || '0' : '0', active: draft.active })
+    if (!parsed.success) return setError(parsed.error.issues[0].message)
     setPending(true)
     setError('')
     try {
-      const result = await onSave(draft, file, operationId, imageAction)
+      const result = await onSave({ ...draft, price: Number(parsed.data.price), minStock: Number(parsed.data.minimum), stock: isNew ? Number(parsed.data.initialStock) : draft.stock }, file, operationId, imageAction)
       if (result.error) setError(result.error)
     } catch {
       setError('Status penyimpanan belum pasti. Muat ulang untuk memeriksa.')
@@ -737,8 +744,8 @@ function ProductEditor({
                 <input
                   type="number"
                   min="0"
-                  value={draft.price}
-                  onChange={e => update('price', Number(e.target.value))}
+                  value={priceText}
+                  onChange={e => setPriceText(e.target.value)}
                   className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]"
                 />
               </label>
@@ -751,8 +758,8 @@ function ProductEditor({
                   step="0.001"
                   disabled={!isNew}
                   title="Ubah stok melalui inventori dengan alasan"
-                  value={draft.stock}
-                  onChange={e => update('stock', Number(e.target.value))}
+                  value={stockText}
+                  onChange={e => setStockText(e.target.value)}
                   className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5] disabled:opacity-50"
                 />
               </label>
@@ -763,8 +770,8 @@ function ProductEditor({
                   type="number"
                   min="0"
                   step="0.001"
-                  value={draft.minStock}
-                  onChange={e => update('minStock', Number(e.target.value))}
+                  value={minimumText}
+                  onChange={e => setMinimumText(e.target.value)}
                   className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]"
                 />
               </label>
@@ -789,7 +796,7 @@ function ProductEditor({
             </div>
           </div>
 
-          {error && <p className="mt-5 rounded-xl bg-[#4a252b] p-3 text-sm text-[#ffb4ae]">{error}</p>}
+          {error && <p role="alert" className="mt-5 rounded-xl bg-[#4a252b] p-3 text-sm text-[#ffb4ae]">{error}</p>}
         </div>
 
         {/* Modal Footer */}
