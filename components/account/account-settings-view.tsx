@@ -17,15 +17,19 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  Copy,
-  Check,
-  Info,
   BadgeCheck,
+  ExternalLink,
+  X,
 } from 'lucide-react'
 import { UsahakuLogo } from '@/components/usahaku-logo'
 import { ProfileAvatarEditor } from './profile-avatar-editor'
-import { updateAccountProfile, updateAccountPassword, signOut } from '@/app/actions'
-import { roleNames, homeForRole, type Role } from '@/lib/auth/permissions'
+import {
+  updateAccountProfile,
+  updateAccountPassword,
+  requestPasswordReset,
+  signOut,
+} from '@/app/actions'
+import { roleNames } from '@/lib/auth/permissions'
 import type { Business, Member } from '@/lib/validation'
 
 interface AccountSettingsViewProps {
@@ -94,12 +98,17 @@ export function AccountSettingsView({
     success?: string
   } | null>(null)
 
+  // Forgot Password Modal State
+  const [showForgotModal, setShowForgotModal] = useState(false)
+  const [forgotPending, startForgotTransition] = useTransition()
+  const [forgotFeedback, setForgotFeedback] = useState<{
+    error?: string
+    success?: string
+  } | null>(null)
+
   // Logout State
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const [logoutPending, startLogoutTransition] = useTransition()
-
-  // Copy ID state
-  const [copiedId, setCopiedId] = useState(false)
 
   // IDs for accessibility
   const nameInputId = useId()
@@ -117,13 +126,16 @@ export function AccountSettingsView({
     : 'Pemilik Usaha'
 
   const isActive = member ? member.active : true
+  const isStaffAccount = user.app_metadata?.account_type === 'staff' || (user.email && user.email.endsWith('@staff.usahaku.invalid'))
 
-  // Password Validation
-  const hasMinLength = newPassword.length >= 10
+  // Password Validation: min 8 karakter, kombinasi huruf, angka, simbol
+  const hasMinLength = newPassword.length >= 8
   const hasLetter = /[a-zA-Z]/.test(newPassword)
   const hasNumber = /[0-9]/.test(newPassword)
+  const hasSymbol = /[^a-zA-Z0-9]/.test(newPassword)
   const passwordsMatch = newPassword.length > 0 && newPassword === confirmation
-  const isPasswordValid = hasMinLength && hasLetter && hasNumber && passwordsMatch
+  const isPasswordValid =
+    hasMinLength && hasLetter && hasNumber && hasSymbol && passwordsMatch
 
   // Handle Profile Update
   const handleProfileSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -161,7 +173,7 @@ export function AccountSettingsView({
 
     if (!isPasswordValid) {
       setPasswordFeedback({
-        error: 'Kata sandi baru belum memenuhi persyaratan keamanan.',
+        error: 'Kata sandi baru harus minimal 8 karakter dan kombinasi huruf, angka, serta simbol.',
       })
       return
     }
@@ -184,18 +196,37 @@ export function AccountSettingsView({
     })
   }
 
+  // Handle Forgot Password Request
+  const handleForgotPassword = () => {
+    setForgotFeedback(null)
+
+    if (isStaffAccount || !user.email) {
+      setForgotFeedback({
+        error: 'Akun staf tidak menggunakan email. Silakan minta reset sandi kepada pemilik usaha (owner).',
+      })
+      return
+    }
+
+    const formData = new FormData()
+    formData.set('email', user.email)
+
+    startForgotTransition(async () => {
+      const res = await requestPasswordReset({}, formData)
+      if (res.error) {
+        setForgotFeedback({ error: res.error })
+      } else {
+        setForgotFeedback({
+          success: `Tautan pemulihan kata sandi telah dikirim ke ${user.email}. Silakan periksa kotak masuk (inbox) atau folder spam di Gmail Anda.`,
+        })
+      }
+    })
+  }
+
   // Handle Logout
   const handleLogout = () => {
     startLogoutTransition(async () => {
       await signOut()
     })
-  }
-
-  // Handle Copy User ID
-  const handleCopyId = () => {
-    navigator.clipboard.writeText(user.id)
-    setCopiedId(true)
-    setTimeout(() => setCopiedId(false), 2000)
   }
 
   return (
@@ -292,26 +323,10 @@ export function AccountSettingsView({
                 )}
               </div>
 
+              {/* Revision 1: Removed ID next to registration date */}
               <div className="mt-4 pt-4 border-t border-white/10 flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs text-[#a4a7ac]">
                 <span>
                   Terdaftar sejak: <strong className="text-white font-medium">{registeredDateFormatted}</strong>
-                </span>
-                <span>•</span>
-                <span className="flex items-center gap-1.5 font-mono">
-                  ID: <span className="text-[#c5cbd5]">{user.id.slice(0, 8)}...</span>
-                  <button
-                    type="button"
-                    onClick={handleCopyId}
-                    className="p-1 text-[#a4a7ac] hover:text-white transition cursor-pointer"
-                    title="Salin ID lengkap"
-                    aria-label="Salin User ID"
-                  >
-                    {copiedId ? (
-                      <Check className="size-3 text-[#24cbc5]" />
-                    ) : (
-                      <Copy className="size-3" />
-                    )}
-                  </button>
                 </span>
               </div>
             </div>
@@ -474,7 +489,7 @@ export function AccountSettingsView({
                     </p>
                   </div>
 
-                  {/* Email (Read-only with explanation) */}
+                  {/* Email: Revision 2 - Removed "Terkunci" badge */}
                   <div className="space-y-1.5">
                     <label
                       htmlFor={emailInputId}
@@ -482,20 +497,14 @@ export function AccountSettingsView({
                     >
                       Alamat Email
                     </label>
-                    <div className="relative">
-                      <input
-                        id={emailInputId}
-                        type="email"
-                        disabled
-                        value={user.email || ''}
-                        className="w-full rounded-xl border border-white/10 bg-[#1c222e]/60 px-4 py-2.5 text-sm text-[#c5cbd5] opacity-80 cursor-not-allowed"
-                      />
-                      <span className="absolute right-3.5 top-2.5 rounded bg-white/10 px-2 py-0.5 text-[10px] font-medium text-[#c5cbd5]">
-                        Terkunci
-                      </span>
-                    </div>
+                    <input
+                      id={emailInputId}
+                      type="email"
+                      disabled
+                      value={user.email || ''}
+                      className="w-full rounded-xl border border-white/10 bg-[#1c222e]/60 px-4 py-2.5 text-sm text-[#c5cbd5] opacity-80 cursor-not-allowed"
+                    />
                     <div className="flex items-start gap-1.5 text-[11px] text-[#a4a7ac] pt-1">
-                      <Info className="size-3.5 shrink-0 text-[#24cbc5] mt-0.5" />
                       <span>
                         Email terhubung dengan kredensial autentikasi utama Anda. Demi keamanan akun, perubahan alamat email memerlukan tautan verifikasi.
                       </span>
@@ -526,13 +535,15 @@ export function AccountSettingsView({
             {/* TAB 2: KEAMANAN & KATA SANDI */}
             {activeTab === 'security' && (
               <div className="rounded-2xl border border-white/10 bg-[#273242] p-6 sm:p-8 shadow-xl animate-in fade-in duration-150">
-                <div className="border-b border-white/10 pb-4 mb-6">
-                  <h3 className="text-lg font-semibold text-white">
-                    Keamanan & Kata Sandi
-                  </h3>
-                  <p className="text-xs text-[#c5cbd5] mt-1">
-                    Ganti kata sandi secara berkala untuk menjaga keamanan akun dan operasional usaha Anda.
-                  </p>
+                <div className="border-b border-white/10 pb-4 mb-6 flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">
+                      Keamanan & Kata Sandi
+                    </h3>
+                    <p className="text-xs text-[#c5cbd5] mt-1">
+                      Ganti kata sandi secara berkala untuk menjaga keamanan akun dan operasional usaha Anda.
+                    </p>
+                  </div>
                 </div>
 
                 {passwordFeedback?.error && (
@@ -556,14 +567,29 @@ export function AccountSettingsView({
                 )}
 
                 <form onSubmit={handlePasswordSubmit} className="space-y-5">
-                  {/* Current Password */}
+                  {/* Current Password with "Lupa kata sandi?" link (Revision 4) */}
                   <div className="space-y-1.5">
-                    <label
-                      htmlFor={currentPassId}
-                      className="block text-xs font-medium text-white"
-                    >
-                      Kata Sandi Saat Ini / Sementara <span className="text-[#24cbc5]">*</span>
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <label
+                        htmlFor={currentPassId}
+                        className="block text-xs font-medium text-white"
+                      >
+                        Kata Sandi Saat Ini / Sementara <span className="text-[#24cbc5]">*</span>
+                      </label>
+
+                      {/* Revision 4: Trigger lupa kata sandi */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowForgotModal(true)
+                          setForgotFeedback(null)
+                        }}
+                        className="text-xs text-[#24cbc5] hover:underline cursor-pointer font-medium"
+                      >
+                        Lupa kata sandi?
+                      </button>
+                    </div>
+
                     <div className="relative">
                       <input
                         id={currentPassId}
@@ -585,7 +611,7 @@ export function AccountSettingsView({
                     </div>
                   </div>
 
-                  {/* New Password */}
+                  {/* New Password: Revision 3 - min 8 karakter */}
                   <div className="space-y-1.5">
                     <label
                       htmlFor={newPassId}
@@ -598,10 +624,10 @@ export function AccountSettingsView({
                         id={newPassId}
                         type={showNewPass ? 'text' : 'password'}
                         required
-                        minLength={10}
+                        minLength={8}
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Minimal 10 karakter"
+                        placeholder="Minimal 8 karakter"
                         className="w-full rounded-xl border border-[#454d5b] bg-[#1c222e] px-4 py-2.5 pr-11 text-sm text-white placeholder-[#a4a7ac] focus:border-[#24cbc5] focus:ring-1 focus:ring-[#24cbc5] focus:outline-none transition"
                       />
                       <button
@@ -628,7 +654,7 @@ export function AccountSettingsView({
                         id={confirmPassId}
                         type={showConfirmPass ? 'text' : 'password'}
                         required
-                        minLength={10}
+                        minLength={8}
                         value={confirmation}
                         onChange={(e) => setConfirmation(e.target.value)}
                         placeholder="Ketik ulang kata sandi baru"
@@ -645,12 +671,12 @@ export function AccountSettingsView({
                     </div>
                   </div>
 
-                  {/* Password Requirements Checklist */}
+                  {/* Password Requirements Checklist (Revision 3: min 8, angka, huruf, simbol) */}
                   <div className="rounded-xl border border-white/5 bg-[#1c222e]/60 p-4 space-y-2 text-xs">
                     <span className="font-medium text-[#c5cbd5] block mb-2">
                       Persyaratan kata sandi:
                     </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       <div className="flex items-center gap-2">
                         <span
                           className={`size-4 rounded-full flex items-center justify-center text-[10px] ${
@@ -662,26 +688,56 @@ export function AccountSettingsView({
                           ✓
                         </span>
                         <span className={hasMinLength ? 'text-white' : 'text-[#a4a7ac]'}>
-                          Minimal 10 karakter
+                          Minimal 8 karakter
                         </span>
                       </div>
 
                       <div className="flex items-center gap-2">
                         <span
                           className={`size-4 rounded-full flex items-center justify-center text-[10px] ${
-                            hasLetter && hasNumber
+                            hasLetter
                               ? 'bg-[#24cbc5] text-[#1c222e]'
                               : 'bg-white/10 text-[#a4a7ac]'
                           }`}
                         >
                           ✓
                         </span>
-                        <span className={hasLetter && hasNumber ? 'text-white' : 'text-[#a4a7ac]'}>
-                          Kombinasi huruf & angka
+                        <span className={hasLetter ? 'text-white' : 'text-[#a4a7ac]'}>
+                          Kombinasi huruf (A-Z, a-z)
                         </span>
                       </div>
 
                       <div className="flex items-center gap-2">
+                        <span
+                          className={`size-4 rounded-full flex items-center justify-center text-[10px] ${
+                            hasNumber
+                              ? 'bg-[#24cbc5] text-[#1c222e]'
+                              : 'bg-white/10 text-[#a4a7ac]'
+                          }`}
+                        >
+                          ✓
+                        </span>
+                        <span className={hasNumber ? 'text-white' : 'text-[#a4a7ac]'}>
+                          Kombinasi angka (0-9)
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`size-4 rounded-full flex items-center justify-center text-[10px] ${
+                            hasSymbol
+                              ? 'bg-[#24cbc5] text-[#1c222e]'
+                              : 'bg-white/10 text-[#a4a7ac]'
+                          }`}
+                        >
+                          ✓
+                        </span>
+                        <span className={hasSymbol ? 'text-white' : 'text-[#a4a7ac]'}>
+                          Kombinasi simbol (!@#$...)
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2 sm:col-span-2">
                         <span
                           className={`size-4 rounded-full flex items-center justify-center text-[10px] ${
                             passwordsMatch
@@ -692,10 +748,34 @@ export function AccountSettingsView({
                           ✓
                         </span>
                         <span className={passwordsMatch ? 'text-white' : 'text-[#a4a7ac]'}>
-                          Konfirmasi sandi cocok
+                          Konfirmasi kata sandi cocok
                         </span>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Revision 4: Helpful Reset Callout Banner */}
+                  <div className="rounded-xl border border-white/10 bg-[#1c222e]/40 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="space-y-0.5">
+                      <span className="text-xs font-medium text-white flex items-center gap-1.5">
+                        <KeyRound className="size-3.5 text-[#24cbc5]" />
+                        Lupa kata sandi akun?
+                      </span>
+                      <p className="text-[11px] text-[#c5cbd5]">
+                        Kirim tautan pemulihan pengaturan sandi langsung ke email Gmail terdaftar Anda.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowForgotModal(true)
+                        setForgotFeedback(null)
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#24cbc5]/40 bg-[#24cbc5]/10 hover:bg-[#24cbc5]/20 px-3.5 py-1.5 text-xs font-medium text-[#24cbc5] transition shrink-0 cursor-pointer"
+                    >
+                      <Mail className="size-3.5" />
+                      Kirim Tautan Reset
+                    </button>
                   </div>
 
                   {/* Submit Button */}
@@ -861,6 +941,143 @@ export function AccountSettingsView({
           </div>
         </div>
       </div>
+
+      {/* Revision 4: Forgot Password Modal Dialog */}
+      {showForgotModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-2xl border border-[#454d5b] bg-[#273242] p-6 sm:p-7 shadow-2xl text-white">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-5">
+              <div className="flex items-center gap-3">
+                <div className="size-10 rounded-xl bg-[#24cbc5]/15 border border-[#24cbc5]/30 flex items-center justify-center text-[#24cbc5]">
+                  <KeyRound className="size-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-white">
+                    Pemulihan Kata Sandi
+                  </h3>
+                  <p className="text-xs text-[#c5cbd5]">
+                    Kirim tautan reset ke email Gmail Anda
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForgotModal(false)
+                  setForgotFeedback(null)
+                }}
+                className="p-1.5 rounded-lg text-[#c5cbd5] hover:text-white hover:bg-white/10 transition cursor-pointer"
+                aria-label="Tutup"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            {forgotFeedback?.error && (
+              <div
+                role="alert"
+                className="mb-5 flex items-start gap-2.5 rounded-xl border border-red-500/30 bg-red-950/40 p-3.5 text-xs text-red-200"
+              >
+                <AlertCircle className="size-4 shrink-0 text-red-400 mt-0.5" />
+                <span>{forgotFeedback.error}</span>
+              </div>
+            )}
+
+            {forgotFeedback?.success ? (
+              <div className="space-y-4">
+                <div
+                  role="status"
+                  className="flex items-start gap-2.5 rounded-xl border border-[#24cbc5]/30 bg-[#173d3c] p-4 text-xs text-[#7de3dc]"
+                >
+                  <CheckCircle2 className="size-5 shrink-0 text-[#24cbc5] mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-semibold text-white">Email Pemulihan Terkirim!</p>
+                    <p className="leading-relaxed">{forgotFeedback.success}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-3">
+                  <a
+                    href="https://mail.google.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-[#24cbc5] hover:bg-[#1bb8b2] text-[#1c222e] transition shadow cursor-pointer"
+                  >
+                    <ExternalLink className="size-3.5" />
+                    Buka Gmail
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowForgotModal(false)
+                      setForgotFeedback(null)
+                    }}
+                    className="px-4 py-2 rounded-xl text-xs font-medium text-[#c5cbd5] hover:bg-white/10 transition cursor-pointer"
+                  >
+                    Tutup
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {isStaffAccount ? (
+                  <p className="text-xs text-[#c5cbd5] leading-relaxed">
+                    Akun Anda terdaftar sebagai akun staf toko tanpa email pribadi. Pemulihan dan reset kata sandi dilakukan langsung oleh pemilik usaha (owner) melalui menu pengaturan staf.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-xs text-[#c5cbd5] leading-relaxed">
+                      Kami akan mengirimkan email berisi tautan pengaturan kata sandi baru ke alamat Gmail terdaftar Anda:
+                    </p>
+                    <div className="rounded-xl border border-white/10 bg-[#1c222e] p-3 text-xs font-medium text-white flex items-center gap-2">
+                      <Mail className="size-4 text-[#24cbc5] shrink-0" />
+                      <span className="truncate">{user.email || 'Email belum diatur'}</span>
+                    </div>
+                    <p className="text-[11px] text-[#a4a7ac]">
+                      Setelah menerima email di inbox atau spam, klik tautan tersebut untuk membuat kata sandi baru.
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowForgotModal(false)
+                      setForgotFeedback(null)
+                    }}
+                    disabled={forgotPending}
+                    className="px-4 py-2.5 rounded-xl text-xs font-medium text-[#c5cbd5] hover:bg-white/10 transition cursor-pointer"
+                  >
+                    Batal
+                  </button>
+
+                  {!isStaffAccount && user.email && (
+                    <button
+                      type="button"
+                      onClick={handleForgotPassword}
+                      disabled={forgotPending}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold bg-[#1835d9] hover:bg-[#132c9e] text-white transition shadow-lg shadow-[#1835d9]/30 cursor-pointer disabled:opacity-50"
+                    >
+                      {forgotPending ? (
+                        <>
+                          <Loader2 className="size-3.5 animate-spin" />
+                          Mengirim Email...
+                        </>
+                      ) : (
+                        <>
+                          <Mail className="size-3.5" />
+                          Kirim ke Gmail
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Logout Confirmation Dialog Modal */}
       {showLogoutModal && (

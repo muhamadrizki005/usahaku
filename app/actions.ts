@@ -286,7 +286,8 @@ export async function signOut() {
   if (error) throw new Error('Logout belum berhasil. Coba lagi; sesi belum dapat dipastikan berakhir.')
   await clearRecovery()
   redirect('/login')
-}
+}
+
 export async function updateAccountProfile(_: ActionState, form: FormData): Promise<ActionState> {
   const { supabase, user, member } = await requireAccount()
   if (member && !member.active) return { error: 'Akses dinonaktifkan. Hubungi owner.' }
@@ -334,11 +335,30 @@ export async function updateAccountProfile(_: ActionState, form: FormData): Prom
   return { success: 'Informasi profil berhasil disimpan.' }
 }
 
+const accountPasswordSchema = z
+  .string()
+  .min(8, 'Kata sandi minimal 8 karakter.')
+  .max(128, 'Maksimal 128 karakter.')
+  .refine((v) => /[a-zA-Z]/.test(v), { message: 'Kata sandi harus mengandung huruf.' })
+  .refine((v) => /[0-9]/.test(v), { message: 'Kata sandi harus mengandung angka.' })
+  .refine((v) => /[^a-zA-Z0-9]/.test(v), { message: 'Kata sandi harus mengandung simbol / karakter khusus.' })
+
+const accountPasswordChangeSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Isi kata sandi saat ini atau sementara.').max(128),
+    password: accountPasswordSchema,
+    confirmation: z.string(),
+  })
+  .refine((d) => d.password === d.confirmation, {
+    message: 'Konfirmasi kata sandi belum sama.',
+    path: ['confirmation'],
+  })
+
 export async function updateAccountPassword(_: ActionState, form: FormData): Promise<ActionState> {
   const { supabase, user, member } = await requireAccount()
   if (member && !member.active) return { error: 'Akses dinonaktifkan. Hubungi owner.' }
 
-  const parsed = passwordChangeSchema.safeParse(fields(form))
+  const parsed = accountPasswordChangeSchema.safeParse(fields(form))
   if (!parsed.success) return invalid(parsed.error)
 
   const current = z.string().min(1).max(128).safeParse(form.get('currentPassword'))
@@ -351,7 +371,7 @@ export async function updateAccountPassword(_: ActionState, form: FormData): Pro
   if (verifyError) return { error: 'Kata sandi saat ini tidak sesuai.' }
 
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password })
-  if (error) return { error: 'Sandi belum diperbarui. Gunakan sandi baru yang berbeda, minimal 10 karakter.' }
+  if (error) return { error: 'Sandi belum diperbarui. Gunakan sandi baru minimal 8 karakter dengan huruf, angka, dan simbol.' }
 
   if (member?.must_change_password) {
     const admin = createAdminClient()
@@ -386,4 +406,5 @@ export async function updateAccountAvatar(avatarUrl: string | null): Promise<Act
   revalidatePath('/dashboard')
 
   return { success: avatarUrl ? 'Foto profil berhasil diperbarui.' : 'Foto profil berhasil dihapus.' }
-}
+}
+
