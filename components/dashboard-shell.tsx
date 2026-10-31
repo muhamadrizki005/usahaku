@@ -15,7 +15,6 @@ import {
   Bell,
   CheckCircle2,
   ChevronDown,
-  Lock,
   LogOut,
   Settings2,
   Store,
@@ -155,14 +154,6 @@ export function DashboardShell({
                 <span className="max-w-32 truncate font-medium text-white">
                   {businessName}
                 </span>
-              </div>
-
-              {/* Secure indicator */}
-              <div
-                className="hidden xl:grid size-9.5 place-items-center rounded-full border border-[#454d5b]/70 bg-[#273242]/70 text-[#a4a7ac]"
-                title="Akses usaha"
-              >
-                <Lock className="size-4" />
               </div>
 
               {/* Notification Bell with Badge & Dropdown */}
