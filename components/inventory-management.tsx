@@ -6,6 +6,7 @@ import type { Business } from '@/lib/validation'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Info, Search } from 'lucide-react'
+import { CustomSelect } from '@/components/ui/custom-select'
 import { useRouter } from 'next/navigation'
 
 type Category = 'toko' | 'restoran' | 'barbershop'
@@ -67,13 +68,21 @@ export default function InventoryManagement({ role, initialCategory = 'toko', bu
                   <Search className="absolute left-3 top-3 size-4 text-[#a4a7ac]" />
                   <input aria-label="Cari produk atau SKU" value={query} onChange={e => setQuery(e.target.value)} placeholder="Cari produk atau SKU" className="h-10 w-full rounded-xl border border-[#454d5b] bg-[#1c222e]/70 pl-9 pr-3 text-sm text-white outline-none focus:border-[#24cbc5]" />
                 </label>
-                <select value={condition} onChange={e => setCondition(e.target.value)} className="h-10 rounded-xl border border-[#454d5b] bg-[#273242] px-3 text-sm text-white">
-                  <option>Semua kondisi</option><option>Habis</option><option>Menipis</option><option>Cukup</option>
-                </select>
-                <select value={category} onChange={e => setCategory(e.target.value)} className="h-10 rounded-xl border border-[#454d5b] bg-[#273242] px-3 text-sm text-white">
-                  <option value="Semua kategori">Semua kategori</option>
-                  {categories.slice(1).map(c => <option key={c}>{c}</option>)}
-                </select>
+                <CustomSelect
+                  value={condition}
+                  onChange={setCondition}
+                  options={['Semua kondisi', 'Habis', 'Menipis', 'Cukup']}
+                  ariaLabel="Filter semua kondisi"
+                  className="min-w-[140px]"
+                />
+                <CustomSelect
+                  value={category}
+                  onChange={setCategory}
+                  options={categories}
+                  align="right"
+                  ariaLabel="Filter semua kategori"
+                  className="min-w-[140px]"
+                />
               </div>
 
               <div className="mt-4 overflow-x-auto">
@@ -121,10 +130,17 @@ export default function InventoryManagement({ role, initialCategory = 'toko', bu
                 <h2 className="mt-4 text-lg font-normal text-white">{mode === 'in' ? 'Catat stok masuk' : mode === 'out' ? 'Catat stok keluar' : 'Sesuaikan stok fisik'}</h2>
                 <p className="mt-1 text-xs sm:text-sm text-[#a4a7ac]">{mode === 'adjustment' ? 'Koreksi selisih dari penghitungan fisik, bukan pembelian atau penjualan barang.' : 'Catat perubahan jumlah barang beserta alasannya. Penjualan POS tercatat otomatis pada riwayat.'}</p>
                 <label className="mt-5 block text-xs font-normal text-white">Produk *
-                  <select value={selected?.id} onChange={e => setSelectedId(e.target.value)} className="mt-2 h-11 w-full rounded-xl border border-[#454d5b] bg-[#273242] px-3 text-sm text-white">
-                    <option value="">Pilih produk</option>
-                    {products.map(p => <option key={p.id} value={p.id}>{p.name} • {p.sku}</option>)}
-                  </select>
+                  <CustomSelect
+                    value={selected?.id || ''}
+                    onChange={setSelectedId}
+                    options={[
+                      { value: '', label: 'Pilih produk' },
+                      ...products.map(p => ({ value: p.id, label: `${p.name} • ${p.sku}` }))
+                    ]}
+                    placeholder="Pilih produk"
+                    ariaLabel="Pilih produk"
+                    className="mt-2 w-full"
+                  />
                 </label>
                 <div className="mt-4 grid grid-cols-3 rounded-xl bg-[#1c222e] p-3 text-center border border-[#454d5b]/60">
                   <div>

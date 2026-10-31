@@ -44,6 +44,7 @@ test('floating assistant toggles without navigation, retains chat across pages a
     }
     await moveLauncher(1000, 180); await expect(chat).toBeHidden(); expect((await launcher.boundingBox())!.y).toBeCloseTo(180, 0)
     await launcher.click(); await expect(chat).toBeVisible(); await expect(chat.getByRole('button', { name: 'Tutup panel Asisten AI' })).toBeFocused()
+    await chat.getByLabel('Periode penjualan (WIB)', { exact: true }).click(); await expect(chat.getByRole('listbox')).toBeVisible(); await p.keyboard.press('Escape'); await expect(chat.getByRole('listbox')).toHaveCount(0); await expect(chat).toBeVisible()
     await chat.getByLabel('Pertanyaan', { exact: true }).fill('Buat caption promosi toko')
     await chat.getByRole('button', { name: 'Kirim pesan', exact: true }).click(); await expect(chat.getByRole('article')).toContainText('Belanja kebutuhan harian')
     await chat.getByLabel('Pertanyaan', { exact: true }).fill('Draft lanjutan saya')

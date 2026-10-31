@@ -98,7 +98,7 @@ test('assistant: scoped database evidence, private provider contract, errors, ro
     await p.getByRole('log', { name: 'Percakapan Asisten', exact: true }).evaluate(el => { el.scrollTop = 0 })
     const jump = p.getByRole('button', { name: 'Ke pesan terbaru', exact: true })
     if (await jump.isVisible()) { await jump.click(); await expect(jump).toBeHidden() }
-    await p.getByLabel('Periode penjualan (WIB)', { exact: true }).selectOption('today'); await p.getByLabel('Pertanyaan', { exact: true }).fill('Stok apa yang perlu diperiksa?')
+    await p.getByLabel('Periode penjualan (WIB)', { exact: true }).click(); await p.getByRole('option', { name: 'Hari ini (WIB)', exact: true }).click(); await p.getByLabel('Pertanyaan', { exact: true }).fill('Stok apa yang perlu diperiksa?')
     await p.getByRole('button', { name: 'Kirim pesan', exact: true }).click(); await expect(p.getByRole('article')).toContainText('stok 0,5 kg, minimum 1 kg')
     await p.getByRole('article').last().getByText('Sumber dan waktu data', { exact: true }).click()
     await p.getByRole('link', { name: 'Inventori saat ini', exact: true }).click(); await expect(p).toHaveURL(/\/dashboard\/inventory$/)

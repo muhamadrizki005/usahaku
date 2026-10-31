@@ -2,6 +2,7 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import Link from 'next/link'
 import { ArrowDown, ArrowUp, RotateCcw } from 'lucide-react'
+import { CustomSelect } from '@/components/ui/custom-select'
 import DashboardSection from './dashboard-section'
 import type { AssistantRequest } from '@/lib/assistant'
 import { chatBasisLabels, chatMoney, type ChatAnswer } from '@/lib/assistant-chat'
@@ -68,7 +69,24 @@ export default function BusinessAssistant({ configured, variant = 'page', active
         {variant === 'page' && <div className="flex min-w-0 items-center gap-3"><img src="/brand/usahaku-logo.png" alt="" width={36} height={36} className="size-9 shrink-0 object-contain" /><div><h2 className="text-sm font-semibold">Usahaku</h2><p className="text-xs text-[#c5cbd5]">Asisten untuk UMKM</p></div></div>}
         <div className="flex flex-wrap items-center gap-2">
           <label htmlFor={periodId} className="sr-only">Periode penjualan (WIB)</label>
-          <select id={periodId} value={period} onChange={e => { conversationToken.current = undefined; setPeriod(e.target.value as AssistantRequest['period']) }} disabled={pending} className={'min-h-11 min-w-0 rounded-xl border border-[#a4a7ac] bg-[#1c222e] px-3 text-xs text-white disabled:opacity-60 ' + focus}><option value="today">Hari ini (WIB)</option><option value="7d">7 hari terakhir (WIB)</option><option value="30d">30 hari terakhir (WIB)</option></select>
+          <CustomSelect
+  id={periodId}
+  ariaLabel="Periode penjualan (WIB)"
+  value={period}
+  disabled={pending}
+  size="sm"
+  align="right"
+  options={[
+    { value: 'today', label: 'Hari ini (WIB)' },
+    { value: '7d', label: '7 hari terakhir (WIB)' },
+    { value: '30d', label: '30 hari terakhir (WIB)' },
+  ]}
+  onChange={val => {
+    conversationToken.current = undefined
+    setPeriod(val as AssistantRequest['period'])
+  }}
+  className="min-w-[150px]"
+/>
           <button type="button" aria-label="Bersihkan percakapan" disabled={pending || !turns.length} onClick={reset} className={'flex min-h-11 min-w-11 items-center gap-2 rounded-xl px-3 text-xs text-[#c5cbd5] hover:bg-[#303640] disabled:opacity-50 ' + focus}><RotateCcw className="size-4" aria-hidden="true" /><span className="hidden sm:inline">Percakapan baru</span></button>
         </div>
       </div>

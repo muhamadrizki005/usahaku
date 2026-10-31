@@ -37,7 +37,7 @@ test('product numeric inputs start blank, allow deletion, validate and persist e
       await field.pressSequentially('10'); await expect(field).toHaveValue('10'); await field.fill('')
     }
     await p.screenshot({ path: `${dir}/blank-desktop.png`, fullPage: true })
-    await dialog.getByLabel('Nama produk *', { exact: true }).fill('Beras Uji Input'); await dialog.getByLabel('Kategori *', { exact: true }).selectOption('Bahan Pokok'); await dialog.getByLabel('Unit stok *', { exact: true }).fill('kg')
+    await dialog.getByLabel('Nama produk *', { exact: true }).fill('Beras Uji Input'); await dialog.getByLabel('Kategori *', { exact: true }).click(); await dialog.getByRole('option', { name: 'Lainnya', exact: true }).click(); await dialog.getByLabel('Kategori lainnya *', { exact: true }).fill('Bahan Pokok Uji'); await dialog.getByLabel('Unit stok *', { exact: true }).fill('kg')
     await dialog.getByRole('button', { name: 'Simpan produk', exact: true }).click(); await expect(dialog.getByRole('alert')).toContainText('Harga jual wajib diisi')
     await dialog.getByLabel('Harga jual *', { exact: true }).fill('15000'); await dialog.getByRole('button', { name: 'Simpan produk', exact: true }).click(); await expect(dialog.getByRole('alert')).toContainText('Minimum stok wajib diisi')
     await dialog.getByLabel('Minimum stok *', { exact: true }).fill('0.500'); await dialog.getByLabel('Stok fisik', { exact: true }).fill('1.2345'); await dialog.getByRole('button', { name: 'Simpan produk', exact: true }).click(); await expect(dialog.getByRole('alert')).toContainText('maksimal 3 desimal')
@@ -51,7 +51,7 @@ test('product numeric inputs start blank, allow deletion, validate and persist e
     await dialog.getByRole('button', { name: 'Simpan perubahan', exact: true }).click(); await expect(dialog).toHaveCount(0)
     product = ok(await admin.from('catalog_products').select('*').eq('id', product.id).single()); expect(Number(product.price)).toBe(10); expect(Number(product.minimum_stock)).toBe(0); expect(Number(product.stock)).toBe(0.25)
     await p.getByRole('button', { name: 'Tambah produk', exact: true }).click(); dialog = p.getByRole('dialog', { name: 'Tambah produk', exact: true })
-    await dialog.getByLabel('Nama produk *', { exact: true }).fill('Produk Nol Uji'); await dialog.getByLabel('Kategori *', { exact: true }).selectOption('Makanan'); await dialog.getByLabel('Harga jual *', { exact: true }).fill('0'); await dialog.getByLabel('Minimum stok *', { exact: true }).fill('0')
+    await dialog.getByLabel('Nama produk *', { exact: true }).fill('Produk Nol Uji'); await dialog.getByLabel('Kategori *', { exact: true }).click(); await dialog.getByRole('option', { name: 'Makanan', exact: true }).click(); await dialog.getByLabel('Unit stok *', { exact: true }).fill('pcs'); await dialog.getByLabel('Harga jual *', { exact: true }).fill('0'); await dialog.getByLabel('Minimum stok *', { exact: true }).fill('0')
     await p.setViewportSize({ width: 390, height: 844 }); expect(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); await p.screenshot({ path: `${dir}/mobile.png`, fullPage: true })
     await dialog.getByRole('button', { name: 'Simpan produk', exact: true }).click(); await expect(dialog).toHaveCount(0)
     const zero = ok(await admin.from('catalog_products').select('*').eq('business_id', bid).eq('name', 'Produk Nol Uji').single()); expect(Number(zero.price)).toBe(0); expect(Number(zero.stock)).toBe(0)

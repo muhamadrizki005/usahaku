@@ -3,6 +3,7 @@
 import { useActionState, useId, useState, useEffect } from "react";
 import Link from "next/link";
 import { Eye, EyeOff, LockKeyhole } from "lucide-react";
+import { CustomSelect } from "@/components/ui/custom-select";
 import { GoogleSignIn } from "@/components/google-sign-in";
 import {
   loginOwner,
@@ -340,15 +341,17 @@ export function StaffForm({
         />
         <div className="flex flex-col gap-1.5 text-sm font-medium">
           <label htmlFor={roleId}>Peran</label>
-          <select
+          <CustomSelect
             id={roleId}
             name="role"
             defaultValue="cashier"
-            className="h-10 rounded-lg border border-[#454d5b] bg-[#273242] px-3 text-sm outline-none focus:border-[#24cbc5] focus:ring-2 focus:ring-[#24cbc5]/20"
-          >
-            <option value="cashier">Kasir</option>
-            <option value="admin">Admin toko</option>
-          </select>
+            options={[
+              { value: 'cashier', label: 'Kasir' },
+              { value: 'admin', label: 'Admin toko' },
+            ]}
+            ariaLabel="Peran staf"
+            className="w-full"
+          />
         </div>
         <p className="text-xs text-[#a4a7ac]">
           Username terdiri dari 3–24 huruf kecil, angka, atau garis bawah. Staf

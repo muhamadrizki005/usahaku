@@ -8,7 +8,8 @@ import type { Business } from '@/lib/validation'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronDown, Download, Package, Plus, Search, X } from 'lucide-react'
+import { Download, Package, Plus, Search, X } from 'lucide-react'
+import { CustomSelect } from '@/components/ui/custom-select'
 
 type Category = 'toko' | 'restoran' | 'barbershop'
 type Product = CatalogProduct
@@ -129,7 +130,7 @@ export default function ProductManagement({
       category: '',
       price: 0,
       stock: 0,
-      unit: 'pcs',
+      unit: '',
       minStock: 0,
       sku: '',
       barcode: '',
@@ -202,23 +203,27 @@ export default function ProductManagement({
             />
           </label>
           <div className="flex flex-wrap items-center gap-3">
-            <FilterDropdown
+            <CustomSelect
               value={filterCategory}
               options={categories}
               onChange={val => {
                 setFilterCategory(val)
                 setPage(1)
               }}
+              align="right"
               ariaLabel="Filter semua kategori"
+              className="min-w-[140px]"
             />
-            <FilterDropdown
+            <CustomSelect
               value={filterStatus}
               options={['Semua status', 'Aktif', 'Nonaktif']}
               onChange={val => {
                 setFilterStatus(val)
                 setPage(1)
               }}
+              align="right"
               ariaLabel="Filter semua status"
+              className="min-w-[140px]"
             />
           </div>
         </div>
@@ -412,89 +417,6 @@ export default function ProductManagement({
   )
 }
 
-function FilterDropdown({
-  value,
-  options,
-  onChange,
-  ariaLabel,
-}: {
-  value: string
-  options: string[]
-  onChange: (val: string) => void
-  ariaLabel?: string
-}) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false)
-      }
-    }
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    document.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [])
-
-  return (
-    <div ref={ref} className="relative inline-block">
-      <button
-        type="button"
-        aria-label={ariaLabel || value}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        onClick={() => setOpen(!open)}
-        className="inline-flex min-w-[140px] items-center justify-between gap-2.5 rounded-xl border border-border bg-[#273242] px-3.5 py-2.5 text-sm text-white transition hover:bg-[#303640] outline-none focus:border-[#24cbc5] focus:ring-2 focus:ring-[#24cbc5]/20"
-      >
-        <span className="truncate">{value}</span>
-        <ChevronDown
-          className={`size-4 shrink-0 text-[#a4a7ac] transition-transform duration-200 ${
-            open ? 'rotate-180 text-white' : ''
-          }`}
-        />
-      </button>
-
-      {open && (
-        <div
-          role="listbox"
-          className="absolute right-0 top-full z-40 mt-2 max-h-60 w-max min-w-full overflow-y-auto rounded-2xl border border-border bg-[#273242] p-1.5 shadow-2xl backdrop-blur-md animate-in fade-in-50 zoom-in-95 duration-150"
-        >
-          {options.map(opt => {
-            const isSelected = opt === value
-            return (
-              <button
-                key={opt}
-                type="button"
-                role="option"
-                aria-selected={isSelected}
-                onClick={() => {
-                  onChange(opt)
-                  setOpen(false)
-                }}
-                className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-sm transition-colors ${
-                  isSelected
-                    ? 'bg-[#1835d9] font-medium text-white shadow-xs'
-                    : 'text-[#c5cbd5] hover:bg-[#303640] hover:text-white'
-                }`}
-              >
-                <span>{opt}</span>
-                {isSelected && <span className="size-1.5 shrink-0 rounded-full bg-white" />}
-              </button>
-            )
-          })}
-        </div>
-      )}
-    </div>
-  )
-}
-
 function ProductEditor({
   product,
   fileRef,
@@ -506,22 +428,30 @@ function ProductEditor({
   onCancel: () => void
   onSave: (product: Product, file: File | null, key: string, imageAction: string) => Promise<CatalogResult>
 }) {
-  const [draft, setDraft] = useState(product!)
-  const [priceText, setPriceText] = useState(product?.name ? String(product.price) : '')
-  const [stockText, setStockText] = useState(product?.name ? String(product.stock) : '')
-  const [minimumText, setMinimumText] = useState(product?.name ? String(product.minStock) : '')
+  const isNew = !product?.name
+
+  const [name, setName] = useState(() => product?.name || '')
+  const [category, setCategory] = useState(() => product?.category || '')
   const [customCategory, setCustomCategory] = useState(
     Boolean(product?.category && !productCategories.includes(product.category))
   )
+  const [customCategoryText, setCustomCategoryText] = useState(
+    Boolean(product?.category && !productCategories.includes(product.category)) ? (product?.category || '') : ''
+  )
+  const [unit, setUnit] = useState(() => product?.unit || '')
+  const [sku, setSku] = useState(() => product?.sku || '')
+
+  const [price, setPrice] = useState(() => (!isNew && product?.price !== undefined ? String(product.price) : ''))
+  const [stock, setStock] = useState(() => (!isNew && product?.stock !== undefined ? String(product.stock) : ''))
+  const [minStock, setMinStock] = useState(() => (!isNew && product?.minStock !== undefined ? String(product.minStock) : ''))
+  const [active, setActive] = useState(() => product?.active ?? true)
+  const [image, setImage] = useState(() => product?.image || '')
+
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [imageAction, setImageAction] = useState('keep')
   const [operationId] = useState(() => crypto.randomUUID())
-
-  const isNew = !product?.name
-  const update = (key: keyof Product, value: string | number | boolean) =>
-    setDraft(prev => ({ ...prev, [key]: value }))
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -537,7 +467,7 @@ function ProductEditor({
   }, [onCancel])
 
   const removeImage = () => {
-    update('image', '')
+    setImage('')
     setFile(null)
     setImageAction('remove')
     if (fileRef.current) fileRef.current.value = ''
@@ -552,23 +482,73 @@ function ProductEditor({
     setImageAction('replace')
     setError('')
     const reader = new FileReader()
-    reader.onload = () => update('image', String(reader.result))
+    reader.onload = () => setImage(String(reader.result))
     reader.readAsDataURL(fileInput)
   }
 
+  const resolvedCategory = (customCategory ? customCategoryText : category).trim()
+
   const save = async () => {
     if (pending) return
-    if (!draft.name.trim() || !draft.category.trim() || !draft.unit.trim()) {
+
+    const trimmedName = name.trim()
+    const trimmedUnit = unit.trim()
+
+    if (!trimmedName || !resolvedCategory || !trimmedUnit) {
       return setError('Nama, kategori, dan unit stok wajib diisi.')
     }
-    if (!priceText.trim()) return setError('Harga jual wajib diisi. Isi 0 jika harganya nol.')
-    if (!minimumText.trim()) return setError('Minimum stok wajib diisi. Isi 0 jika tidak ada batas minimum.')
-    const parsed = productSchema.safeParse({ name: draft.name, category: draft.category, unit: draft.unit, sku: draft.sku, barcode: draft.barcode, price: priceText, minimum: minimumText, initialStock: isNew ? stockText || '0' : '0', active: draft.active })
+
+    if (!price.trim()) {
+      return setError('Harga jual wajib diisi.')
+    }
+    const cleanPrice = price.trim()
+    if (!/^(0|[1-9]\d{0,11})$/.test(cleanPrice)) {
+      return setError('Harga harus rupiah bulat, 0–999.999.999.999.')
+    }
+
+    const cleanMinStock = minStock.trim().replace(',', '.')
+    if (!cleanMinStock) {
+      return setError('Minimum stok wajib diisi.')
+    }
+    if (!/^(0|[1-9]\d*)(\.\d{1,3})?$/.test(cleanMinStock)) {
+      return setError('Minimum stok harus angka dengan maksimal 3 desimal.')
+    }
+
+    let cleanStock = '0'
+    if (isNew) {
+      if (stock.trim()) {
+        const rawStock = stock.trim().replace(',', '.')
+        if (!/^(0|[1-9]\d*)(\.\d{1,3})?$/.test(rawStock)) {
+          return setError('Stok fisik harus angka dengan maksimal 3 desimal.')
+        }
+        cleanStock = rawStock
+      }
+    } else {
+      cleanStock = String(product?.stock ?? 0)
+    }
+
+    const parsed = productSchema.safeParse({ name: trimmedName, category: resolvedCategory, unit: trimmedUnit, sku: sku.trim(), barcode: product?.barcode || '', price: cleanPrice, minimum: cleanMinStock, initialStock: isNew ? cleanStock : '0', active })
     if (!parsed.success) return setError(parsed.error.issues[0].message)
+
     setPending(true)
     setError('')
     try {
-      const result = await onSave({ ...draft, price: Number(parsed.data.price), minStock: Number(parsed.data.minimum), stock: isNew ? Number(parsed.data.initialStock) : draft.stock }, file, operationId, imageAction)
+      const payload: Product = {
+        id: product?.id || crypto.randomUUID(),
+        name: trimmedName,
+        category: resolvedCategory,
+        unit: trimmedUnit,
+        sku: sku.trim(),
+        barcode: product?.barcode || '',
+        price: Number(cleanPrice),
+        stock: Number(cleanStock),
+        minStock: Number(cleanMinStock),
+        active,
+        revision: product?.revision ?? 0,
+        stockRevision: product?.stockRevision ?? 0,
+        image,
+      }
+      const result = await onSave(payload, file, operationId, imageAction)
       if (result.error) setError(result.error)
     } catch {
       setError('Status penyimpanan belum pasti. Muat ulang untuk memeriksa.')
@@ -616,9 +596,9 @@ function ProductEditor({
               <h3 className="font-normal text-white">Informasi produk</h3>
 
               <div className="relative flex min-h-32 flex-col items-center justify-center rounded-2xl border border-dashed border-[#24cbc5]/40 bg-[#24cbc5]/10 p-4">
-                {draft.image ? (
+                {image ? (
                   <>
-                    <img src={draft.image} alt="Preview produk" className="size-20 rounded-xl object-cover" />
+                    <img src={image} alt="Preview produk" className="size-20 rounded-xl object-cover" />
                     <button
                       type="button"
                       onClick={removeImage}
@@ -644,152 +624,163 @@ function ProductEditor({
                 </label>
               </div>
 
-              <label className="text-sm font-medium text-white">
-                Nama produk *
+              <div>
+                <label className="text-sm font-medium text-white" htmlFor="product-name-input">
+                  Nama produk *
+                </label>
                 <input
-                  value={draft.name}
-                  onChange={e => update('name', e.target.value)}
+                  id="product-name-input"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
                   placeholder="Contoh: Kopi Susu Aren"
                   className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]"
                 />
-              </label>
+              </div>
 
               <div className="space-y-3">
-                <label className="text-sm font-medium text-white">
-                  Kategori *
-                  <select
-                    aria-label="Kategori *"
-                    value={customCategory ? 'Lainnya' : draft.category}
-                    onChange={e => {
-                      const custom = e.target.value === 'Lainnya'
-                      setCustomCategory(custom)
-                      update('category', custom ? '' : e.target.value)
+                <div>
+                  <label className="text-sm font-medium text-white" id="product-category-label">
+                    Kategori *
+                  </label>
+                  <CustomSelect
+                    value={customCategory ? 'Lainnya' : category}
+                    options={[
+                      { value: '', label: 'Pilih kategori', disabled: true },
+                      ...productCategories.map(value => ({ value, label: value })),
+                      { value: 'Lainnya', label: 'Lainnya' },
+                    ]}
+                    onChange={val => {
+                      const isCustom = val === 'Lainnya'
+                      setCustomCategory(isCustom)
+                      if (!isCustom) {
+                        setCategory(val)
+                        setCustomCategoryText('')
+                      }
                     }}
-                    className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]"
-                  >
-                    <option value="" disabled>
-                      Pilih kategori
-                    </option>
-                    {productCategories.map(value => (
-                      <option key={value} value={value}>
-                        {value}
-                      </option>
-                    ))}
-                    <option value="Lainnya">Lainnya</option>
-                  </select>
-                </label>
+                    placeholder="Pilih kategori"
+                    ariaLabel="Kategori *"
+                    className="mt-1.5 w-full"
+                  />
+                </div>
                 {customCategory && (
-                  <label className="block text-sm font-medium text-white">
-                    Kategori lainnya *
+                  <div>
+                    <label className="block text-sm font-medium text-white" htmlFor="custom-category-input">
+                      Kategori lainnya *
+                    </label>
                     <input
+                      id="custom-category-input"
                       maxLength={100}
-                      value={draft.category}
-                      onChange={e => update('category', e.target.value)}
+                      value={customCategoryText}
+                      onChange={e => setCustomCategoryText(e.target.value)}
                       placeholder="Masukkan nama kategori"
                       className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]"
                     />
-                  </label>
+                  </div>
                 )}
               </div>
 
-              <label className="text-sm font-medium text-white">
-                Unit stok *
+              <div>
+                <label className="text-sm font-medium text-white" htmlFor="product-unit-input">
+                  Unit stok *
+                </label>
                 <input
-                  value={draft.unit}
+                  id="product-unit-input"
+                  value={unit}
                   disabled={!isNew}
-                  title="Satuan tetap setelah produk dibuat"
-                  onChange={e => update('unit', e.target.value)}
-                  placeholder="pcs, porsi, kg, botol..."
+                  title={isNew ? undefined : 'Satuan tetap setelah produk dibuat'}
+                  onChange={e => setUnit(e.target.value)}
+                  placeholder="pcs/porsi/kg/botol/..."
                   className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5] disabled:opacity-50"
                 />
-              </label>
+              </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="text-sm font-medium text-white">
-                    SKU
-                    <input
-                      aria-label="SKU"
-                      aria-describedby="product-sku-help"
-                      maxLength={64}
-                      placeholder={isNew ? `${productSkuPrefix(draft.category, draft.name)}001` : product?.sku}
-                      value={draft.sku}
-                      onChange={e => update('sku', e.target.value)}
-                      className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]"
-                    />
-                  </label>
-                  <p id="product-sku-help" className="mt-1 text-xs text-[#a4a7ac]">
-                    {isNew
-                      ? 'Kosongkan untuk SKU otomatis. Nomor ditetapkan saat disimpan; dapat diisi sendiri.'
-                      : 'Kosongkan untuk mempertahankan SKU saat ini.'}
-                  </p>
-                </div>
-                <label className="text-sm font-medium text-white">
-                  Barcode
-                  <input
-                    value={draft.barcode}
-                    onChange={e => update('barcode', e.target.value)}
-                    placeholder="Contoh: 89912345678"
-                    className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]"
-                  />
+              <div>
+                <label className="text-sm font-medium text-white" htmlFor="product-sku-input">
+                  SKU
                 </label>
+                <input
+                  id="product-sku-input"
+                  aria-label="SKU"
+                  aria-describedby="product-sku-help"
+                  maxLength={64}
+                  placeholder={isNew ? `${productSkuPrefix(resolvedCategory, name)}001` : product?.sku}
+                  value={sku}
+                  onChange={e => setSku(e.target.value)}
+                  className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]"
+                />
+                <p id="product-sku-help" className="mt-1 text-xs text-[#a4a7ac]">
+                  {isNew
+                    ? 'Kosongkan untuk SKU otomatis. Nomor ditetapkan saat disimpan; dapat diisi sendiri.'
+                    : 'Kosongkan untuk mempertahankan SKU saat ini.'}
+                </p>
               </div>
             </div>
 
             <div className="flex flex-col gap-4">
               <h3 className="font-normal text-white">Harga & pengaturan penjualan</h3>
 
-              <label className="text-sm font-medium text-white">
-                Harga jual *
+              <div>
+                <label className="text-sm font-medium text-white" htmlFor="product-price-input">
+                  Harga jual *
+                </label>
                 <input
-                  type="number"
-                  min="0"
-                  value={priceText}
-                  onChange={e => setPriceText(e.target.value)}
+                  id="product-price-input"
+                  type="text"
+                  inputMode="numeric"
+                  value={price}
+                  onChange={e => setPrice(e.target.value)}
+                  placeholder="Contoh: 15000"
                   className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]"
                 />
-              </label>
+              </div>
 
-              <label className="text-sm font-medium text-white">
-                Stok fisik
+              <div>
+                <label className="text-sm font-medium text-white" htmlFor="product-stock-input">
+                  Stok fisik
+                </label>
                 <input
-                  type="number"
-                  min="0"
-                  step="0.001"
+                  id="product-stock-input"
+                  type="text"
+                  inputMode="decimal"
                   disabled={!isNew}
-                  title="Ubah stok melalui inventori dengan alasan"
-                  value={stockText}
-                  onChange={e => setStockText(e.target.value)}
+                  title={isNew ? undefined : 'Ubah stok melalui inventori dengan alasan'}
+                  value={stock}
+                  onChange={e => setStock(e.target.value)}
+                  placeholder="0"
                   className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5] disabled:opacity-50"
                 />
-              </label>
+              </div>
 
-              <label className="text-sm font-medium text-white">
-                Minimum stok *
+              <div>
+                <label className="text-sm font-medium text-white" htmlFor="product-minstock-input">
+                  Minimum stok *
+                </label>
                 <input
-                  type="number"
-                  min="0"
-                  step="0.001"
-                  value={minimumText}
-                  onChange={e => setMinimumText(e.target.value)}
+                  id="product-minstock-input"
+                  type="text"
+                  inputMode="decimal"
+                  value={minStock}
+                  onChange={e => setMinStock(e.target.value)}
+                  placeholder="0"
                   className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]"
                 />
-              </label>
+              </div>
 
-              <label className="text-sm font-medium text-white">
-                Status produk
-                <select
-                  value={draft.active ? 'Aktif' : 'Nonaktif'}
-                  onChange={e => update('active', e.target.value === 'Aktif')}
-                  className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]"
-                >
-                  <option>Aktif</option>
-                  <option>Nonaktif</option>
-                </select>
-              </label>
+              <div>
+                <label className="text-sm font-medium text-white" id="product-status-label">
+                  Status produk
+                </label>
+                <CustomSelect
+                  value={active ? 'Aktif' : 'Nonaktif'}
+                  options={['Aktif', 'Nonaktif']}
+                  onChange={val => setActive(val === 'Aktif')}
+                  ariaLabel="Status produk"
+                  className="mt-1.5 w-full"
+                />
+              </div>
 
               <div className="rounded-2xl border border-[#24cbc5]/20 bg-[#24cbc5]/10 p-4 text-sm text-[#24cbc5]">
-                {draft.active
+                {active
                   ? 'Produk aktif dan tersedia untuk ditampilkan di kasir.'
                   : 'Produk nonaktif tidak muncul di kasir, tetapi riwayat transaksi dan stok fisiknya tetap dipertahankan.'}
               </div>
