@@ -29,5 +29,71 @@ export function BusinessHoursSettings({ business }: { business: Business }) {
     {state.success && !error && <p role="status" className="mt-3 text-sm text-[#a4a7ac]">{state.success}</p>}
   </section>
 }
-export function HoursEditor({hours,setHours,save,error,cancel,pending}:{hours:Hours;setHours:(h:Hours)=>void;save:()=>void;error:string;cancel:()=>void;pending:boolean}) { const update=(day:string,key:string,value:string|boolean)=>setHours({...hours,[day]:{...hours[day],[key]:value}}); return <div><p className="mb-4 text-sm text-[#a4a7ac]">WIB. Jam tutup lebih awal berarti hari berikutnya. Jam sama dan jadwal tumpang tindih tidak diperbolehkan.</p><button type="button" onClick={()=>{const source=days.find(d=>!hours[d].closed)||days[0]; setHours(Object.fromEntries(days.map(d=>[d,{open:hours[source].open,close:hours[source].close,closed:false}])) as Hours)}} className="mb-3 rounded-full border border-[#454d5b] px-4 py-2 text-sm font-normal text-[#24cbc5]">Aktifkan semua hari</button>{days.map(d=><div className={`mb-2 grid grid-cols-[72px_minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2 rounded-lg border p-2 transition-colors ${hours[d].closed ? 'border-[#454d5b]/50 bg-[#1c222e] text-[#a4a7ac] [&_input]:opacity-40' : 'border-[#454d5b] bg-[#273242] text-[#ffffff]'}`} key={d}><b className="text-sm">{d}</b><input type="time" className={input} disabled={hours[d].closed} value={hours[d].open} onChange={e=>update(d,'open',e.target.value)}/><input type="time" className={input} disabled={hours[d].closed} value={hours[d].close} onChange={e=>update(d,'close',e.target.value)}/><button type="button" aria-label={`${d} ${hours[d].closed ? 'dibuka' : 'ditutup'}`} aria-pressed={!hours[d].closed} onClick={()=>update(d,'closed',!hours[d].closed)} className={`grid size-7 place-items-center rounded-full border-2 ${hours[d].closed ? 'border-[#454d5b] bg-transparent' : 'border-[#1835d9] bg-[#273242]'}`}><span className={`size-2.5 rounded-full ${hours[d].closed ? 'bg-transparent' : 'bg-[#1835d9]'}`} /></button></div>)}<Footer cancel={pending?()=>{}:cancel} save={save} label={pending?'Menyimpan...':'Simpan jam operasional'} error={error}/></div> }
+export function HoursEditor({hours,setHours,save,error,cancel,pending}:{hours:Hours;setHours:(h:Hours)=>void;save:()=>void;error:string;cancel:()=>void;pending:boolean}) {
+  const update=(day:string,key:string,value:string|boolean)=>setHours({...hours,[day]:{...hours[day],[key]:value}});
+  const allActive = days.every(d => !hours[d]?.closed);
+  const toggleAll = () => {
+    if (allActive) {
+      setHours(Object.fromEntries(days.map(d => [d, { ...hours[d], closed: true }])) as Hours);
+    } else {
+      const source = days.find(d => !hours[d]?.closed) || days[0];
+      setHours(Object.fromEntries(days.map(d => [d, { open: hours[source].open, close: hours[source].close, closed: false }])) as Hours);
+    }
+  };
+
+  return (
+    <div>
+      <p className="mb-4 text-sm text-[#a4a7ac]">WIB. Jam tutup lebih awal berarti hari berikutnya. Jam sama dan jadwal tumpang tindih tidak diperbolehkan.</p>
+      <button
+        type="button"
+        onClick={toggleAll}
+        className={`mb-3 rounded-full border px-4 py-2 text-sm font-normal transition-colors ${
+          allActive
+            ? 'border-white text-red-500 hover:bg-white/10'
+            : 'border-[#454d5b] text-[#24cbc5] hover:border-[#24cbc5]'
+        }`}
+      >
+        {allActive ? 'Nonaktifkan semua hari' : 'Aktifkan semua hari'}
+      </button>
+      {days.map(d => (
+        <div
+          className={`mb-2 grid grid-cols-[72px_minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2 rounded-lg border p-2 transition-colors ${
+            hours[d].closed
+              ? 'border-[#454d5b]/50 bg-[#1c222e] text-[#a4a7ac] [&_input]:opacity-40'
+              : 'border-[#454d5b] bg-[#273242] text-[#ffffff]'
+          }`}
+          key={d}
+        >
+          <b className="text-sm">{d}</b>
+          <input
+            type="time"
+            className={input}
+            disabled={hours[d].closed}
+            value={hours[d].open}
+            onChange={e => update(d, 'open', e.target.value)}
+          />
+          <input
+            type="time"
+            className={input}
+            disabled={hours[d].closed}
+            value={hours[d].close}
+            onChange={e => update(d, 'close', e.target.value)}
+          />
+          <button
+            type="button"
+            aria-label={`${d} ${hours[d].closed ? 'dibuka' : 'ditutup'}`}
+            aria-pressed={!hours[d].closed}
+            onClick={() => update(d, 'closed', !hours[d].closed)}
+            className={`grid size-7 place-items-center rounded-full border-2 ${
+              hours[d].closed ? 'border-[#454d5b] bg-transparent' : 'border-[#1835d9] bg-[#273242]'
+            }`}
+          >
+            <span className={`size-2.5 rounded-full ${hours[d].closed ? 'bg-transparent' : 'bg-[#1835d9]'}`} />
+          </button>
+        </div>
+      ))}
+      <Footer cancel={pending ? () => {} : cancel} save={save} label={pending ? 'Menyimpan...' : 'Simpan jam operasional'} error={error} />
+    </div>
+  );
+}
 function Footer({cancel,save,label,error}:{cancel:()=>void;save:()=>void;label:string;error:string}){return <><p className="mt-4 min-h-5 text-sm text-[#ffb4ae]">{error}</p><div className="mt-4 flex justify-end gap-3"><button onClick={cancel} className="rounded-lg border px-4 py-2.5 text-sm font-normal text-[#a4a7ac]">Batal</button><button onClick={save} className="rounded-lg bg-[#1835d9] px-4 py-2.5 text-sm font-normal text-white">{label}</button></div></>}
