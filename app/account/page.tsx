@@ -1,10 +1,56 @@
-import Link from 'next/link'
 import { requireAccount } from '@/lib/access'
-import { roleNames, homeForRole } from '@/lib/auth/permissions'
-import { AccountCard } from '@/components/account-shell'
-import { signOut } from '@/app/actions'
+import { homeForRole } from '@/lib/auth/permissions'
+import { AccountSettingsView } from '@/components/account/account-settings-view'
+import type { Business } from '@/lib/validation'
+
 export default async function AccountPage() {
-  const { user, member } = await requireAccount()
-  const isStaff = user.app_metadata.account_type === 'staff'
-  return <AccountCard title={member && !member.active ? 'Akses dinonaktifkan' : 'Akun Anda'}><p className="font-normal">{member?.name || user.user_metadata.full_name || user.user_metadata.name || 'Pengguna'}</p>{member && <p className="mt-2 text-sm text-[#a4a7ac]">{roleNames[member.role]}</p>}{member && !member.active ? <p className="mt-5 text-[#c5cbd5]">Akses Anda dinonaktifkan. Hubungi owner usaha. Sesi ini tidak memiliki akses ke data usaha.</p> : !member && isStaff ? <p className="mt-5 text-[#c5cbd5]">Akun staf belum terhubung dengan usaha. Hubungi owner.</p> : <div className="mt-6 flex flex-wrap gap-4"><Link href={member ? member.must_change_password ? '/account/password' : homeForRole(member.role) : '/onboarding'} className="text-[#24cbc5] underline">{member?.must_change_password ? 'Ganti sandi sementara' : member ? 'Kembali ke ruang usaha' : 'Buat usaha'}</Link><Link href="/account/password" className="text-[#24cbc5] underline">Ubah kata sandi</Link></div>}<form action={signOut} className="mt-8"><button className="rounded-xl border border-slate-300 px-4 py-2 text-sm">Keluar akun</button></form></AccountCard>
+  const { supabase, user, member } = await requireAccount()
+
+  let business: Business | null = null
+  if (member?.business_id) {
+    const { data } = await supabase
+      .from('businesses')
+      .select('*')
+      .eq('id', member.business_id)
+      .maybeSingle()
+    business = data as Business | null
+  }
+
+  const registeredDateFormatted = user.created_at
+    ? new Intl.DateTimeFormat('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }).format(new Date(user.created_at))
+    : '-'
+
+  const backHref = member
+    ? member.must_change_password
+      ? '/account/password'
+      : homeForRole(member.role)
+    : '/onboarding'
+
+  const backLabel = member
+    ? member.must_change_password
+      ? 'Ganti sandi sementara'
+      : 'Kembali ke Dashboard'
+    : 'Lanjut ke Onboarding'
+
+  return (
+    <AccountSettingsView
+      user={{
+        id: user.id,
+        email: user.email,
+        phone: user.phone,
+        created_at: user.created_at,
+        app_metadata: user.app_metadata,
+        user_metadata: user.user_metadata,
+      }}
+      member={member}
+      business={business}
+      registeredDateFormatted={registeredDateFormatted}
+      backHref={backHref}
+      backLabel={backLabel}
+    />
+  )
 }
