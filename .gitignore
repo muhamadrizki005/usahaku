@@ -18,9 +18,4 @@ node_modules
 .DS_Store
 .cache/
 test-results/
-playwright-report/
-
-# AI Agent internal skills & hooks
-.agent/
-.agents/
-.codex/
+playwright-report/
