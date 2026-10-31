@@ -9,18 +9,20 @@ import {
   dashboardNavigation,
   topNavigationItems,
   sidebarNavigationItems,
+  restaurantTopNavigationItems,
+  restaurantSidebarNavigationItems,
 } from './dashboard-navigation'
 import { rolesForPath, type Role } from '@/lib/auth/permissions'
 import { useReducedMotionPreference } from '@/lib/use-reduced-motion'
 
-export const topItemsForRole = (role: Role) =>
-  topNavigationItems.filter(([, , path]) => rolesForPath(path).includes(role))
+export const topItemsForRole = (role: Role, category = 'store') =>
+  (category === 'restaurant' ? restaurantTopNavigationItems : topNavigationItems).filter(([, , path]) => rolesForPath(path).includes(role))
 
-export const sidebarItemsForRole = (role: Role) =>
-  sidebarNavigationItems.filter(([, , path]) => rolesForPath(path).includes(role))
+export const sidebarItemsForRole = (role: Role, category = 'store') =>
+  (category === 'restaurant' ? restaurantSidebarNavigationItems : sidebarNavigationItems).filter(([, , path]) => rolesForPath(path).includes(role))
 
-export const dashboardItemsForRole = (role: Role) =>
-  dashboardNavigation.filter(([, , path]) => rolesForPath(path).includes(role))
+export const dashboardItemsForRole = (role: Role, category = 'store') =>
+  (category === 'restaurant' ? [...restaurantTopNavigationItems, ...restaurantSidebarNavigationItems] : dashboardNavigation).filter(([, , path]) => rolesForPath(path).includes(role))
 
 export function DashboardBrand({ onHome }: { onHome: () => void }) {
   return (
@@ -47,15 +49,17 @@ export function DashboardTopNav({
   role,
   onNavigate,
   activePath,
+  category = 'store',
 }: {
   role: Role
   onNavigate: (path: string) => void
   activePath?: string
+  category?: string
 }) {
   const pathname = usePathname()
   const currentPath = activePath || pathname
   const reducedMotion = useReducedMotionPreference()
-  const items = topItemsForRole(role)
+  const items = topItemsForRole(role, category)
 
   return (
     <nav
@@ -98,14 +102,18 @@ export function DashboardSidebar({
   role,
   onNavigate,
   activePath,
+  category = 'store',
+  assistantVisible,
 }: {
   role: Role
   onNavigate: (path: string) => void
   activePath?: string
+  category?: string
+  assistantVisible?: boolean
 }) {
   const pathname = usePathname()
   const currentPath = activePath || pathname
-  const items = sidebarItemsForRole(role)
+  const items = sidebarItemsForRole(role, category)
 
   if (items.length === 0) return null
 
@@ -116,13 +124,15 @@ export function DashboardSidebar({
     >
       <div className="flex flex-col items-center gap-3 rounded-full border border-[#454d5b]/80 bg-[#273242]/90 p-2 sm:p-2.5 shadow-2xl backdrop-blur-md">
         {items.map(([label, Icon, path]) => {
+          const assistantToggle = path === '/dashboard/assistant' && assistantVisible !== undefined
           const active =
-            currentPath === path || currentPath.startsWith(path + '/')
+            assistantToggle ? assistantVisible : currentPath === path || currentPath.startsWith(path + '/')
           return (
             <button
               key={path}
               onClick={() => onNavigate(path)}
-              aria-current={active ? 'page' : undefined}
+              aria-current={!assistantToggle && active ? 'page' : undefined}
+              aria-pressed={assistantToggle ? assistantVisible : undefined}
               aria-label={label}
               title={label}
               className={`group relative grid size-10 sm:size-11 place-items-center rounded-full border transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5] cursor-pointer ${
@@ -147,22 +157,28 @@ function NavigationItems({
   role,
   onNavigate,
   activePath,
+  category = 'store',
+  assistantVisible,
 }: {
   role: Role
   onNavigate: (path: string) => void
   activePath?: string
+  category?: string
+  assistantVisible?: boolean
 }) {
   const pathname = usePathname()
   const currentPath = activePath || pathname
-  return dashboardItemsForRole(role).map(([label, Icon, path]) => {
+  return dashboardItemsForRole(role, category).map(([label, Icon, path]) => {
+    const assistantToggle = path === '/dashboard/assistant' && assistantVisible !== undefined
     const active =
-      currentPath === path ||
+      assistantToggle ? assistantVisible : currentPath === path ||
       (path !== '/dashboard' && currentPath.startsWith(path + '/'))
     return (
       <button
         key={path}
         onClick={() => onNavigate(path)}
-        aria-current={active ? 'page' : undefined}
+        aria-current={!assistantToggle && active ? 'page' : undefined}
+        aria-pressed={assistantToggle ? assistantVisible : undefined}
         className={`flex min-h-11 shrink-0 items-center gap-2.5 rounded-[12px] border px-3 text-left text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#24cbc5] cursor-pointer ${
           active
             ? 'border-[#24cbc5]/30 bg-[#1c222e] text-[#24cbc5] shadow-xs'
@@ -180,10 +196,14 @@ export function DashboardMobileMenu({
   role,
   onNavigate,
   businessName,
+  category = 'store',
+  assistantVisible,
 }: {
   role: Role
   onNavigate: (path: string) => void
   businessName: string
+  category?: string
+  assistantVisible?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const id = useId()
@@ -272,6 +292,8 @@ export function DashboardMobileMenu({
               <nav aria-label="Navigasi dashboard mobile" className="flex flex-col gap-1 overflow-y-auto">
                 <NavigationItems
                   role={role}
+                  category={category}
+                  assistantVisible={assistantVisible}
                   onNavigate={(path) => {
                     setOpen(false)
                     onNavigate(path)

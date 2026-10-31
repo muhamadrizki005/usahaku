@@ -2,7 +2,7 @@
 
 import { productSkuPrefix } from '@/lib/product-sku'
 import { saveCatalogProduct, bulkCatalogProducts } from '@/app/catalog-actions'
-import { productCategories, formatQuantity, type CatalogProduct, type CatalogResult } from '@/lib/catalog'
+import { productCategories, productSchema, formatQuantity, type CatalogProduct, type CatalogResult } from '@/lib/catalog'
 import type { Role } from '@/lib/auth/permissions'
 import type { Business } from '@/lib/validation'
 
@@ -527,6 +527,9 @@ function ProductEditor({
       cleanStock = String(product?.stock ?? 0)
     }
 
+    const parsed = productSchema.safeParse({ name: trimmedName, category: resolvedCategory, unit: trimmedUnit, sku: sku.trim(), barcode: product?.barcode || '', price: cleanPrice, minimum: cleanMinStock, initialStock: isNew ? cleanStock : '0', active })
+    if (!parsed.success) return setError(parsed.error.issues[0].message)
+
     setPending(true)
     setError('')
     try {
@@ -784,7 +787,7 @@ function ProductEditor({
             </div>
           </div>
 
-          {error && <p className="mt-5 rounded-xl bg-[#4a252b] p-3 text-sm text-[#ffb4ae]">{error}</p>}
+          {error && <p role="alert" className="mt-5 rounded-xl bg-[#4a252b] p-3 text-sm text-[#ffb4ae]">{error}</p>}
         </div>
 
         {/* Modal Footer */}
