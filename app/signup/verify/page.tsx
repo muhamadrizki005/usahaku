@@ -108,15 +108,16 @@ export default function VerifyEmailPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#1c222e] text-white">
-      <header className="border-b border-white/10">
+    <main className="landing-page relative min-h-screen overflow-x-clip text-white">
+
+      <header className="relative z-10 border-b border-white/10 bg-black/20 backdrop-blur-md">
         <div className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between px-5 sm:px-8 lg:px-12">
           <Link href="/" aria-label="Usahaku beranda"><UsahakuLogo /></Link>
           <Link href="/signup" className="inline-flex items-center gap-2 text-sm text-[#c5cbd5] hover:text-[#24cbc5]"><ArrowLeft aria-hidden="true" /> Kembali ke pendaftaran</Link>
         </div>
       </header>
-      <section className="mx-auto flex min-h-[calc(100vh-136px)] max-w-xl items-center px-5 py-14">
-        <div className="w-full rounded-2xl border border-white/10 bg-[#273242] p-6 sm:p-10">
+      <section className="relative z-10 mx-auto flex min-h-[calc(100vh-136px)] max-w-xl items-center px-5 py-14">
+        <div className="w-full rounded-2xl border border-white/10 bg-[#273242]/70 backdrop-blur-sm p-6 sm:p-10">
           <div className="grid size-12 place-items-center rounded-2xl bg-[#273242] text-[#24cbc5]"><MailCheck aria-hidden="true" /></div>
           <h1 className="mt-6 text-3xl font-normal tracking-tight">Verifikasi email Anda</h1>
           <p className="mt-3 leading-7 text-[#c5cbd5]">Kami telah mengirim kode verifikasi ke email Anda. Masukkan kode tersebut untuk melanjutkan.</p>
