@@ -12,6 +12,9 @@ export interface NumberTickerProps extends ComponentPropsWithoutRef<"span"> {
   delay?: number
   decimalPlaces?: number
   locale?: string
+  loop?: boolean
+  peakHoldDuration?: number
+  bottomHoldDuration?: number
 }
 
 export function NumberTicker({
@@ -22,6 +25,9 @@ export function NumberTicker({
   className,
   decimalPlaces = 0,
   locale = "id-ID",
+  loop = false,
+  peakHoldDuration = 2000,
+  bottomHoldDuration = 800,
   ...props
 }: NumberTickerProps) {
   const ref = useRef<HTMLSpanElement>(null)
@@ -30,23 +36,72 @@ export function NumberTicker({
     damping: 60,
     stiffness: 100,
   })
-  const isInView = useInView(ref, { once: true, margin: "0px" })
+  const isInView = useInView(ref, { once: !loop, margin: "0px" })
 
   useEffect(() => {
+    if (!isInView) return
+
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+
+    if (prefersReducedMotion) {
+      motionValue.set(direction === "down" ? startValue : value)
+      return
+    }
+
+    let isMounted = true
     let timer: ReturnType<typeof setTimeout> | null = null
 
-    if (isInView) {
+    if (!loop) {
       timer = setTimeout(() => {
-        motionValue.set(direction === "down" ? startValue : value)
+        if (isMounted) {
+          motionValue.set(direction === "down" ? startValue : value)
+        }
       }, delay * 1000)
-    }
 
-    return () => {
-      if (timer !== null) {
-        clearTimeout(timer)
+      return () => {
+        isMounted = false
+        if (timer !== null) clearTimeout(timer)
       }
     }
-  }, [motionValue, isInView, delay, value, direction, startValue])
+
+    // Ping-pong loop: smoothly spring to target, hold, spring back, hold, repeat
+    let movingToTarget = direction !== "down"
+    const upInterval = 1500 + peakHoldDuration
+    const downInterval = 1400 + bottomHoldDuration
+
+    const scheduleNext = () => {
+      if (!isMounted) return
+      movingToTarget = !movingToTarget
+      motionValue.set(movingToTarget ? value : startValue)
+      const nextDelay = movingToTarget ? upInterval : downInterval
+      timer = setTimeout(scheduleNext, nextDelay)
+    }
+
+    // Initial trigger
+    timer = setTimeout(() => {
+      if (!isMounted) return
+      motionValue.set(movingToTarget ? value : startValue)
+      const nextDelay = movingToTarget ? upInterval : downInterval
+      timer = setTimeout(scheduleNext, nextDelay)
+    }, delay * 1000)
+
+    return () => {
+      isMounted = false
+      if (timer !== null) clearTimeout(timer)
+    }
+  }, [
+    motionValue,
+    isInView,
+    delay,
+    value,
+    direction,
+    startValue,
+    loop,
+    peakHoldDuration,
+    bottomHoldDuration,
+  ])
 
   useEffect(
     () =>

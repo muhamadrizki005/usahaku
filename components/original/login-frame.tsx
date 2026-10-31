@@ -20,12 +20,12 @@ export function LoginFrame({title = 'Masuk ke Usahaku', description = 'Lanjutkan
       <div className="grid min-h-[calc(100vh-136px)] lg:grid-cols-[42%_58%]">
         <section className="bg-[#273242] px-5 py-12 sm:px-10 lg:flex lg:items-center lg:px-16 xl:px-24">
           <div className="mx-auto w-full max-w-xl">
-            <p className="text-xs font-semibold tracking-[0.18em] text-[#24cbc5]">RUANG UNTUK USAHA ANDA</p>
-            <h1 className="mt-5 max-w-lg text-4xl font-semibold leading-[1.12] tracking-tight text-white sm:text-5xl">Selamat datang kembali<br />di ruang usaha Anda.</h1>
+            <p className="text-xs font-normal tracking-[0.18em] text-[#24cbc5]">RUANG UNTUK USAHA ANDA</p>
+            <h1 className="mt-5 max-w-lg text-4xl font-normal leading-[1.12] tracking-tight text-white sm:text-5xl">Selamat datang kembali<br />di ruang usaha Anda.</h1>
             <p className="mt-6 max-w-md text-lg leading-8 text-[#c5cbd5]">Satu platform untuk mengelola usaha, pelanggan, dan pertumbuhan bisnis.</p>
 
             <div className="mt-10 rounded-2xl border border-white/10 bg-[#1c222e] p-6 shadow-sm">
-              <h2 className="text-base font-semibold text-white">Mengikuti cara usaha Anda bekerja</h2>
+              <h2 className="text-base font-normal text-white">Mengikuti cara usaha Anda bekerja</h2>
               <div className="mt-6 flex flex-col gap-5">
                 <Benefit icon={Store} title="Toko & laundry" description="Stok, transaksi, atau progres pesanan." />
                 <Benefit icon={CalendarDays} title="Usaha berbasis jadwal" description="Reservasi dan janji temu sesuai layanan." />
@@ -43,7 +43,7 @@ export function LoginFrame({title = 'Masuk ke Usahaku', description = 'Lanjutkan
               <Link href="/login" aria-current={mode === 'owner' ? 'page' : undefined} className={`rounded-lg px-4 py-2 ${mode === 'owner' ? 'bg-white/10 text-[#24cbc5]' : 'text-white'}`}>Pemilik</Link>
               <Link href="/login?mode=staff" aria-current={mode === 'staff' ? 'page' : undefined} className={`rounded-lg px-4 py-2 ${mode === 'staff' ? 'bg-white/10 text-[#24cbc5]' : 'text-white'}`}>Staf</Link>
             </nav>
-            <h2 className="mt-6 text-3xl font-semibold tracking-tight text-white sm:text-4xl">{title}</h2>
+            <h2 className="mt-6 text-3xl font-normal tracking-tight text-white sm:text-4xl">{title}</h2>
             <p className="mt-3 max-w-lg leading-7 text-[#c5cbd5]">{description}</p>
 
             {children}
@@ -60,5 +60,5 @@ export function LoginFrame({title = 'Masuk ke Usahaku', description = 'Lanjutkan
 }
 
 function Benefit({ icon: Icon, title, description }: { icon: typeof Store; title: string; description: string }) {
-  return <div className="flex gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[#273242] text-[#24cbc5]"><Icon aria-hidden="true" /></span><div><p className="text-sm font-semibold text-white">{title}</p><p className="mt-1 text-sm leading-5 text-[#c5cbd5]">{description}</p></div></div>
+  return <div className="flex gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[#273242] text-[#24cbc5]"><Icon aria-hidden="true" /></span><div><p className="text-sm font-normal text-white">{title}</p><p className="mt-1 text-sm leading-5 text-[#c5cbd5]">{description}</p></div></div>
 }

@@ -11,6 +11,7 @@ import { NumberTicker } from '@/registry/magicui/number-ticker'
 import { MenuBars } from '@reui/icons/default/filled/menu-bars'
 import { ShapeGrid } from '@/components/shape-grid'
 import TiltedCard, { TiltedCardLayer } from '@/components/tilted-card'
+import TextType from '@/components/TextType'
 
 const categories = [
   { label: 'Toko / Minimarket / Kios', type: 'toko', icon: Store, description: 'Dari kasir ke stok, jaga catatan barang dan penjualan tetap rapi.', features: ['Kasir & transaksi', 'Stok produk & persediaan', 'Laporan penjualan'], link: 'Tentang modul penjualan' },
@@ -29,8 +30,18 @@ export default function LandingPage() {
   const [legalModal, setLegalModal] = useState<LegalModalType>(null)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
+  const handleAnchorClick = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
+    const targetElement = document.getElementById(targetId)
+    if (targetElement) {
+      e.preventDefault()
+      const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      targetElement.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth' })
+      window.history.pushState(null, '', `#${targetId}`)
+    }
+  }
+
   return (
-    <main className="landing-page min-h-screen overflow-x-clip bg-background text-foreground">
+    <main className="landing-page min-h-screen overflow-x-clip text-foreground">
       {/* Floating Fully Rounded Pill Navbar with Fade In */}
       <motion.header
         initial={{ opacity: 0, y: -20 }}
@@ -38,7 +49,7 @@ export default function LandingPage() {
         transition={{ duration: 0.6, ease: 'easeOut' }}
         className="fixed top-4 sm:top-6 inset-x-0 z-50 flex justify-center px-4 pointer-events-none"
       >
-        <div className="relative pointer-events-auto flex items-center justify-between w-full max-w-4xl lg:max-w-5xl rounded-full border border-white/15 bg-black/90 px-4 py-2 sm:px-6 sm:py-2.5 shadow-2xl backdrop-blur-xl">
+        <div className="relative pointer-events-auto flex items-center justify-between w-full max-w-4xl lg:max-w-5xl rounded-full border border-white/0 bg-black/35 px-4 py-2 sm:px-6 sm:py-2.5 shadow-2xl backdrop-blur-xl">
           {/* Logo */}
           <Link href="/" aria-label="Usahaku beranda" className="flex items-center gap-2">
             <UsahakuLogo wordmarkClassName="text-white" />
@@ -46,13 +57,13 @@ export default function LandingPage() {
 
           {/* Center Navigation Links (Desktop/Laptop) */}
           <nav className="hidden md:flex items-center gap-6 lg:gap-8 text-xs lg:text-sm font-medium text-white/70" aria-label="Navigasi utama">
-            <a href="#kategori-usaha" className="transition-colors hover:text-white">
+            <a href="#kategori-usaha" onClick={(e) => handleAnchorClick(e, 'kategori-usaha')} className="transition-colors hover:text-white">
               Kategori Usaha
             </a>
-            <a href="#fitur" className="transition-colors hover:text-white">
+            <a href="#fitur" onClick={(e) => handleAnchorClick(e, 'fitur')} className="transition-colors hover:text-white">
               Fitur
             </a>
-            <a href="#cara-memulai" className="transition-colors hover:text-white">
+            <a href="#cara-memulai" onClick={(e) => handleAnchorClick(e, 'cara-memulai')} className="transition-colors hover:text-white">
               Cara Memulai
             </a>
           </nav>
@@ -67,7 +78,7 @@ export default function LandingPage() {
             </Link>
             <Link
               href="/signup"
-              className="inline-flex items-center justify-center rounded-full bg-[#1835d9] px-5 py-2 text-xs lg:text-sm font-semibold text-white shadow-md transition-all hover:bg-[#132c9e] hover:shadow-lg active:scale-95"
+              className="inline-flex items-center justify-center rounded-full bg-[#1835d9] px-5 py-2 text-xs lg:text-sm font-normal text-white shadow-md transition-all hover:bg-[#132c9e] hover:shadow-lg active:scale-95"
             >
               Mulai Sekarang
             </Link>
@@ -77,7 +88,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-2 md:hidden">
             <Link
               href="/signup"
-              className="rounded-full bg-[#1835d9] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#132c9e]"
+              className="rounded-full bg-[#1835d9] px-3.5 py-1.5 text-xs font-normal text-white shadow-sm hover:bg-[#132c9e]"
             >
               Mulai
             </Link>
@@ -100,26 +111,35 @@ export default function LandingPage() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -8, scale: 0.96 }}
                 transition={{ duration: 0.2, ease: 'easeOut' }}
-                className="absolute top-full left-0 right-0 mt-3 w-full rounded-3xl border border-white/15 bg-black/95 p-5 shadow-2xl backdrop-blur-2xl text-white"
+                className="absolute top-full left-0 right-0 mt-3 w-full rounded-3xl border border-white/15 bg-black/80 p-5 shadow-2xl backdrop-blur-2xl text-white"
               >
                 <div className="flex flex-col gap-2">
                   <a
                     href="#kategori-usaha"
-                    onClick={() => setMobileNavOpen(false)}
+                    onClick={(e) => {
+                      setMobileNavOpen(false)
+                      handleAnchorClick(e, 'kategori-usaha')
+                    }}
                     className="rounded-xl px-4 py-2.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                   >
                     Kategori Usaha
                   </a>
                   <a
                     href="#fitur"
-                    onClick={() => setMobileNavOpen(false)}
+                    onClick={(e) => {
+                      setMobileNavOpen(false)
+                      handleAnchorClick(e, 'fitur')
+                    }}
                     className="rounded-xl px-4 py-2.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                   >
                     Fitur
                   </a>
                   <a
                     href="#cara-memulai"
-                    onClick={() => setMobileNavOpen(false)}
+                    onClick={(e) => {
+                      setMobileNavOpen(false)
+                      handleAnchorClick(e, 'cara-memulai')
+                    }}
                     className="rounded-xl px-4 py-2.5 text-sm font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                   >
                     Cara Memulai
@@ -129,14 +149,14 @@ export default function LandingPage() {
                     <Link
                       href="/login"
                       onClick={() => setMobileNavOpen(false)}
-                      className="w-full rounded-full border border-white/20 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                      className="w-full rounded-full border border-white/20 py-2.5 text-center text-sm font-normal text-white transition-colors hover:bg-white/10"
                     >
                       Masuk
                     </Link>
                     <Link
                       href="/signup"
                       onClick={() => setMobileNavOpen(false)}
-                      className="w-full rounded-full bg-[#1835d9] py-2.5 text-center text-sm font-semibold text-white shadow-md transition-colors hover:bg-[#132c9e]"
+                      className="w-full rounded-full bg-[#1835d9] py-2.5 text-center text-sm font-normal text-white shadow-md transition-colors hover:bg-[#132c9e]"
                     >
                       Mulai Sekarang
                     </Link>
@@ -149,7 +169,7 @@ export default function LandingPage() {
       </motion.header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-[#1c222e] px-5 pt-24 pb-16 text-white sm:px-8 sm:pt-28 sm:pb-20 lg:px-12 lg:pt-32 lg:pb-24">
+      <section className="relative overflow-hidden bg-transparent px-5 pt-24 pb-16 text-white sm:px-8 sm:pt-28 sm:pb-20 lg:px-12 lg:pt-32 lg:pb-24">
         <div className="absolute inset-0 z-0 pointer-events-none">
           <ShapeGrid
             shape="square"
@@ -180,8 +200,8 @@ export default function LandingPage() {
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             className="min-w-0"
           >
-            <p className="mb-6 text-xs font-semibold tracking-[0.18em] text-[#24cbc5]">UNTUK BERBAGAI USAHA INDONESIA</p>
-            <h1 className="text-5xl font-semibold leading-[1.05] tracking-[-0.04em] sm:text-6xl lg:text-7xl 2xl:text-[5rem]">
+            <p className="mb-6 text-xs font-normal tracking-[0.18em] text-[#24cbc5]">UNTUK BERBAGAI USAHA INDONESIA</p>
+            <h1 className="text-5xl font-medium leading-[1.05] tracking-[-0.04em] sm:text-6xl lg:text-7xl 2xl:text-[5rem]">
               <TextEffect per="char" preset="fade" as="span" className="inline">
                 Beda usaha,
               </TextEffect>
@@ -190,24 +210,39 @@ export default function LandingPage() {
                 satu platform.
               </TextEffect>
               <br />
-              <span className="text-[#24cbc5]">
-                <TextEffect per="char" preset="fade" as="span" delay={0.5} className="inline text-[#24cbc5]">
-                  Tetap sesuai caranya.
-                </TextEffect>
+              <span className="inline-block w-full text-[#24cbc5] min-h-[2.3em] align-top">
+                <TextType
+                  as="span"
+                  text={[
+                    'Tetap sesuai caranya.',
+                    'Lebih mudah kelolanya.',
+                    'Siap tumbuh bersama.',
+                  ]}
+                  typingSpeed={38}
+                  pauseDuration={1400}
+                  deletingSpeed={22}
+                  deleteMode="backspace"
+                  typeEffect="fade"
+                  cursorStyle="bar"
+                  cursorGlide
+                  showCursor
+                  cursorColor="#24cbc5"
+                  className="text-[#24cbc5] font-semibold"
+                />
               </span>
             </h1>
             <p className="mt-7 text-lg leading-8 text-white/75">Satu platform untuk mengelola usaha, pelanggan, dan pertumbuhan bisnis.</p>
             <p className="mt-4 max-w-xl leading-7 text-white/60">Dari kasir toko hingga janji temu salon, Usahaku menyesuaikan modul operasional dengan kategori usaha Anda.</p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <Link href="/signup" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#1835d9] px-5 py-3.5 font-semibold text-white">
+              <Link href="/signup" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#1835d9] px-5 py-3.5 font-normal text-white transition-colors duration-200 hover:bg-[#132c9e]">
                 Mulai Sekarang <ArrowRight aria-hidden="true" />
               </Link>
-              <a href="#fitur" className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/10 px-5 py-3.5 font-semibold text-white">
+              <a href="#fitur" onClick={(e) => handleAnchorClick(e, 'fitur')} className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/10 px-5 py-3.5 font-normal text-white transition-colors duration-200 hover:border-white/35 hover:bg-white/[0.18]">
                 Jelajahi Fitur
               </a>
             </div>
             <p className="mt-5 text-sm text-white/55">Praktis untuk pemilik usaha, sesuai dengan kebutuhan usaha Anda.</p>
-            <button type="button" onClick={() => setShowDemos(true)} className="mt-6 text-left text-sm font-semibold text-[#24cbc5] underline-offset-4 hover:underline">
+            <button type="button" onClick={() => setShowDemos(true)} className="mt-6 text-left text-sm font-normal text-[#24cbc5] underline-offset-4 hover:underline">
               Coba demo
             </button>
           </motion.div>
@@ -231,13 +266,13 @@ export default function LandingPage() {
               showTooltip={false}
               flipOnClick={true}
               backContent={
-                <div className="flex h-full w-full flex-col justify-between rounded-[1.75rem] border border-[#454d5b] bg-[#273242] p-6 text-white shadow-2xl">
+                <div className="flex h-full w-full flex-col justify-between rounded-[1.75rem] border border-border bg-[#273242] p-6 text-white shadow-2xl">
                   <div>
                     <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                      <div className="flex items-center gap-2 text-sm font-semibold text-[#24cbc5]">
+                      <div className="flex items-center gap-2 text-sm font-normal text-[#24cbc5]">
                         <Coffee className="size-4" /> Kopi Senja
                       </div>
-                      <span className="rounded-lg bg-[#24cbc5]/15 px-2 py-0.5 text-[10px] font-semibold text-[#24cbc5]">
+                      <span className="rounded-lg bg-[#24cbc5]/15 px-2 py-0.5 text-[10px] font-normal text-[#24cbc5]">
                         Modul Restoran
                       </span>
                     </div>
@@ -262,20 +297,20 @@ export default function LandingPage() {
                 </div>
               }
             >
-              <div className="w-full rounded-[1.75rem] border border-[#454d5b] bg-[#303640] p-3 shadow-2xl">
+              <div className="w-full rounded-[1.75rem] border border-border bg-[#303640] p-3 shadow-2xl">
                 <div className="overflow-hidden rounded-[1.25rem] bg-[#f7f9fc] text-[#1c222e]">
                   <div className="flex items-center justify-between border-b border-[#dfe6f0] bg-white px-4 py-3">
                     <div className="flex items-center gap-2 text-sm">
                       <Coffee className="text-[#168d86]" aria-hidden="true" />
-                      <span className="font-semibold">Kopi Senja</span>
+                      <span className="font-normal">Kopi Senja</span>
                       <span className="text-[#667085]">/ Restoran/Cafe</span>
                     </div>
-                    <span className="rounded-lg bg-[#e9fbf8] px-2 py-1 text-[10px] font-semibold text-[#168d86]">Data demo ilustratif</span>
+                    <span className="rounded-lg bg-[#e9fbf8] px-2 py-1 text-[10px] font-normal text-[#168d86]">Data demo ilustratif</span>
                   </div>
                   <div className="grid xl:grid-cols-[8.5rem_1fr]">
                     <aside className="hidden border-r border-[#dfe6f0] bg-white p-3 xl:block">
                       <div className="flex flex-col gap-1 text-[10px] text-[#52627a]">
-                        <div className="rounded-lg bg-[#e9fbf8] px-2 py-2 font-semibold text-[#168d86]">▦ Ringkasan</div>
+                        <div className="rounded-lg bg-[#e9fbf8] px-2 py-2 font-normal text-[#168d86]">▦ Ringkasan</div>
                         <div className="px-2 py-2">☷ Menu & layanan</div>
                         <div className="px-2 py-2">▣ Kasir (POS)</div>
                         <div className="px-2 py-2">▦ Reservasi</div>
@@ -287,26 +322,26 @@ export default function LandingPage() {
                     <div className="min-w-0 bg-[#f7f9fc] p-4 2xl:p-6">
                       <p className="text-xl font-medium">Selamat siang, Pak Arief</p>
                       <p className="mt-1 text-[10px] text-[#667085]">Senin, 19 Oktober 2026 • 14.30 WIB</p>
-                      
+
                       {/* Number Ticker Cards */}
                       <div className="mt-3 grid grid-cols-2 gap-2">
                         <div className="rounded-lg border border-[#dfe6f0] bg-white p-3">
                           <p className="text-[10px] text-[#667085]">Omzet hari ini</p>
                           <p className="mt-1 text-lg font-medium text-[#1c222e]">
-                            Rp<NumberTicker value={2450000} className="text-lg font-medium text-[#1c222e] dark:text-[#1c222e]" />
+                            Rp<NumberTicker value={2450000} loop className="text-lg font-medium text-[#1c222e] dark:text-[#1c222e]" />
                           </p>
                         </div>
                         <div className="rounded-lg border border-[#dfe6f0] bg-white p-3">
                           <p className="text-[10px] text-[#667085]">Transaksi hari ini</p>
                           <p className="mt-1 text-lg font-medium text-[#1c222e]">
-                            <NumberTicker value={38} className="text-lg font-medium text-[#1c222e] dark:text-[#1c222e]" />
+                            <NumberTicker value={38} loop className="text-lg font-medium text-[#1c222e] dark:text-[#1c222e]" />
                           </p>
                         </div>
                       </div>
 
                       <div className="mt-3 rounded-lg border border-[#dfe6f0] bg-white p-3">
                         <div className="flex items-center justify-between">
-                          <p className="text-xs font-semibold">Tren omzet</p>
+                          <p className="text-xs font-normal">Tren omzet</p>
                           <span className="text-[9px] text-[#667085]">13–19 Oktober 2026</span>
                         </div>
                         <div className="mt-3 flex h-20 items-end gap-1 2xl:mt-5 2xl:h-28">
@@ -345,7 +380,7 @@ export default function LandingPage() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.2 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="border-b border-border bg-card"
+        className="bg-transparent"
       >
         <div className="mx-auto flex max-w-[1800px] flex-col items-center justify-center gap-6 px-5 py-8 sm:flex-row sm:flex-wrap sm:gap-10 lg:gap-16">
           {['Operasional sesuai kategori', 'Pelanggan dan data usaha', 'Akses dari berbagai perangkat'].map((item, idx) => (
@@ -373,8 +408,8 @@ export default function LandingPage() {
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         className="mx-auto max-w-[1800px] px-5 py-20 sm:px-8 lg:px-12"
       >
-        <p className="text-xs font-semibold tracking-[0.18em] text-accent">SATU PLATFORM, LIMA KATEGORI</p>
-        <h2 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight">Usaha Anda punya cara kerja sendiri. Kami mengikutinya.</h2>
+        <p className="text-xs font-normal tracking-[0.18em] text-accent">SATU PLATFORM, LIMA KATEGORI</p>
+        <h2 className="mt-4 max-w-2xl text-4xl font-medium tracking-tight">Usaha Anda punya cara kerja sendiri. Kami mengikutinya.</h2>
         <p className="mt-5 max-w-2xl leading-7 text-muted-foreground">Pilih satu kategori utama saat menyiapkan usaha. Navigasi, data ringkasan, dan modul yang tampil akan menyesuaikan kebutuhan operasionalnya.</p>
         <div className="mt-10 grid gap-5 lg:grid-cols-3">
           {categories.map(({ label, icon: Icon, description, features: items, link }, index) => (
@@ -389,7 +424,7 @@ export default function LandingPage() {
               <div className="grid size-11 place-items-center rounded-xl bg-accent/10 text-accent">
                 <Icon aria-hidden="true" />
               </div>
-              <h3 className="mt-6 text-xl font-semibold">{label}</h3>
+              <h3 className="mt-6 text-xl font-normal">{label}</h3>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">{description}</p>
               <ul className="mt-6 flex flex-col gap-3 text-sm">
                 {items.map((item) => (
@@ -399,7 +434,7 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <a href="#fitur" className="mt-7 inline-flex items-center gap-2 text-sm font-semibold text-accent hover:underline">
+              <a href="#fitur" onClick={(e) => handleAnchorClick(e, 'fitur')} className="mt-7 inline-flex items-center gap-2 text-sm font-normal text-accent hover:underline">
                 {link} <ArrowRight aria-hidden="true" />
               </a>
             </motion.article>
@@ -414,12 +449,12 @@ export default function LandingPage() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.15 }}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        className="bg-[#1c222e] px-5 py-20 text-white sm:px-8 lg:px-12"
+        className="bg-transparent px-5 py-20 text-white sm:px-8 lg:px-12"
       >
         <div className="mx-auto grid max-w-[1800px] items-center gap-12 lg:grid-cols-[.8fr_1.2fr]">
           <div>
-            <p className="text-xs font-semibold tracking-[0.18em] text-[#24cbc5]">LEBIH JELAS, DARI AWAL HINGGA AKHIR</p>
-            <h2 className="mt-4 text-4xl font-semibold leading-tight text-white">Operasional tertata.<br />Keputusan tetap<br />di tangan Anda.</h2>
+            <p className="text-xs font-normal tracking-[0.18em] text-[#24cbc5]">LEBIH JELAS, DARI AWAL HINGGA AKHIR</p>
+            <h2 className="mt-4 text-4xl font-medium leading-tight text-white">Operasional tertata.<br />Keputusan tetap<br />di tangan Anda.</h2>
             <p className="mt-5 leading-7 text-[#c5cbd5]">Satu ruang kerja untuk aktivitas harian, dengan alur dan kontrol yang relevan untuk usaha Anda.</p>
             <div className="mt-8 flex flex-col gap-6">
               {[
@@ -434,7 +469,7 @@ export default function LandingPage() {
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: idx * 0.1 }}
                 >
-                  <h3 className="font-semibold text-white">{title}</h3>
+                  <h3 className="font-normal text-white">{title}</h3>
                   <p className="mt-2 text-sm leading-6 text-[#c5cbd5]">{description}</p>
                 </motion.div>
               ))}
@@ -445,27 +480,27 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, scale: 1, y: 0 }}
             viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="rounded-3xl border border-white/15 bg-[#1c222e] p-5 text-white sm:p-6"
+            className="rounded-3xl border border-border bg-[#1c222e] p-5 text-white sm:p-6"
           >
             <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 pb-5">
               <div>
-                <p className="text-xs font-semibold text-[#24cbc5]">Kopi Senja • Restoran/Cafe</p>
-                <p className="mt-1 text-2xl font-semibold">Reservasi mendatang</p>
+                <p className="text-xs font-normal text-[#24cbc5]">Kopi Senja • Restoran/Cafe</p>
+                <p className="mt-1 text-2xl font-normal">Reservasi mendatang</p>
                 <p className="mt-1 text-xs text-[#c5cbd5]">Data operasional ilustratif</p>
               </div>
-              <span className="rounded-full bg-[#24cbc5]/15 px-3 py-1 text-xs font-semibold text-[#24cbc5]">Terkonfirmasi</span>
+              <span className="rounded-full bg-[#24cbc5]/15 px-3 py-1 text-xs font-normal text-[#24cbc5]">Terkonfirmasi</span>
             </div>
             <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="rounded-2xl border border-white/10 bg-[#273242] p-4">
                 <p className="text-xs text-[#c5cbd5]">Booking hari ini</p>
-                <p className="mt-1 text-2xl font-semibold text-[#24cbc5]">6</p>
+                <p className="mt-1 text-2xl font-normal text-[#24cbc5]">6</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-[#273242] p-4">
                 <p className="text-xs text-[#c5cbd5]">DP menunggu verifikasi</p>
-                <p className="mt-1 text-2xl font-semibold text-[#1665CF]">Rp350.000</p>
+                <p className="mt-1 text-2xl font-normal text-[#1665CF]">Rp350.000</p>
               </div>
             </div>
-            <div className="mt-6 hidden grid-cols-[44%_25%_31%] gap-3 px-3 text-[10px] font-semibold uppercase tracking-wide text-[#c5cbd5] sm:grid">
+            <div className="mt-6 hidden grid-cols-[44%_25%_31%] gap-3 px-3 text-[10px] font-normal uppercase tracking-wide text-[#c5cbd5] sm:grid">
               <span>Pelanggan & jadwal</span>
               <span>Status booking</span>
               <span>Status pembayaran</span>
@@ -505,8 +540,8 @@ export default function LandingPage() {
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         className="mx-auto max-w-[1800px] px-5 py-20 sm:px-8 lg:px-12"
       >
-        <p className="text-xs font-semibold tracking-[0.18em] text-accent">DARI AKTIVITAS MENJADI PEMAHAMAN</p>
-        <h2 className="mt-4 max-w-xl text-4xl font-semibold leading-tight">Bukan hanya mengelola hari ini.<br />Kenali usaha Anda lebih baik.</h2>
+        <p className="text-xs font-normal tracking-[0.18em] text-accent">DARI AKTIVITAS MENJADI PEMAHAMAN</p>
+        <h2 className="mt-4 max-w-xl text-4xl font-medium leading-tight">Bukan hanya mengelola hari ini.<br />Kenali usaha Anda lebih baik.</h2>
         <div className="mt-10 grid gap-5 lg:grid-cols-3">
           {[
             ['Kenali pelanggan, bukan sekadar transaksi.', 'Simpan riwayat pelanggan dan catat poin loyalitas agar layanan berikutnya lebih personal.', 'CONTOH CATATAN PELANGGAN', 'Dina Pratama · 240 poin'],
@@ -521,10 +556,10 @@ export default function LandingPage() {
               transition={{ duration: 0.55, delay: index * 0.12, ease: [0.22, 1, 0.36, 1] }}
               className="rounded-2xl border border-border bg-card p-6"
             >
-              <h3 className="text-xl font-semibold">{title}</h3>
+              <h3 className="text-xl font-normal">{title}</h3>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">{description}</p>
               <div className="mt-8 rounded-xl bg-accent/10 p-4">
-                <p className="text-[10px] font-semibold tracking-[0.16em] text-accent">{label}</p>
+                <p className="text-[10px] font-normal tracking-[0.16em] text-accent">{label}</p>
                 <p className="mt-3 text-sm font-medium">{preview}</p>
               </div>
             </motion.article>
@@ -540,11 +575,11 @@ export default function LandingPage() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.15 }}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        className="border-y border-border bg-card/50 px-5 py-20 sm:px-8 lg:px-12"
+        className="px-5 py-20 sm:px-8 lg:px-12"
       >
         <div className="mx-auto max-w-[1800px]">
-          <p className="text-xs font-semibold tracking-[0.18em] text-accent">CARA MEMULAI</p>
-          <h2 className="mt-4 text-4xl font-semibold">Mulai dari akun, lanjut sesuai usaha Anda.</h2>
+          <p className="text-xs font-normal tracking-[0.18em] text-accent">CARA MEMULAI</p>
+          <h2 className="mt-4 text-4xl font-medium">Mulai dari akun, lanjut sesuai usaha Anda.</h2>
           <p className="mt-5 text-muted-foreground">Tidak perlu menyiapkan semuanya sekaligus. Ikuti langkah yang relevan untuk usaha Anda.</p>
           <div className="mt-10 grid gap-5 lg:grid-cols-3">
             {steps.map(([number, title, description], index) => (
@@ -556,8 +591,8 @@ export default function LandingPage() {
                 transition={{ duration: 0.55, delay: index * 0.12, ease: [0.22, 1, 0.36, 1] }}
                 className="rounded-2xl border border-border bg-background p-6"
               >
-                <span className="text-sm font-semibold text-accent">{number}</span>
-                <h3 className="mt-8 font-semibold">{title}</h3>
+                <span className="text-sm font-normal text-accent">{number}</span>
+                <h3 className="mt-8 font-normal">{title}</h3>
                 <p className="mt-3 text-sm leading-6 text-muted-foreground">{description}</p>
               </motion.article>
             ))}
@@ -571,14 +606,14 @@ export default function LandingPage() {
         whileInView={{ opacity: 1, scale: 1, y: 0 }}
         viewport={{ once: true, amount: 0.2 }}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        className="mx-5 my-20 rounded-3xl border border-[#24cbc5]/30 bg-[#24cbc5]/10 px-6 py-14 text-center sm:mx-8 lg:mx-auto lg:max-w-[1800px]"
+        className="mx-auto my-20 max-w-[1800px] px-5 py-14 text-center sm:px-8 lg:px-12"
       >
-        <h2 className="text-4xl font-semibold">Usaha Anda, lebih tertata.<br />Mulai dari satu langkah hari ini.</h2>
+        <h2 className="text-4xl font-medium">Usaha Anda, lebih tertata.<br />Mulai dari satu langkah hari ini.</h2>
         <p className="mx-auto mt-5 max-w-xl text-muted-foreground">Buat akun pemilik dan bangun ruang kerja yang sesuai usaha Anda.</p>
-        <Link href="/signup" className="mt-8 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3.5 font-semibold text-primary-foreground">
+        <Link href="/signup" className="mt-8 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3.5 font-normal text-primary-foreground transition-colors duration-200 hover:bg-[#132c9e]">
           Mulai Sekarang <ArrowRight aria-hidden="true" />
         </Link>
-        <p className="mt-5 text-sm text-muted-foreground">Sudah punya akun? <Link href="/login" className="font-semibold text-accent hover:underline">Masuk</Link></p>
+        <p className="mt-5 text-sm text-muted-foreground">Sudah punya akun? <Link href="/login" className="font-normal text-accent hover:underline">Masuk</Link></p>
       </motion.section>
 
       {/* Demos Modal */}
@@ -588,7 +623,7 @@ export default function LandingPage() {
             <div className="flex items-start justify-between gap-5">
               <div>
                 <p className="text-sm font-medium text-accent">Demo berdasarkan kategori usaha</p>
-                <h2 id="demo-title" className="mt-2 text-3xl font-semibold tracking-tight">Pilih alur kerja usaha Anda.</h2>
+                <h2 id="demo-title" className="mt-2 text-3xl font-normal tracking-tight">Pilih alur kerja usaha Anda.</h2>
               </div>
               <button type="button" onClick={() => setShowDemos(false)} className="rounded-lg p-2 text-muted-foreground hover:bg-secondary" aria-label="Tutup demo">×</button>
             </div>
@@ -597,11 +632,11 @@ export default function LandingPage() {
                 <article key={type} className="flex flex-col rounded-2xl border border-border bg-card p-6">
                   <div className="flex items-center justify-between">
                     <span className="grid size-11 place-items-center rounded-xl bg-primary text-primary-foreground"><Icon aria-hidden="true" /></span>
-                    <span className="text-xs font-semibold text-muted-foreground">0{index + 1}</span>
+                    <span className="text-xs font-normal text-muted-foreground">0{index + 1}</span>
                   </div>
-                  <h3 className="mt-7 text-xl font-semibold">{label}</h3>
+                  <h3 className="mt-7 text-xl font-normal">{label}</h3>
                   <p className="mt-3 flex-1 text-sm leading-6 text-muted-foreground">{description}</p>
-                  <Link href={`/dashboard?category=${type}`} className="mt-7 inline-flex items-center gap-2 text-sm font-semibold text-accent hover:underline">
+                  <Link href={`/dashboard?category=${type}`} className="mt-7 inline-flex items-center gap-2 text-sm font-normal text-accent hover:underline">
                     Lihat demo {type === 'toko' ? 'toko' : type === 'restoran' ? 'restoran' : 'salon'} <ArrowRight aria-hidden="true" />
                   </Link>
                 </article>
@@ -612,29 +647,29 @@ export default function LandingPage() {
       )}
 
       {/* Footer */}
-      <footer className="border-t border-border bg-[#1c222e] text-white">
+      <footer className="border-t border-border bg-transparent text-white">
         <div className="mx-auto grid max-w-[1800px] gap-10 px-5 py-14 sm:px-8 md:grid-cols-[1.3fr_.7fr_.7fr_.7fr] lg:px-12">
           <div>
             <UsahakuLogo dark />
             <p className="mt-4 max-w-xs text-sm leading-6 text-white/60">Satu platform untuk mengelola usaha, pelanggan, dan pertumbuhan bisnis.</p>
           </div>
           <div>
-            <p className="font-semibold">Platform</p>
+            <p className="font-normal">Platform</p>
             <div className="mt-4 flex flex-col gap-3 text-sm text-white/60">
-              <a href="#kategori-usaha">Kategori Usaha</a>
-              <a href="#fitur">Fitur</a>
-              <a href="#cara-memulai">Cara Memulai</a>
+              <a href="#kategori-usaha" onClick={(e) => handleAnchorClick(e, 'kategori-usaha')} className="transition-colors hover:text-white">Kategori Usaha</a>
+              <a href="#fitur" onClick={(e) => handleAnchorClick(e, 'fitur')} className="transition-colors hover:text-white">Fitur</a>
+              <a href="#cara-memulai" onClick={(e) => handleAnchorClick(e, 'cara-memulai')} className="transition-colors hover:text-white">Cara Memulai</a>
             </div>
           </div>
           <div>
-            <p className="font-semibold">Akun</p>
+            <p className="font-normal">Akun</p>
             <div className="mt-4 flex flex-col gap-3 text-sm text-white/60">
               <Link href="/login">Masuk</Link>
               <Link href="/signup">Daftar Pemilik</Link>
             </div>
           </div>
           <div>
-            <p className="font-semibold">Informasi</p>
+            <p className="font-normal">Informasi</p>
             <div className="mt-4 flex flex-col items-start gap-3 text-sm text-white/60">
               <button type="button" onClick={() => setLegalModal('privacy')} className="hover:text-white transition-colors">Kebijakan Privasi</button>
               <button type="button" onClick={() => setLegalModal('terms')} className="hover:text-white transition-colors">Syarat Penggunaan</button>

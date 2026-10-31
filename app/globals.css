@@ -20,6 +20,65 @@
   font-display: swap;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+.landing-page {
+  --landing-glow-teal-size: 68rem 48rem;
+  --landing-glow-teal-position: -12rem -8rem;
+  --landing-glow-teal-core: 0.48;
+  --landing-glow-teal-mid: 0.30;
+  --landing-glow-teal-edge: 0.12;
+  --landing-glow-blue-size: 70rem 52rem;
+  --landing-glow-blue-position: 108% 38rem;
+  --landing-glow-blue-core: 0.20;
+  --landing-ambient-image:
+    radial-gradient(
+      ellipse var(--landing-glow-teal-size) at var(--landing-glow-teal-position),
+      rgb(36 203 197 / var(--landing-glow-teal-core)) 0%,
+      rgb(36 203 197 / var(--landing-glow-teal-mid)) 26%,
+      rgb(36 203 197 / var(--landing-glow-teal-edge)) 52%,
+      rgb(36 203 197 / 0) 78%
+    ),
+    radial-gradient(
+      ellipse var(--landing-glow-blue-size) at var(--landing-glow-blue-position),
+      rgb(24 53 217 / var(--landing-glow-blue-core)) 0%,
+      rgb(24 53 217 / 0.085) 44%,
+      rgb(24 53 217 / 0) 78%
+    );
+  background-color: #1c222e;
+  background-image: var(--landing-ambient-image);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+@media (max-width: 767px) {
+  .landing-page {
+    --landing-glow-teal-size: 36rem 40rem;
+    --landing-glow-teal-position: -8rem -5rem;
+    --landing-glow-teal-core: 0.36;
+    --landing-glow-teal-mid: 0.24;
+    --landing-glow-teal-edge: 0.09;
+    --landing-glow-blue-size: 36rem 46rem;
+    --landing-glow-blue-position: 132% 38rem;
+    --landing-glow-blue-core: 0.16;
+  }
+}
+
+@media print {
+  .landing-page {
+    background-color: white !important;
+    background-image: none !important;
+  }
+}
+
 .landing-page section[id] {
   scroll-margin-top: 6rem;
 }
@@ -63,7 +122,7 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
-  --font-sans: 'Urbanist', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-sans: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-mono: 'Geist Mono', 'Geist Mono Fallback';
   --font-serif: 'Source Serif 4', 'Source Serif 4 Fallback';
   /* computed shadow variables below - do not modify */
@@ -144,8 +203,8 @@
   --accent: #1e3a8a;
   --accent-foreground: #bfdbfe;
   --destructive: #ef4444;
-  --border: #404040;
-  --input: #404040;
+  --border: rgba(69, 77, 91, 0.65);
+  --input: rgba(69, 77, 91, 0.65);
   --ring: #24cbc5;
   --chart-1: #24cbc5;
   --chart-2: #349cb8;
@@ -206,6 +265,10 @@
   }
 }
 
+.border-\[\#454d5b\] {
+  border-color: var(--border) !important;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -213,6 +276,10 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-sans);
+  }
+  b,
+  strong {
+    font-weight: 600;
   }
   button:not(:disabled),
   a[href],

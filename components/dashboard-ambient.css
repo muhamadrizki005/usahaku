@@ -1,3 +1,15 @@
+html,
+body {
+  height: 100%;
+}
+
+html:has(.dashboard-ambient),
+body:has(.dashboard-ambient) {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden !important;
+}
+
 .dashboard-ambient {
   --dashboard-glow-teal-size: 68rem 48rem;
   --dashboard-glow-teal-position: -12rem -8rem;
@@ -21,13 +33,23 @@
       rgb(24 53 217 / 0.085) 44%,
       rgb(24 53 217 / 0) 78%
     );
-  min-height: 100dvh;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  position: relative;
   background-color: #1c222e;
-}
-
-.dashboard-ambient > main {
   background-image: var(--dashboard-ambient-image);
   background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 @media (max-width: 767px) {
@@ -44,12 +66,13 @@
 }
 
 @media print {
+  html:has(.dashboard-ambient),
+  body:has(.dashboard-ambient),
   .dashboard-ambient {
-    background-color: white;
-  }
-
-  .dashboard-ambient > main {
-    background-color: transparent;
-    background-image: none;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background-color: white !important;
+    background-image: none !important;
   }
 }
