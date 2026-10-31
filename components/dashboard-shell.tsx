@@ -141,6 +141,7 @@ export function DashboardShell({
             <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center justify-center pointer-events-auto">
               <DashboardTopNav
                 role={member.role}
+                category={business.category}
                 onNavigate={navigate}
                 activePath={activePath}
               />
@@ -366,6 +367,7 @@ export function DashboardShell({
               {/* Mobile Drawer Navigation Toggle */}
               <DashboardMobileMenu
                 role={member.role}
+                category={business.category}
                 onNavigate={navigate}
                 businessName={businessName}
               />
@@ -378,6 +380,7 @@ export function DashboardShell({
           {/* Vertical Capsule Sidebar (Pill Rail with Asisten Bisnis AI & Pengaturan) */}
           <DashboardSidebar
             role={member.role}
+            category={business.category}
             onNavigate={navigate}
             activePath={activePath}
           />

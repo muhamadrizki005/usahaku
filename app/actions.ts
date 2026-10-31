@@ -13,6 +13,7 @@ import { siteUrl } from '@/lib/auth/site-url'
 import { businessSchema, ownerLoginSchema, passwordSchema, registerSchema, staffEmail, staffLoginSchema, staffSchema, type ActionState } from '@/lib/validation'
 import { profileSchema, businessHoursSchema } from '@/lib/business-profile'
 import { prepareBusinessLogo, uploadBusinessLogo, cleanupBusinessLogos } from '@/lib/business-logo-server'
+import { businessCategorySchema, businessSlug } from '@/lib/business-categories'
 
 const connectionError = { error: 'Layanan akun belum dapat dihubungi. Coba lagi sebentar.' }
 function invalid(error: z.ZodError): ActionState { return { error: error.issues[0]?.message || 'Periksa kembali isian.' } }
@@ -106,12 +107,15 @@ export async function createBusiness(_: ActionState, form: FormData): Promise<Ac
   const { supabase, user, member } = await requireAccount()
   if (member) return redirectAfterLogin()
   if (user.app_metadata.account_type === 'staff') return { error: 'Akun staf tidak dapat membuat usaha. Hubungi owner.' }
+  const category = businessCategorySchema.safeParse(form.get('category') || 'store')
+  if (!category.success) return { error: 'Kategori usaha belum didukung.' }
   const parsed = profileSchema.safeParse(fields(form))
   if (!parsed.success) return invalid(parsed.error)
   let logo: Buffer | undefined
   try { if (form.get('logoOperation') === 'replace') logo = await prepareBusinessLogo(form.get('logo')) } catch (error) { return { error: (error as Error).message } }
   const p = parsed.data
-  const { data: id, error } = await supabase.rpc('create_business_profile', { store_name: p.name, owner_name: String(user.user_metadata.full_name || user.user_metadata.name || 'Pemilik usaha'), store_phone: p.phone, store_street: p.address, store_city: p.city, store_province: p.province, store_description: p.description }).abortSignal(AbortSignal.timeout(15000)).retry(false)
+  const profile = { store_name: p.name, owner_name: String(user.user_metadata.full_name || user.user_metadata.name || 'Pemilik usaha'), store_phone: p.phone, store_street: p.address, store_city: p.city, store_province: p.province, store_description: p.description }
+  const { data: id, error } = await supabase.rpc(category.data === 'restaurant' ? 'create_business_profile_for_category' : 'create_business_profile', category.data === 'restaurant' ? { ...profile, business_category: category.data } : profile).abortSignal(AbortSignal.timeout(15000)).retry(false)
   if (error) {
     const { data } = await supabase.from('business_members').select('id').eq('user_id', user.id).maybeSingle()
     if (data) return redirectAfterLogin()
@@ -124,7 +128,7 @@ export async function createBusiness(_: ActionState, form: FormData): Promise<Ac
     else { const result = await uploadBusinessLogo(supabase, business, logo); if (result.error || result.warning) notice = 'logo' }
   }
   refreshBusinessViews()
-  redirect(`/onboarding/setup?category=toko${notice ? '&notice=logo' : ''}`)
+  redirect(`/onboarding/setup?category=${businessSlug(category.data)}${notice ? '&notice=logo' : ''}`)
 }
 
 function refreshBusinessViews() {
@@ -161,7 +165,7 @@ export async function saveBusinessProfile(_: ActionState, form: FormData): Promi
   }
   try { if (!await cleanupBusinessLogos(business.id)) warning ||= 'Profil tersimpan. Pembersihan logo lama akan dicoba kembali.' } catch { warning ||= 'Profil tersimpan. Pembersihan logo lama akan dicoba kembali.' }
   refreshBusinessViews()
-  if (form.get('next') === 'setup') redirect(`/onboarding/setup?category=toko${warning ? '&notice=logo' : ''}`)
+  if (form.get('next') === 'setup') redirect(`/onboarding/setup?category=${businessSlug(saved.category)}${warning ? '&notice=logo' : ''}`)
   return { success: 'Profil usaha tersimpan.', business: saved, warning }
 }
 
