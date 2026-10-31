@@ -35,9 +35,11 @@ export const profileSchema = z.object({
   address: z.string().trim().min(1, 'Isi alamat usaha.').max(300),
   city: z.string().trim().min(1, 'Isi kota/kabupaten.').max(100),
   province: z.string().trim().min(1, 'Isi provinsi.').max(100),
+  district: z.string().trim().max(100).default(''),
+  village: z.string().trim().max(100).default(''),
   description: z.string().trim().max(300),
 }).superRefine((value, ctx) => {
-  if ([value.address, value.city, value.province].join(', ').length > 500) ctx.addIssue({ code: 'custom', message: 'Alamat lengkap maksimal 500 karakter.' })
+  if ([value.address, value.village, value.district, value.city, value.province].filter(Boolean).join(', ').length > 500) ctx.addIssue({ code: 'custom', message: 'Alamat lengkap maksimal 500 karakter.' })
 })
 export function businessInitials(name: string) {
   return name.trim().split(/\s+/).filter(Boolean).map(part => part[0]).join('').slice(0, 2).toUpperCase() || 'U'

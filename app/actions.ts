@@ -12,6 +12,8 @@ import { clearRecovery, hasRecovery } from '@/lib/auth/recovery'
 import { siteUrl } from '@/lib/auth/site-url'
 import { businessSchema, ownerLoginSchema, passwordSchema, registerSchema, staffEmail, staffLoginSchema, staffSchema, type ActionState } from '@/lib/validation'
 import { profileSchema, businessHoursSchema } from '@/lib/business-profile'
+import { businessLocationProblem } from '@/lib/business-regions'
+import { detailedLocationProblem } from '@/lib/business-region-details'
 import { prepareBusinessLogo, uploadBusinessLogo, cleanupBusinessLogos } from '@/lib/business-logo-server'
 import { businessCategorySchema, businessSlug } from '@/lib/business-categories'
 
@@ -111,11 +113,13 @@ export async function createBusiness(_: ActionState, form: FormData): Promise<Ac
   if (!category.success) return { error: 'Kategori usaha belum didukung.' }
   const parsed = profileSchema.safeParse(fields(form))
   if (!parsed.success) return invalid(parsed.error)
+  const locationError = businessLocationProblem(parsed.data) || detailedLocationProblem(parsed.data)
+  if (locationError) return { error: locationError }
   let logo: Buffer | undefined
   try { if (form.get('logoOperation') === 'replace') logo = await prepareBusinessLogo(form.get('logo')) } catch (error) { return { error: (error as Error).message } }
   const p = parsed.data
   const profile = { store_name: p.name, owner_name: String(user.user_metadata.full_name || user.user_metadata.name || 'Pemilik usaha'), store_phone: p.phone, store_street: p.address, store_city: p.city, store_province: p.province, store_description: p.description }
-  const { data: id, error } = await supabase.rpc(category.data === 'restaurant' ? 'create_business_profile_for_category' : 'create_business_profile', category.data === 'restaurant' ? { ...profile, business_category: category.data } : profile).abortSignal(AbortSignal.timeout(15000)).retry(false)
+  const { data: id, error } = await supabase.rpc('create_business_profile_with_location', { ...profile, business_category: category.data, store_district: p.district, store_village: p.village }).abortSignal(AbortSignal.timeout(15000)).retry(false)
   if (error) {
     const { data } = await supabase.from('business_members').select('id').eq('user_id', user.id).maybeSingle()
     if (data) return redirectAfterLogin()
@@ -140,6 +144,8 @@ export async function saveBusinessProfile(_: ActionState, form: FormData): Promi
   const { supabase, business } = await requireBusiness(['owner'], true)
   const parsed = profileSchema.safeParse(fields(form))
   if (!parsed.success) return invalid(parsed.error)
+  const locationError = businessLocationProblem(parsed.data, business) || detailedLocationProblem(parsed.data, business)
+  if (locationError) return { error: locationError }
   const revision = z.coerce.number().int().nonnegative().safeParse(form.get('revision'))
   if (!revision.success || form.get('revision') === null) return { error: 'Muat ulang profil sebelum menyimpan.' }
   const operation = z.enum(['keep', 'replace', 'remove']).safeParse(form.get('logoOperation') || 'keep')
@@ -147,7 +153,7 @@ export async function saveBusinessProfile(_: ActionState, form: FormData): Promi
   let logo: Buffer | undefined
   try { if (operation.data === 'replace') logo = await prepareBusinessLogo(form.get('logo')) } catch (error) { return { error: (error as Error).message } }
   const p = parsed.data
-  const { data, error } = await supabase.rpc('save_business_profile', { target_id: business.id, expected_revision: revision.data, new_name: p.name, new_phone: p.phone, new_street: p.address, new_city: p.city, new_province: p.province, new_description: p.description }).abortSignal(AbortSignal.timeout(15000)).retry(false)
+  const { data, error } = await supabase.rpc('save_business_profile_with_location', { target_id: business.id, expected_revision: revision.data, new_name: p.name, new_phone: p.phone, new_street: p.address, new_city: p.city, new_province: p.province, new_description: p.description, new_district: p.district, new_village: p.village }).abortSignal(AbortSignal.timeout(15000)).retry(false)
   if (error || !data) return { error: 'Profil belum dapat dipastikan tersimpan atau telah diubah di tab lain. Muat ulang sebelum mencoba lagi.' }
   let saved = data
   let warning: string | undefined
