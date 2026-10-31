@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
+import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import Link from 'next/link'
 import { ArrowDown, ArrowUp, RotateCcw } from 'lucide-react'
 import DashboardSection from './dashboard-section'
@@ -11,7 +11,8 @@ const focus = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visi
 const time = (s: string) => new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Jakarta' }).format(new Date(s)) + ' WIB'
 type Turn = { id: string; question: string; period: AssistantRequest['period']; status: 'pending' | 'failed' | 'done'; answer?: ChatAnswer }
 
-export default function BusinessAssistant({ configured }: { configured: boolean }) {
+export default function BusinessAssistant({ configured, variant = 'page', active = true }: { configured: boolean; variant?: 'page' | 'floating'; active?: boolean }) {
+  const id = useId(), periodId = id + '-period', questionId = id + '-question', privacyId = id + '-privacy'
   const [question, setQuestion] = useState(''), [period, setPeriod] = useState<AssistantRequest['period']>('7d')
   const [turns, setTurns] = useState<Turn[]>([]), [pending, setPending] = useState(false), [error, setError] = useState('')
   const [loginRequired, setLoginRequired] = useState(false), [until, setUntil] = useState(0), [seconds, setSeconds] = useState(0), [away, setAway] = useState(false)
@@ -22,6 +23,7 @@ export default function BusinessAssistant({ configured }: { configured: boolean 
   useEffect(() => () => operation.current?.abort(), [])
   useEffect(() => { const tick = () => setSeconds(Math.max(0, Math.ceil((until - Date.now()) / 1000))); tick(); const timer = setInterval(tick, 1000); return () => clearInterval(timer) }, [until])
   useEffect(() => { if (nearBottom.current) jump() }, [turns, pending])
+  useEffect(() => { if (!active || !nearBottom.current) return; const frame = requestAnimationFrame(jump); return () => cancelAnimationFrame(frame) }, [active])
   useEffect(() => {
     let frame = 0
     const resized = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(jump) }
@@ -61,13 +63,12 @@ export default function BusinessAssistant({ configured }: { configured: boolean 
   const keydown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.form?.requestSubmit() }
   }
-  return <DashboardSection title="Asisten Bisnis AI">
-    <div className="flex h-[calc(100dvh-192px)] min-h-[440px] max-h-[1100px] w-full max-w-[1200px] flex-col overflow-hidden rounded-2xl border border-[#454d5b] bg-[#1c222e]">
+  const chat = <div className={'flex w-full flex-col overflow-hidden border border-[#454d5b] bg-[#1c222e] ' + (variant === 'floating' ? 'min-h-0 flex-1 rounded-b-2xl border-t-0' : 'h-[calc(100dvh-192px)] min-h-[440px] max-h-[1100px] max-w-[1200px] rounded-2xl')}>
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[#454d5b] bg-[#273242] px-3 py-3 sm:px-5">
-        <div className="flex min-w-0 items-center gap-3"><img src="/brand/usahaku-logo.png" alt="" width={36} height={36} className="size-9 shrink-0 object-contain" /><div><h2 className="text-sm font-semibold">Usahaku</h2><p className="text-xs text-[#c5cbd5]">Asisten untuk UMKM</p></div></div>
+        {variant === 'page' && <div className="flex min-w-0 items-center gap-3"><img src="/brand/usahaku-logo.png" alt="" width={36} height={36} className="size-9 shrink-0 object-contain" /><div><h2 className="text-sm font-semibold">Usahaku</h2><p className="text-xs text-[#c5cbd5]">Asisten untuk UMKM</p></div></div>}
         <div className="flex flex-wrap items-center gap-2">
-          <label htmlFor="assistant-period" className="sr-only">Periode penjualan (WIB)</label>
-          <select id="assistant-period" value={period} onChange={e => { conversationToken.current = undefined; setPeriod(e.target.value as AssistantRequest['period']) }} disabled={pending} className={'min-h-11 min-w-0 rounded-xl border border-[#a4a7ac] bg-[#1c222e] px-3 text-xs text-white disabled:opacity-60 ' + focus}><option value="today">Hari ini (WIB)</option><option value="7d">7 hari terakhir (WIB)</option><option value="30d">30 hari terakhir (WIB)</option></select>
+          <label htmlFor={periodId} className="sr-only">Periode penjualan (WIB)</label>
+          <select id={periodId} value={period} onChange={e => { conversationToken.current = undefined; setPeriod(e.target.value as AssistantRequest['period']) }} disabled={pending} className={'min-h-11 min-w-0 rounded-xl border border-[#a4a7ac] bg-[#1c222e] px-3 text-xs text-white disabled:opacity-60 ' + focus}><option value="today">Hari ini (WIB)</option><option value="7d">7 hari terakhir (WIB)</option><option value="30d">30 hari terakhir (WIB)</option></select>
           <button type="button" aria-label="Bersihkan percakapan" disabled={pending || !turns.length} onClick={reset} className={'flex min-h-11 min-w-11 items-center gap-2 rounded-xl px-3 text-xs text-[#c5cbd5] hover:bg-[#303640] disabled:opacity-50 ' + focus}><RotateCcw className="size-4" aria-hidden="true" /><span className="hidden sm:inline">Percakapan baru</span></button>
         </div>
       </div>
@@ -102,18 +103,18 @@ export default function BusinessAssistant({ configured }: { configured: boolean 
         </div>
         {away && <button type="button" onClick={jump} className={'absolute bottom-3 left-1/2 flex min-h-11 -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-xl border border-[#a4a7ac] bg-[#273242] px-3 text-xs text-white shadow-sm ' + focus}><ArrowDown className="size-4" aria-hidden="true" />Ke pesan terbaru</button>}
       </div>
-      <form onSubmit={submit} className="shrink-0 border-t border-[#454d5b] bg-[#273242] p-3 sm:px-5 sm:py-4">
+      <form onSubmit={submit} className={'shrink-0 border-t border-[#454d5b] bg-[#273242] p-3 sm:px-5 sm:py-4 ' + (variant === 'floating' ? 'max-h-[55%] overflow-y-auto' : '')}>
         {!configured && <p role="status" className="mb-3 text-sm text-[#c5cbd5]">Gemini belum dikonfigurasi. Hubungi pengelola aplikasi untuk mengaktifkannya.</p>}
         {error && <div role="alert" className="mb-3 rounded-xl bg-[#4a252b] p-3 text-sm text-[#ffb4ae]">{error}{loginRequired && <Link href="/login" className="ml-2 underline">Masuk kembali</Link>}</div>}
         <div className="flex items-end gap-2 rounded-xl border border-[#a4a7ac] bg-[#1c222e] p-1.5 focus-within:border-[#24cbc5] focus-within:ring-2 focus-within:ring-[#24cbc5]/30">
-          <label htmlFor="assistant-question" className="sr-only">Pertanyaan</label><textarea id="assistant-question" ref={input} value={question} onChange={e => setQuestion(e.target.value)} onKeyDown={keydown} maxLength={600} rows={1} disabled={!configured} placeholder="Tulis pesan untuk Usahaku..." aria-describedby="assistant-privacy" className="min-h-11 max-h-[120px] min-w-0 flex-1 resize-none overflow-y-auto bg-transparent px-2 py-2.5 text-sm leading-6 text-white outline-none disabled:opacity-60" />
+          <label htmlFor={questionId} className="sr-only">Pertanyaan</label><textarea id={questionId} ref={input} value={question} onChange={e => setQuestion(e.target.value)} onKeyDown={keydown} maxLength={600} rows={1} disabled={!configured} placeholder="Tulis pesan untuk Usahaku..." aria-describedby={privacyId} className="min-h-11 max-h-[120px] min-w-0 flex-1 resize-none overflow-y-auto bg-transparent px-2 py-2.5 text-sm leading-6 text-white outline-none disabled:opacity-60" />
           <button disabled={pending || seconds > 0 || !configured} type="submit" aria-label={pending ? 'Mengirim pesan' : 'Kirim pesan'} className={'grid size-11 shrink-0 place-items-center rounded-lg bg-[#1835d9] text-white hover:bg-[#132c9e] disabled:opacity-50 ' + focus}><ArrowUp className="size-5" aria-hidden="true" /></button>
         </div>
         <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-[11px] leading-5 text-[#c5cbd5]"><span>{seconds ? `Tunggu ${seconds} detik sebelum mengirim lagi.` : 'Enter untuk kirim, Shift+Enter untuk baris baru.'}</span><span>{question.length}/600</span></div>
-        <details className="mt-1 text-[11px] leading-5 text-[#c5cbd5]"><summary className={'min-h-11 w-fit cursor-pointer py-3 ' + focus}>Tentang data percakapan</summary><p id="assistant-privacy">Pesan dan beberapa balasan terakhir dikirim ke Google Gemini bersama ringkasan angka toko. Jangan tulis data pribadi. Rincian transaksi, nama pelanggan/staf dan kontak tidak disertakan otomatis. Saran umum dan estimasi bukan catatan database atau harga pasar terverifikasi. Asisten hanya membaca data. Satu putaran klarifikasi maksimal dalam satu percakapan; setelah kamu menjawab, Asisten langsung menyusun hasil dengan asumsi jika perlu. Maksimal sepuluh percakapan terakhir tampil selama halaman terbuka; percakapan baru, ganti periode atau reload mereset konteks.</p></details>
+        <details className="mt-1 text-[11px] leading-5 text-[#c5cbd5]"><summary className={'min-h-11 w-fit cursor-pointer py-3 ' + focus}>Tentang data percakapan</summary><p id={privacyId}>Pesan dan beberapa balasan terakhir dikirim ke Google Gemini bersama ringkasan angka toko. Jangan tulis data pribadi. Rincian transaksi, nama pelanggan/staf dan kontak tidak disertakan otomatis. Saran umum dan estimasi bukan catatan database atau harga pasar terverifikasi. Asisten hanya membaca data. Satu putaran klarifikasi maksimal dalam satu percakapan; setelah kamu menjawab, Asisten langsung menyusun hasil dengan asumsi jika perlu. Maksimal sepuluh percakapan terakhir tampil selama halaman terbuka; percakapan baru, ganti periode atau reload mereset konteks.</p></details>
       </form>
     </div>
-  </DashboardSection>
+  return variant === 'floating' ? chat : <DashboardSection title="Asisten Bisnis AI">{chat}</DashboardSection>
 }
 
 

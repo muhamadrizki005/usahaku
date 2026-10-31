@@ -103,11 +103,13 @@ export function DashboardSidebar({
   onNavigate,
   activePath,
   category = 'store',
+  assistantVisible,
 }: {
   role: Role
   onNavigate: (path: string) => void
   activePath?: string
   category?: string
+  assistantVisible?: boolean
 }) {
   const pathname = usePathname()
   const currentPath = activePath || pathname
@@ -122,14 +124,15 @@ export function DashboardSidebar({
     >
       <div className="flex flex-col items-center gap-3 rounded-full border border-[#454d5b]/80 bg-[#273242]/90 p-2 sm:p-2.5 shadow-2xl backdrop-blur-md">
         {items.map(([label, Icon, path]) => {
+          const assistantToggle = path === '/dashboard/assistant' && assistantVisible !== undefined
           const active =
-            currentPath === path || currentPath.startsWith(path + '/')
+            assistantToggle ? assistantVisible : currentPath === path || currentPath.startsWith(path + '/')
           return (
             <button
               key={path}
               onClick={() => onNavigate(path)}
-              aria-current={active ? 'page' : undefined}
-              aria-pressed={undefined}
+              aria-current={!assistantToggle && active ? 'page' : undefined}
+              aria-pressed={assistantToggle ? assistantVisible : undefined}
               aria-label={label}
               title={label}
               className={`group relative grid size-10 sm:size-11 place-items-center rounded-full border transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5] cursor-pointer ${
@@ -155,24 +158,27 @@ function NavigationItems({
   onNavigate,
   activePath,
   category = 'store',
+  assistantVisible,
 }: {
   role: Role
   onNavigate: (path: string) => void
   activePath?: string
   category?: string
+  assistantVisible?: boolean
 }) {
   const pathname = usePathname()
   const currentPath = activePath || pathname
   return dashboardItemsForRole(role, category).map(([label, Icon, path]) => {
+    const assistantToggle = path === '/dashboard/assistant' && assistantVisible !== undefined
     const active =
-      currentPath === path ||
+      assistantToggle ? assistantVisible : currentPath === path ||
       (path !== '/dashboard' && currentPath.startsWith(path + '/'))
     return (
       <button
         key={path}
         onClick={() => onNavigate(path)}
-        aria-current={active ? 'page' : undefined}
-        aria-pressed={undefined}
+        aria-current={!assistantToggle && active ? 'page' : undefined}
+        aria-pressed={assistantToggle ? assistantVisible : undefined}
         className={`flex min-h-11 shrink-0 items-center gap-2.5 rounded-[12px] border px-3 text-left text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#24cbc5] cursor-pointer ${
           active
             ? 'border-[#24cbc5]/30 bg-[#1c222e] text-[#24cbc5] shadow-xs'
@@ -191,11 +197,13 @@ export function DashboardMobileMenu({
   onNavigate,
   businessName,
   category = 'store',
+  assistantVisible,
 }: {
   role: Role
   onNavigate: (path: string) => void
   businessName: string
   category?: string
+  assistantVisible?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const id = useId()
@@ -285,6 +293,7 @@ export function DashboardMobileMenu({
                 <NavigationItems
                   role={role}
                   category={category}
+                  assistantVisible={assistantVisible}
                   onNavigate={(path) => {
                     setOpen(false)
                     onNavigate(path)

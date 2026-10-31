@@ -35,6 +35,7 @@ import { roleNames } from '@/lib/auth/permissions'
 import { saleCode, type Sale } from '@/lib/pos'
 import type { CatalogProduct } from '@/lib/catalog'
 import type { Business, Member } from '@/lib/validation'
+import { FloatingBusinessAssistant } from './floating-business-assistant'
 
 type Activity = {
   businessId: string
@@ -62,10 +63,12 @@ export function DashboardShell({
   business,
   member,
   children,
+  assistantConfigured = false,
 }: {
   business: Business
   member: Member
   children: ReactNode
+  assistantConfigured?: boolean
 }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -73,6 +76,8 @@ export function DashboardShell({
   const [showNotifications, setShowNotifications] = useState(false)
   const [optimisticPath, setOptimisticPath] = useState<string | null>(null)
   const [publishedActivity, setActivity] = useState<Activity | null>(null)
+  const [assistantVisible, setAssistantVisible] = useState(false)
+  const assistantAllowed = business.category === 'store' && (member.role === 'owner' || member.role === 'admin')
 
   const activity =
     publishedActivity?.businessId === business.id ? publishedActivity : null
@@ -96,6 +101,10 @@ export function DashboardShell({
   const navigate = (path: string) => {
     setShowAccount(false)
     setShowNotifications(false)
+    if (path === '/dashboard/assistant' && assistantAllowed) {
+      setAssistantVisible(value => !value)
+      return
+    }
     setOptimisticPath(path)
     router.push(path === '/account' ? path : path + '?category=' + category)
   }
@@ -370,6 +379,7 @@ export function DashboardShell({
                 category={business.category}
                 onNavigate={navigate}
                 businessName={businessName}
+                assistantVisible={assistantAllowed ? assistantVisible : undefined}
               />
             </div>
           </div>
@@ -383,6 +393,7 @@ export function DashboardShell({
             category={business.category}
             onNavigate={navigate}
             activePath={activePath}
+            assistantVisible={assistantAllowed ? assistantVisible : undefined}
           />
 
           {/* Scrollable Main Content Container (ONLY vertical scroll container) */}
@@ -395,6 +406,7 @@ export function DashboardShell({
           </div>
         </div>
       </main>
+      {assistantAllowed && <FloatingBusinessAssistant visible={assistantVisible} configured={assistantConfigured} />}
     </ActivityPublisher.Provider>
   )
 }
