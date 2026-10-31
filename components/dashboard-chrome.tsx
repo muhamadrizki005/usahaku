@@ -22,7 +22,7 @@ export const sidebarItemsForRole = (role: Role, category = 'store') =>
   (category === 'restaurant' ? restaurantSidebarNavigationItems : sidebarNavigationItems).filter(([, , path]) => rolesForPath(path).includes(role))
 
 export const dashboardItemsForRole = (role: Role, category = 'store') =>
-  (category === 'restaurant' ? [...restaurantTopNavigationItems, ...restaurantSidebarNavigationItems] : dashboardNavigation).filter(([, , path]) => rolesForPath(path).includes(role))
+  (category === 'restaurant' ? [...restaurantTopNavigationItems, ...restaurantSidebarNavigationItems] : dashboardNavigation).filter(([, , path], index, self) => rolesForPath(path).includes(role) && self.findIndex(([, , p]) => p === path) === index)
 
 export function DashboardBrand({ onHome }: { onHome: () => void }) {
   return (
@@ -76,7 +76,7 @@ export function DashboardTopNav({
             onClick={() => onNavigate(path)}
             aria-current={active ? 'page' : undefined}
             className={`relative rounded-full px-4 py-2 text-xs sm:text-sm font-normal transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5] whitespace-nowrap cursor-pointer ${
-              active ? 'text-[#1c222e]' : 'text-[#c5cbd5] hover:text-white font-medium'
+              active ? 'text-[#1c222e] font-semibold' : 'text-[#c5cbd5] hover:text-white font-medium'
             }`}
           >
             {active && (
@@ -126,7 +126,7 @@ export function DashboardSidebar({
         {items.map(([label, Icon, path]) => {
           const assistantToggle = path === '/dashboard/assistant' && assistantVisible !== undefined
           const active =
-            assistantToggle ? assistantVisible : currentPath === path || currentPath.startsWith(path + '/')
+            assistantToggle ? assistantVisible : currentPath === path || (path !== '/dashboard' && currentPath.startsWith(path + '/'))
           return (
             <button
               key={path}

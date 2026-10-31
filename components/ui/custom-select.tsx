@@ -9,6 +9,7 @@ export type CustomSelectOption =
       value: string
       label: string
       disabled?: boolean
+      group?: string
     }
 
 export interface CustomSelectProps {
@@ -26,6 +27,7 @@ export interface CustomSelectProps {
   dropdownClassName?: string
   align?: 'left' | 'right'
   size?: 'sm' | 'md' | 'lg'
+  dropdownFooter?: React.ReactNode | ((helpers: { close: () => void }) => React.ReactNode)
 }
 
 export function CustomSelect({
@@ -43,6 +45,7 @@ export function CustomSelect({
   dropdownClassName = '',
   align = 'left',
   size = 'md',
+  dropdownFooter,
 }: CustomSelectProps) {
   const generatedId = useId()
   const id = explicitId || generatedId
@@ -53,8 +56,8 @@ export function CustomSelect({
     () =>
       options.map(opt =>
         typeof opt === 'string'
-          ? { value: opt, label: opt, disabled: false }
-          : { value: opt.value, label: opt.label, disabled: !!opt.disabled }
+          ? { value: opt, label: opt, disabled: false, group: undefined }
+          : { value: opt.value, label: opt.label, disabled: !!opt.disabled, group: opt.group }
       ),
     [options]
   )
@@ -154,29 +157,48 @@ export function CustomSelect({
             align === 'right' ? 'right-0' : 'left-0'
           } top-full z-50 mt-2 max-h-60 ${defaultPopupWidth} overflow-y-auto rounded-2xl border border-border bg-[#273242] p-1.5 shadow-2xl backdrop-blur-md animate-in fade-in-50 zoom-in-95 duration-150 ${dropdownClassName}`}
         >
-          {normalizedOptions.map(opt => {
+          {normalizedOptions.map((opt, idx) => {
             const isSelected = opt.value === currentValue
+            const prevOpt = normalizedOptions[idx - 1]
+            const showGroupHeader = Boolean(opt.group && (!prevOpt || prevOpt.group !== opt.group))
             return (
-              <button
-                key={opt.value}
-                type="button"
-                role="option"
-                aria-selected={isSelected}
-                disabled={opt.disabled}
-                onClick={() => handleSelect(opt.value, opt.disabled)}
-                className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-sm transition-colors ${
-                  opt.disabled
-                    ? 'cursor-not-allowed opacity-40 text-[#a4a7ac]'
-                    : isSelected
-                    ? 'bg-[#1835d9] font-medium text-white shadow-xs'
-                    : 'text-[#c5cbd5] hover:bg-[#303640] hover:text-white'
-                }`}
-              >
-                <span className="truncate">{opt.label}</span>
-                {isSelected && <span className="size-1.5 shrink-0 rounded-full bg-white" />}
-              </button>
+              <React.Fragment key={opt.value}>
+                {showGroupHeader && (
+                  <div
+                    className={`px-3 ${
+                      idx > 0 ? 'mt-2 pt-2 border-t border-[#454d5b]/40' : 'pt-1'
+                    } pb-1 text-[11px] font-semibold uppercase tracking-wider text-[#24cbc5] select-none`}
+                  >
+                    {opt.group}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  disabled={opt.disabled}
+                  onClick={() => handleSelect(opt.value, opt.disabled)}
+                  className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-sm transition-colors ${
+                    opt.disabled
+                      ? 'cursor-not-allowed opacity-40 text-[#a4a7ac]'
+                      : isSelected
+                      ? 'bg-[#1835d9] font-medium text-white shadow-xs'
+                      : 'text-[#c5cbd5] hover:bg-[#303640] hover:text-white'
+                  }`}
+                >
+                  <span className="truncate">{opt.label}</span>
+                  {isSelected && <span className="size-1.5 shrink-0 rounded-full bg-white" />}
+                </button>
+              </React.Fragment>
             )
           })}
+          {dropdownFooter && (
+            <div className="mt-1.5 border-t border-[#454d5b]/60 pt-1.5">
+              {typeof dropdownFooter === 'function'
+                ? dropdownFooter({ close: () => setOpen(false) })
+                : dropdownFooter}
+            </div>
+          )}
         </div>
       )}
     </div>

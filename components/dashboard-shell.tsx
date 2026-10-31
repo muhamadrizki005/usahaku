@@ -16,7 +16,6 @@ import {
   CheckCircle2,
   ChevronDown,
   LogOut,
-  Settings2,
   Store,
   User,
   Users,
@@ -341,17 +340,6 @@ export function DashboardShell({
                         }}
                       >
                         <Users className="size-4 text-[#24cbc5]" /> Staf & akses
-                      </button>
-                    )}
-                    {member.role === 'owner' && (
-                      <button
-                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm text-[#c5cbd5] hover:bg-[#1c222e] hover:text-white transition cursor-pointer"
-                        onClick={() => {
-                          setShowAccount(false)
-                          router.push('/dashboard/settings')
-                        }}
-                      >
-                        <Settings2 className="size-4 text-[#24cbc5]" /> Pengaturan bisnis
                       </button>
                     )}
                     <div className="border-t border-[#454d5b] my-1" />
