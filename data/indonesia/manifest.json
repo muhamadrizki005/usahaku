@@ -1,0 +1,20 @@
+{
+  "source": "User-supplied Wilayah-Administrasi-Indonesia-master/csv",
+  "provinces": {
+    "count": 37,
+    "sha256": "db070f36d015428ded6e932d5320bb575054019bf6287975901c26ee02b56ece"
+  },
+  "regencies": {
+    "count": 514,
+    "sha256": "947eb6f8b0ada597bb39c0273315804674623b2d02ff5366b3949706be286ed7"
+  },
+  "districts": {
+    "count": 7277,
+    "sha256": "bc0490adb1a2a94ec47ab89ce7e6ffe22f1d00a9769da51fdc8e803e5db04cef"
+  },
+  "villages": {
+    "count": 83761,
+    "sha256": "0c675f443bb93c729efb48cdd7edc1f9395aef5a97a22bf41f302eccfd899280"
+  },
+  "note": "Source README states Papua Barat Daya is not included. Preserve source IDs and names."
+}
