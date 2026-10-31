@@ -41,7 +41,16 @@ test('assistant: scoped database evidence, private provider contract, errors, ro
   try {
     await mkdir(dir, { recursive: true })
     const owner = await account(), p = owner.page
-    await p.goto('/dashboard/assistant')
+    await p.getByRole('complementary', { name: 'Sidebar navigasi sekunder', exact: true }).getByRole('button', { name: 'Asisten Bisnis AI', exact: true }).click()
+    await expect(p).toHaveURL(url => url.pathname === '/dashboard/assistant')
+    await p.setViewportSize({ width: 390, height: 844 })
+    await p.goto('/dashboard')
+    await p.getByRole('button', { name: 'Buka navigasi', exact: true }).click()
+    await p.getByRole('navigation', { name: 'Navigasi dashboard mobile', exact: true }).getByRole('button', { name: 'Asisten Bisnis AI', exact: true }).click()
+    await expect(p).toHaveURL(url => url.pathname === '/dashboard/assistant')
+    await expect(p.getByRole('dialog', { name: 'Menu dashboard', exact: true })).toHaveCount(0)
+    await p.setViewportSize({ width: 1366, height: 900 })
+    results.push('Post-merge desktop secondary sidebar and mobile menu both navigate to the assistant')
     if (process.env.USAHAKU_ASSISTANT_MISSING_KEY === '1') {
       await expect(p.getByRole('status')).toContainText('Gemini belum dikonfigurasi')
       await expect(p.getByRole('button', { name: 'Kirim pesan', exact: true })).toBeDisabled()

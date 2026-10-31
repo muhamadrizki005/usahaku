@@ -1,6 +1,6 @@
 # Asisten AI UMKM dengan Gemini
 
-Implementasi pada branch `feat/gemini-business-assistant`, diperluas 31 Oktober 2026 sesuai permintaan pengguna. Tidak ada commit/push/deployment, migrasi atau dependency baru pada pekerjaan ini.
+Implementasi pada branch `feat/gemini-business-assistant`, diperluas 31 Oktober 2026 sesuai permintaan pengguna. Implementasi Asisten tidak menambah migrasi atau dependency. Pengguna sudah membuat commit fitur dan menggabungkan `origin/main`; agent tidak melakukan commit, push atau deployment.
 
 ## Perilaku saat ini
 
@@ -70,6 +70,14 @@ Temuan saat pengujian aktual: model pernah memberi label `store_data` pada klari
 Tes browser umum memakai Supabase aktual dengan akun baru, provider disimulasikan lewat preload `tests/fixtures/gemini-preload.cjs` di server QA terisolasi. Preload hanya bisa berjalan dengan mode eksplisit dan key dummy; tidak diimpor aplikasi. Tes Google nyata harus opt-in `USAHAKU_GEMINI_LIVE=1` karena menghabiskan kuota. Simulasi tidak boleh diklaim sebagai bukti kualitas Gemini nyata. Bukti berada di `.cache/assistant-local/` dan `.cache/urbanist-dashboard-preview/.cache/assistant-*`, bukan untuk commit.
 
 ## Arah desain dan pemeriksaan
+
+### Verifikasi setelah integrasi main, 31 Oktober 2026
+
+- Diuji setelah commit pengguna `f03bf53`, dengan perubahan main sampai `5684bc7` sudah tergabung. Working tree aplikasi tetap dipertahankan; hanya tes navigasi Asisten dan catatan ini diperbarui.
+- Dependency di checkout QA terisolasi dipasang ulang memakai `npm ci` sesuai `package-lock.json`, termasuk GSAP yang ditambahkan landing di main. Sebelum dependency terpasang, build QA gagal menemukan GSAP; sesudah instalasi production build lulus. Pengguna perlu menyelaraskan dependency lokalnya setelah mengambil perubahan main.
+- Typecheck dan 35/35 tes unit/database lulus. Suite browser provider simulasi dengan Supabase aktual lulus, ditambah akses lewat sidebar desktop dan menu mobile. Tes memeriksa pathname sehingga parameter `?category=toko` dari navigasi baru tetap diterima. Locator tes Gemini aktual mengikuti sidebar sekunder baru.
+- Suite Gemini aktual dijalankan ulang sesudah merge dan lulus empat panggilan: kebutuhan awal, rencana belanja setelah jawaban budget satu juta, stok terverifikasi dan caption umum. Cleanup akun/usaha uji berhasil; snapshot data lama tetap sama dan tidak ada page error.
+- Bukti integrasi disimpan pada `.cache/assistant-local/merge-browser-results.json` dan `merge-live-results.json`, tidak untuk commit. Semua server pengujian agent dihentikan setelah selesai; server pengguna tidak disentuh.
 
 antislop during, session override. ENERGY 1 / RHYTHM 1 / MOTION 0. Room chat dan warna/font dipertahankan; hanya isi jawaban lebih alami, label basis/estimasi dan daftar rencana belanja ditambahkan. List item/total mengikuti gaya rincian transaksi yang sudah ada; tidak membuat tema, aset atau animasi baru.
 

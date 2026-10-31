@@ -41,7 +41,7 @@ test('live Gemini interprets actual scoped store evidence through the website', 
     ok(await client.rpc('save_catalog_product', { target_id: bid, item_id: productId, expected_version: null, operation_id: randomUUID(), details: { name: 'Produk Uji Gemini', category: 'Minuman', unit: 'kg', sku: 'LIVE-TEST', barcode: '', price: '20000', minimum: '1', initialStock: '0.75', active: true } }))
     ok(await client.rpc('checkout_pos', { target_id: bid, operation_id: randomUUID(), details: { lines: [{ id: productId, quantity: '0.25', price: '20000', revision: 0 }], payment: 'cash', received: '5000', discountKind: 'amount', discountValue: '500', customer: 'Pelanggan umum', confirmed: true } }))
     await page.goto('/login'); await page.getByLabel('Email', { exact: true }).fill(email); await page.getByLabel('Kata sandi', { exact: true }).fill(password); await page.getByRole('button', { name: 'Masuk', exact: true }).click(); await expect(page).toHaveURL(/\/dashboard$/)
-    await page.getByRole('navigation', { name: 'Navigasi dashboard', exact: true }).getByRole('button', { name: 'Asisten Bisnis AI', exact: true }).click()
+    await page.getByRole('complementary', { name: 'Sidebar navigasi sekunder', exact: true }).getByRole('button', { name: 'Asisten Bisnis AI', exact: true }).click()
     await expect(page.getByRole('button', { name: 'Kirim pesan', exact: true })).toBeEnabled()
     const first = await ask('Saran barang yang perlu dijual beserta harga dan stoknya. Jika perlu, tanyakan dulu barang baru atau yang ada dan anggaran saya.')
     expect(['answer', 'clarification']).toContain(first.mode)
