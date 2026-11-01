@@ -17,7 +17,10 @@ import {
   startTransition,
 } from "react";
 import type { Business } from "@/lib/validation";
-import { createBusiness, saveBusinessProfile } from "@/app/actions";
+import { createBusiness, saveBusinessProfile, saveLoyaltySettings } from "@/app/actions";
+import BusinessPaymentSettings from "@/components/business-payment-settings";
+import type { PaymentSettings } from "@/lib/business-payments";
+import React from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -45,6 +48,8 @@ export default function OriginalIdentity({
   onboarding = false,
   embedded = false,
   initialCategory = "toko",
+  payments,
+  paymentSettingsNode,
 }: {
   ownerName: string;
   userId: string;
@@ -52,6 +57,8 @@ export default function OriginalIdentity({
   onboarding?: boolean;
   embedded?: boolean;
   initialCategory?: "toko" | "restoran" | "barbershop";
+  payments?: PaymentSettings;
+  paymentSettingsNode?: React.ReactNode;
 }) {
   const [serverState, dispatchIdentity, pending] = useActionState(
     business ? saveBusinessProfile : createBusiness,
@@ -121,6 +128,53 @@ export default function OriginalIdentity({
     setMapNotice(value.incomplete ? 'Titik dipilih. Periksa alamat dan lengkapi wilayah yang masih kosong.' : 'Alamat dari peta diterapkan. Periksa kembali sebelum menyimpan.');
   };
   const [logoError, setLogoError] = useState("");
+  // Loyalty points configuration state
+  const [loyaltyActive, setLoyaltyActive] = useState<boolean>(() => {
+    return business?.loyalty_active ?? false;
+  });
+  const [loyaltyPointNominal, setLoyaltyPointNominal] = useState<number>(() => {
+    return Number(business?.loyalty_point_nominal) || 50000;
+  });
+  const [nominalInput, setNominalInput] = useState<string>(() => {
+    const init = Number(business?.loyalty_point_nominal) || 50000;
+    return init.toLocaleString("id-ID");
+  });
+  const handleNominalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/[^0-9]/g, "");
+    if (!raw) {
+      setNominalInput("");
+      setLoyaltyPointNominal(0);
+      return;
+    }
+    const num = parseInt(raw, 10);
+    setLoyaltyPointNominal(num);
+    setNominalInput(num.toLocaleString("id-ID"));
+  };
+  const [loyaltyPending, setLoyaltyPending] = useState(false);
+  const handleSaveLoyalty = async () => {
+    if (!business) return;
+    if (loyaltyActive && (!loyaltyPointNominal || loyaltyPointNominal <= 0)) {
+      showToast("error", "Nominal transaksi per poin harus lebih besar dari Rp0.");
+      return;
+    }
+    setLoyaltyPending(true);
+    const fd = new FormData();
+    fd.set("loyaltyActive", loyaltyActive ? "true" : "false");
+    fd.set("loyaltyPointNominal", String(loyaltyPointNominal || 50000));
+    try {
+      const res = await saveLoyaltySettings({}, fd);
+      if (res.error) {
+        showToast("error", res.error);
+      } else {
+        showToast("success", res.success || "Pengaturan poin member berhasil disimpan.");
+        router.refresh();
+      }
+    } catch (err: any) {
+      showToast("error", err?.message || "Gagal menyimpan pengaturan poin member.");
+    } finally {
+      setLoyaltyPending(false);
+    }
+  };
   useEffect(() => {
     if (!business)
       try {
@@ -195,6 +249,12 @@ export default function OriginalIdentity({
       showToast("error", locationError);
       return;
     }
+    if (loyaltyActive && (!loyaltyPointNominal || loyaltyPointNominal <= 0)) {
+      const msg = "Nominal transaksi per poin harus lebih besar dari Rp0.";
+      setError(msg);
+      showToast("error", msg);
+      return;
+    }
     setError("");
     submittedRef.current = true;
     if (!business)
@@ -208,6 +268,8 @@ export default function OriginalIdentity({
     Object.entries(form).forEach(([key, value]) => data.set(key, value));
     data.set("category", category === "restoran" ? "restaurant" : category === "barbershop" ? "barbershop" : "store");
     data.set("ownerName", ownerName);
+    data.set("loyaltyActive", loyaltyActive ? "true" : "false");
+    data.set("loyaltyPointNominal", String(loyaltyPointNominal || 50000));
     if (onboarding) data.set("next", "setup");
     data.set("logoOperation", logoOperation);
     if (selectedFile) data.set("logo", selectedFile);
@@ -375,6 +437,127 @@ export default function OriginalIdentity({
                 </Link>
               )}
             </section>
+
+            {/* Program Poin Member Section */}
+            <section className="rounded-xl border border-[#454d5b] bg-[#273242] p-5 shadow-sm transition-all duration-300">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="font-medium text-white">Program Poin Member</h2>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={loyaltyActive}
+                    onClick={() => setLoyaltyActive((v) => !v)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5] ${
+                      loyaltyActive ? "bg-[#24cbc5]" : "bg-[#303640] border-[#454d5b]"
+                    }`}
+                    aria-label="Aktifkan program poin member"
+                  >
+                    <span
+                      className={`pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                        loyaltyActive ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+                <p className="mt-1 text-xs text-[#a4a7ac] leading-relaxed">
+                  Berikan poin kepada pelanggan setiap kali melakukan transaksi.
+                </p>
+              </div>
+
+              {/* Collapsible / Expandable Settings Area with Smooth Transition */}
+              <div
+                className={`grid transition-all duration-300 ease-in-out ${
+                  loyaltyActive
+                    ? "grid-rows-[1fr] opacity-100 mt-5 pt-5 border-t border-[#454d5b]/60"
+                    : "grid-rows-[0fr] opacity-0 pointer-events-none"
+                }`}
+              >
+                <div className="overflow-hidden">
+                  <div className="space-y-4">
+                    <label className="flex flex-col gap-2 text-sm font-medium text-white">
+                      <span>Setiap kelipatan transaksi</span>
+                      <div className="relative">
+                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm font-normal text-[#a4a7ac]">
+                          Rp
+                        </span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={nominalInput}
+                          onChange={handleNominalChange}
+                          placeholder="50.000"
+                          className="h-10 w-full rounded-lg border border-[#454d5b] bg-[#1c222e] pl-9 pr-3 text-sm font-normal text-white placeholder:font-normal placeholder:text-[#a4a7ac] outline-none focus:border-[#24cbc5] focus:ring-2 focus:ring-[#24cbc5]/20"
+                        />
+                      </div>
+                    </label>
+
+                    <p className="text-xs text-[#a4a7ac] leading-relaxed">
+                      Setiap transaksi senilai{" "}
+                      <span className="font-medium text-white">
+                        Rp{(loyaltyPointNominal || 0).toLocaleString("id-ID")}
+                      </span>{" "}
+                      mendapatkan{" "}
+                      <span className="font-medium text-[#24cbc5]">1 poin</span>.
+                    </p>
+
+                    {/* Preview Simulasi Poin Dinamis */}
+                    <div className="overflow-hidden rounded-xl border border-[#454d5b]/80 bg-[#1c222e]">
+                      <div className="border-b border-[#454d5b]/80 bg-[#273242]/70 px-3.5 py-2 text-[11px] font-medium uppercase tracking-wider text-[#a4a7ac]">
+                        Simulasi Perolehan Poin
+                      </div>
+                      <table className="w-full text-left text-xs">
+                        <thead>
+                          <tr className="border-b border-[#454d5b]/60 text-[#a4a7ac]">
+                            <th className="py-2.5 px-3.5 font-medium">Total transaksi</th>
+                            <th className="py-2.5 px-3.5 text-right font-medium">Poin diperoleh</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#454d5b]/40">
+                          {[0.5, 1, 2, 3, 4].map((mult) => {
+                            const total = Math.round((loyaltyPointNominal || 0) * mult);
+                            const pts =
+                              loyaltyPointNominal > 0 ? Math.floor(total / loyaltyPointNominal) : 0;
+                            return (
+                              <tr key={mult} className="hover:bg-[#273242]/30 transition-colors">
+                                <td className="py-2 px-3.5 text-[#c5cbd5] font-normal">
+                                  Rp{total.toLocaleString("id-ID")}
+                                </td>
+                                <td className="py-2 px-3.5 text-right font-medium text-[#24cbc5]">
+                                  {pts} poin
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    {!onboarding && business && (
+                      <button
+                        type="button"
+                        onClick={handleSaveLoyalty}
+                        disabled={loyaltyPending}
+                        className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#1835d9] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#132c9e] transition-colors disabled:opacity-50"
+                      >
+                        {loyaltyPending ? "Menyimpan..." : "Simpan pengaturan poin"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {!loyaltyActive && !onboarding && business && business.loyalty_active && (
+                <div className="mt-4 pt-4 border-t border-[#454d5b]/60">
+                  <button
+                    type="button"
+                    onClick={handleSaveLoyalty}
+                    disabled={loyaltyPending}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1835d9] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#132c9e] transition-colors disabled:opacity-50"
+                  >
+                    {loyaltyPending ? "Menyimpan..." : "Simpan pengaturan poin"}
+                  </button>
+                </div>
+              )}
+            </section>
           </aside>
           <div className="flex items-center justify-between border-t border-[#454d5b] pt-5 lg:col-span-2">
             <button
@@ -396,9 +579,9 @@ export default function OriginalIdentity({
               <ArrowRight className="size-4" />
             </button>
           </div>
-          {(serverState.success || serverState.warning) && (
-            <p role="status" className="text-sm text-[#a4a7ac] lg:col-span-2">
-              {serverState.success} {serverState.warning}
+          {serverState.warning && (
+            <p role="status" className="text-sm text-[#f59e0b] lg:col-span-2">
+              {serverState.warning}
             </p>
           )}
           {error && (
@@ -408,7 +591,28 @@ export default function OriginalIdentity({
           )}
         </form>
         {!onboarding && business && (
-          <BusinessHoursSettings business={business} onNotify={showToast} />
+          <div className="mt-8 grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
+            <div>
+              <BusinessHoursSettings business={business} onNotify={showToast} />
+            </div>
+            {(paymentSettingsNode || payments) && (
+              <div>
+                {payments ? (
+                  <BusinessPaymentSettings
+                    initial={payments}
+                    businessId={business.id}
+                    onNotify={showToast}
+                  />
+                ) : React.isValidElement(paymentSettingsNode) ? (
+                  React.cloneElement(paymentSettingsNode as React.ReactElement<any>, {
+                    onNotify: showToast,
+                  })
+                ) : (
+                  paymentSettingsNode
+                )}
+              </div>
+            )}
+          </div>
         )}
       </div>
       <ToastNotification toast={toast} onClose={hideToast} />

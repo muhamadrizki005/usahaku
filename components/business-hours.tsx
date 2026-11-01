@@ -57,7 +57,7 @@ export function BusinessHoursSettings({
   }
 
   return (
-    <section aria-label="Jam operasional" className="mt-8 rounded-xl border border-[#454d5b] bg-[#273242] p-5 sm:p-6">
+    <section aria-label="Jam operasional" className="rounded-xl border border-[#454d5b] bg-[#273242] p-5 sm:p-6">
       <h2 className="mb-4 text-lg font-medium text-white">Jam operasional</h2>
       <HoursEditor hours={hours} setHours={setHours} save={save} pending={pending} error={error} cancel={() => {setHours(saved.operating_hours || defaultHours()); setError('')}} />
       {state.success && !error && <p role="status" className="mt-3 text-sm text-[#a4a7ac]">{state.success}</p>}

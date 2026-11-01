@@ -10,7 +10,7 @@ import { getSupabaseConfig } from '@/lib/supabase/config'
 import { requireAccount, requireBusiness, redirectAfterLogin } from '@/lib/access'
 import { clearRecovery, hasRecovery } from '@/lib/auth/recovery'
 import { siteUrl } from '@/lib/auth/site-url'
-import { businessSchema, ownerLoginSchema, passwordSchema, registerSchema, staffEmail, staffLoginSchema, staffSchema, type ActionState } from '@/lib/validation'
+import { businessSchema, ownerLoginSchema, passwordSchema, registerSchema, staffEmail, staffLoginSchema, staffSchema, type ActionState, type Business } from '@/lib/validation'
 import { profileSchema, businessHoursSchema } from '@/lib/business-profile'
 import { businessLocationProblem } from '@/lib/business-regions'
 import { detailedLocationProblem } from '@/lib/business-region-details'
@@ -170,6 +170,28 @@ export async function saveBusinessProfile(_: ActionState, form: FormData): Promi
     } else saved = result.data
   }
   try { if (!await cleanupBusinessLogos(business.id)) warning ||= 'Profil tersimpan. Pembersihan logo lama akan dicoba kembali.' } catch { warning ||= 'Profil tersimpan. Pembersihan logo lama akan dicoba kembali.' }
+  if (form.has('loyaltyActive')) {
+    const loyaltyActive = form.get('loyaltyActive') === 'true';
+    const rawNominal = form.get('loyaltyPointNominal');
+    const loyaltyPointNominal = Math.max(1, Math.round(Number(rawNominal) || 50000));
+    try {
+      const { data: loyaltyData } = await supabase.rpc('save_business_loyalty_settings', {
+        target_id: business.id,
+        new_active: loyaltyActive,
+        new_nominal: loyaltyPointNominal,
+      });
+      if (loyaltyData) saved = loyaltyData;
+    } catch {
+      try {
+        const admin = createAdminClient();
+        const { data: updatedBiz } = await admin.from('businesses').update({
+          loyalty_active: loyaltyActive,
+          loyalty_point_nominal: loyaltyPointNominal,
+        }).eq('id', business.id).select().maybeSingle();
+        if (updatedBiz) saved = updatedBiz;
+      } catch {}
+    }
+  }
   refreshBusinessViews()
   if (form.get('next') === 'setup') redirect(`/onboarding/setup?category=${businessSlug(saved.category)}${warning ? '&notice=logo' : ''}`)
   return { success: 'Profil usaha tersimpan.', business: saved, warning }
@@ -408,3 +430,50 @@ export async function updateAccountAvatar(avatarUrl: string | null): Promise<Act
   return { success: avatarUrl ? 'Foto profil berhasil diperbarui.' : 'Foto profil berhasil dihapus.' }
 }
 
+
+
+export async function saveLoyaltySettings(_: ActionState, form: FormData): Promise<ActionState> {
+  const { supabase, business } = await requireBusiness(['owner', 'admin'], true);
+  const loyaltyActive = form.get('loyaltyActive') === 'true';
+  const rawNominal = form.get('loyaltyPointNominal');
+  const parsedNominal = z.coerce.number().positive('Nominal transaksi per poin harus lebih besar dari 0.').max(1000000000).safeParse(rawNominal);
+  if (!parsedNominal.success) {
+    return { error: 'Nominal transaksi per poin harus lebih besar dari Rp0.' };
+  }
+  const nominal = Math.round(parsedNominal.data);
+  try {
+    const { data, error } = await supabase.rpc('save_business_loyalty_settings', {
+      target_id: business.id,
+      new_active: loyaltyActive,
+      new_nominal: nominal,
+    });
+    if (!error && data) {
+      refreshBusinessViews();
+      return { success: 'Pengaturan poin member berhasil disimpan.', business: data as Business };
+    }
+  } catch {}
+  try {
+    const admin = createAdminClient();
+    const { data: updated, error: updateErr } = await admin.from('businesses').update({
+      loyalty_active: loyaltyActive,
+      loyalty_point_nominal: nominal,
+    }).eq('id', business.id).select().maybeSingle();
+    if (!updateErr && updated) {
+      refreshBusinessViews();
+      return { success: 'Pengaturan poin member berhasil disimpan.', business: updated as Business };
+    }
+    if (updateErr) {
+      console.error('Loyalty settings update error:', updateErr);
+      if (updateErr.code === '42703' || updateErr.message?.includes('column') || updateErr.message?.includes('loyalty')) {
+        return { error: 'Kolom loyalty points belum ada di database Supabase. Jalankan migrasi 202611010006_loyalty_points.sql di Supabase SQL Editor.' };
+      }
+      return { error: updateErr.message || 'Pengaturan poin member belum dapat disimpan.' };
+    }
+  } catch (err) {
+    console.error('Loyalty settings update exception:', err);
+    return { error: (err instanceof Error ? err.message : String(err)) || 'Pengaturan poin member belum dapat disimpan.' };
+  }
+
+  refreshBusinessViews();
+  return { success: 'Pengaturan poin member berhasil disimpan.' };
+}

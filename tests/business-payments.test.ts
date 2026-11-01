@@ -10,6 +10,7 @@ test('payment configuration validates usable methods and preserves legacy manual
   assert.equal(paymentSettingsSchema.safeParse({cash:false,qris:false,transfer:false,banks:[]}).success,true)
   assert.equal(paymentSettingsSchema.safeParse({cash:true,qris:false,transfer:true,banks:[]}).success,false)
   assert.equal(paymentSettingsSchema.safeParse({cash:true,qris:false,transfer:false,banks:[],ewallet:true}).success,false)
+  assert.equal(paymentSettingsSchema.safeParse({cash:true,qris:false,transfer:false,banks:[],ewallet:true,ewallets:[{ewallet:'GoPay',holder:'Owner',number:'08123456789'}]}).success,true)
 })
 
 test('server payment settings isolate owner writes, assets, revisions, failed saves and checkout/replay',async()=>{
@@ -57,5 +58,8 @@ test('server payment settings isolate owner writes, assets, revisions, failed sa
     await as(owner);await assert.rejects(save({...cash,qris:true},3,qr),/unavailable/)
     const draft=randomUUID();await db.query('select public.reserve_payment_qr($1,$2)',[bid,draft]);await db.exec('reset role');await db.exec('set role service_role');assert.equal((await db.query<any>('select public.claim_payment_qr_cleanup($1) path',[draft])).rows[0].path,null)
     await as(owner);await save({cash:false,qris:false,transfer:false,banks:[]},3);await assert.rejects(checkout({...payload,payment:'cash',paymentRevision:4}),/disabled/)
+    await save({cash:false,qris:false,transfer:false,banks:[],ewallet:true,ewallets:[{ewallet:'GoPay',holder:'Owner',number:'08123456789'}]},4);
+    const ewSale=(await checkout({...payload,payment:'ewallet',paymentRevision:5})).rows[0].sale;
+    assert.equal(ewSale.payment,'ewallet');
   }finally{await db.close()}
 })

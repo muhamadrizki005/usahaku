@@ -1,9 +1,9 @@
 export type SaleLine={id:string;name:string;sku:string;unit:string;price:number;quantity:number;total:number;unit_price?:number;original_total?:number;discount_kind?:string;discount_value?:number;discount?:number}
-export type Sale={product_discount?:number|null;order_discount?:number|null;receipt_number?:string|null;tax_rate?:number;tax_amount?:number;id:string;business_id:string;actor_id:string|null;actor_name:string;customer:string;customer_id?:string|null;lines:SaleLine[];subtotal:number;discount_kind:'none'|'amount'|'percent';discount_value:number;discount:number;total:number;payment:'cash'|'qris'|'transfer';received:number;change:number;status:'completed'|'cancelled';created_at:string;cancelled_at:string|null;cancelled_by_name:string|null;cancellation_reason:string|null;refund_amount:number|null}
+export type Sale={product_discount?:number|null;order_discount?:number|null;receipt_number?:string|null;tax_rate?:number;tax_amount?:number;id:string;business_id:string;actor_id:string|null;actor_name:string;customer:string;customer_id?:string|null;lines:SaleLine[];subtotal:number;discount_kind:'none'|'amount'|'percent';discount_value:number;discount:number;total:number;payment:'cash'|'qris'|'transfer'|'ewallet';received:number;change:number;status:'completed'|'cancelled';points_earned?:number|null;created_at:string;cancelled_at:string|null;cancelled_by_name:string|null;cancellation_reason:string|null;refund_amount:number|null}
 export const saleCode=(sale:Pick<Sale,'id'> & Pick<Partial<Sale>,'receipt_number'>)=>sale.receipt_number||`TRX-${sale.id.toUpperCase()}`
 export const rupiah=(n:number)=>`Rp${n.toLocaleString('id-ID')}`
 export const saleDate=(s:string)=>new Date(s).toLocaleString('id-ID',{timeZone:'Asia/Jakarta',dateStyle:'medium',timeStyle:'short'})+' WIB'
-export const paymentLabel={cash:'Tunai',qris:'QRIS usaha',transfer:'Transfer'}
+export const paymentLabel={cash:'Tunai',qris:'QRIS usaha',transfer:'Transfer',ewallet:'E-wallet'}
 export function salesSummary(sales:Sale[],now=new Date()){
   const day=(date:Date)=>new Date(date.getTime()+7*3600000).toISOString().slice(0,10)
   const dates=Array.from({length:7},(_,i)=>day(new Date(now.getTime()-(6-i)*86400000)))
