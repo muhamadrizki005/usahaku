@@ -10,5 +10,5 @@ export default async function CustomerPage({params}:{params:Promise<{id:string}>
   const {data,error}=await supabase.from('customers').select('*').eq('business_id',business.id).eq('id',id).maybeSingle()
   if(error)throw Error('Pelanggan belum dapat dibaca. Coba muat ulang.')
   if(!data)notFound()
-  return <TransactionHistory member={member} customer={data as Customer} sales={await readCustomerSales(supabase,business.id,id)}/>
+  return <TransactionHistory member={member} business={business} customer={data as Customer} sales={await readCustomerSales(supabase,business.id,id)}/>
 }
