@@ -21,7 +21,7 @@ test('bundled regions retain CSV identifiers, province relations and distinct ci
   assert.equal(citiesForProvince('missing').length, 0)
   for (const name of ['provinces', 'regencies', 'districts', 'villages']) {
     const bytes = readFileSync(`data/indonesia/${name}.csv`)
-    assert.equal(createHash('sha256').update(bytes).digest('hex'), manifest[name].sha256)
+    assert.equal(createHash('sha256').update(bytes.toString('utf8').replace(/^\uFEFF/, '').replace(/\r\n/g, '\n')).digest('hex'), manifest[name].sha256)
   }
 })
 

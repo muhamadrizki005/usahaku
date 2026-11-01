@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 
 function csv(file, header) {
-  const source = readFileSync(file, 'utf8').replace(/^\uFEFF/, '')
+  const source = readFileSync(file, 'utf8').replace(/^\uFEFF/, '').replace(/\r\n/g, '\n')
   const rows = source.trim().split(/\r?\n/).map(line => {
     const fields = []; let value = '', quoted = false
     for (let i = 0; i < line.length; i++) {
