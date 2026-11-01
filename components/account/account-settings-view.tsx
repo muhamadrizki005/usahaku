@@ -857,7 +857,7 @@ export function AccountSettingsView({
                     </span>
                     {business && (
                       <p className="text-xs text-[#c5cbd5] mt-1.5">
-                        Kode Usaha: <span className="font-mono text-white">{business.code}</span>
+                        Kode Usaha: <span className="text-white font-medium">{business.code}</span>
                       </p>
                     )}
                   </div>
@@ -882,7 +882,7 @@ export function AccountSettingsView({
                   <span className="font-medium text-white block mb-2">Metadata Autentikasi</span>
                   <div className="flex flex-wrap items-center justify-between gap-2 py-1 border-b border-white/5">
                     <span className="text-[#a4a7ac]">User ID (UUID):</span>
-                    <span className="font-mono text-white select-all">{user.id}</span>
+                    <span className="text-white select-all">{user.id}</span>
                   </div>
                   <div className="flex flex-wrap items-center justify-between gap-2 py-1 border-b border-white/5">
                     <span className="text-[#a4a7ac]">Tipe Akun:</span>

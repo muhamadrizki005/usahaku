@@ -478,7 +478,7 @@ export function ProfileAvatarEditor({
                   <ZoomIn className="size-3.5 text-[#24cbc5]" />
                   Perbesar / Perkecil
                 </span>
-                <span className="text-[11px] font-mono text-[#a4a7ac]">
+                <span className="text-[11px] text-[#a4a7ac]">
                   {Math.round(zoom * 100)}%
                 </span>
               </div>

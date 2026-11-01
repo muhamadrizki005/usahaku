@@ -137,10 +137,10 @@ export function DashboardShell({
 
   return (
     <ActivityPublisher.Provider value={setActivity}>
-      <main className="h-full max-h-full w-full flex flex-col overflow-hidden text-white bg-transparent">
+      <main className="min-h-screen w-full flex flex-col text-white bg-transparent">
         {/* Topbar: 3 parts (Kiri, Tengah, Kanan), outside scroll container, non-sticky, non-fixed */}
         <header className="shrink-0 w-full z-30 print:hidden bg-transparent pt-4 sm:pt-5 pb-4 sm:pb-5">
-          <div className="relative mx-auto flex w-full max-w-[1680px] items-center justify-between px-4 sm:px-6 lg:px-8 gap-4">
+          <div className="relative mx-auto flex w-full items-center justify-between px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 gap-4">
             {/* 1. KIRI: Logo resmi Usahaku + Teks "Usahaku" (sejajar vertikal dengan blok greeting) */}
             <div className="flex items-center shrink-0 z-10 lg:pl-[70px]">
               <DashboardBrand onHome={() => navigate('/dashboard')} />
@@ -387,8 +387,8 @@ export function DashboardShell({
           </div>
         </header>
 
-        {/* Main Content Area & Capsule Sidebar Rail: Fixed sidebar centered vertically in viewport, vertical scroll solely on main content */}
-        <div className="flex-1 min-h-0 flex items-center overflow-hidden w-full max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 gap-5 pt-2 pb-4">
+        {/* Main Content Area & Capsule Sidebar Rail */}
+        <div className="flex-1 flex items-start w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 gap-5 pt-2 pb-10">
           {/* Vertical Capsule Sidebar (Pill Rail with Asisten Bisnis AI & Pengaturan) */}
           <DashboardSidebar
             role={member.role}
@@ -398,10 +398,10 @@ export function DashboardShell({
             assistantVisible={assistantAllowed ? assistantVisible : undefined}
           />
 
-          {/* Scrollable Main Content Container (ONLY vertical scroll container) */}
+          {/* Main Content Container */}
           <div
             id="dashboard-content"
-            className="flex-1 min-w-0 h-full overflow-y-auto overflow-x-hidden pb-10 focus:outline-none"
+            className="flex-1 min-w-0 focus:outline-none"
             tabIndex={-1}
           >
             {children}

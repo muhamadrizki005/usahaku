@@ -119,14 +119,14 @@ export function DashboardSidebar({
 
   return (
     <aside
-      className="hidden lg:flex flex-col items-center shrink-0 self-center my-auto z-20 print:hidden lg:-ml-4"
+      className="hidden lg:flex flex-col items-center shrink-0 self-start w-12 sm:w-14 z-20 print:hidden lg:-ml-4"
       aria-label="Sidebar navigasi sekunder"
     >
-      <div className="flex flex-col items-center gap-3 rounded-full border border-[#454d5b]/80 bg-[#273242]/90 p-2 sm:p-2.5 shadow-2xl backdrop-blur-md">
+      <div className="fixed top-[188px] z-20 flex flex-col items-center gap-3 rounded-full border border-[#454d5b]/80 bg-[#273242]/90 p-2 sm:p-2.5 shadow-2xl backdrop-blur-md">
         {items.map(([label, Icon, path]) => {
           const assistantToggle = path === '/dashboard/assistant' && assistantVisible !== undefined
           const active =
-            assistantToggle ? assistantVisible : currentPath === path || (path !== '/dashboard' && currentPath.startsWith(path + '/'))
+            assistantToggle ? assistantVisible : path === '/dashboard/settings' ? currentPath === '/dashboard/settings' || (currentPath.startsWith('/dashboard/settings?') && !currentPath.includes('/staff')) : currentPath === path || (path !== '/dashboard' && currentPath.startsWith(path + '/'))
           return (
             <button
               key={path}
@@ -171,8 +171,7 @@ function NavigationItems({
   return dashboardItemsForRole(role, category).map(([label, Icon, path]) => {
     const assistantToggle = path === '/dashboard/assistant' && assistantVisible !== undefined
     const active =
-      assistantToggle ? assistantVisible : currentPath === path ||
-      (path !== '/dashboard' && currentPath.startsWith(path + '/'))
+      assistantToggle ? assistantVisible : path === '/dashboard/settings' ? currentPath === '/dashboard/settings' || (currentPath.startsWith('/dashboard/settings?') && !currentPath.includes('/staff')) : currentPath === path || (path !== '/dashboard' && currentPath.startsWith(path + '/'))
     return (
       <button
         key={path}

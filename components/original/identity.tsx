@@ -1,5 +1,6 @@
 "use client";
 import { BusinessHoursSettings } from "@/components/business-hours";
+import { ToastNotification, useToast } from "@/components/ui/toast-notification";
 import { BusinessHeader } from "@/components/business-header";
 import { BusinessLocationFields } from "@/components/business-location-fields";
 import { BusinessLocationMap } from "@/components/business-location-map";
@@ -8,6 +9,7 @@ import { businessLocationProblem } from "@/lib/business-regions";
 import {
   ChangeEvent,
   FormEvent,
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -19,21 +21,23 @@ import { createBusiness, saveBusinessProfile } from "@/app/actions";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
+  AlertCircle,
   ArrowLeft,
   ArrowRight,
   Check,
+  CheckCircle2,
   CircleHelp,
   ImagePlus,
   X,
 } from "lucide-react";
 type Category = "toko" | "restoran" | "barbershop";
-const labels = {
+const labels: Record<Category, string> = {
   toko: "Toko / Minimarket / Kios",
   restoran: "Restoran / Cafe",
   barbershop: "Barbershop / Salon",
 };
 const input =
-  "h-10 rounded-lg border border-[#454d5b] bg-[#273242] px-3 text-sm outline-none focus:border-[#24cbc5] focus:ring-2 focus:ring-[#24cbc5]/20";
+  "h-10 rounded-lg border border-[#454d5b] bg-[#273242] px-3 text-sm font-normal text-white placeholder:font-normal placeholder:text-[#a4a7ac] outline-none focus:border-[#24cbc5] focus:ring-2 focus:ring-[#24cbc5]/20";
 export default function OriginalIdentity({
   ownerName,
   userId,
@@ -47,7 +51,7 @@ export default function OriginalIdentity({
   business?: Business;
   onboarding?: boolean;
   embedded?: boolean;
-  initialCategory?: "toko" | "restoran";
+  initialCategory?: "toko" | "restoran" | "barbershop";
 }) {
   const [serverState, dispatchIdentity, pending] = useActionState(
     business ? saveBusinessProfile : createBusiness,
@@ -55,10 +59,17 @@ export default function OriginalIdentity({
   );
   const router = useRouter();
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const resolveCategory = (cat?: string): Category => {
+    if (cat === "restaurant" || cat === "restoran") return "restoran";
+    if (cat === "barbershop") return "barbershop";
+    return "toko";
+  };
   const [category] = useState<Category>(
-    business?.category === "restaurant" ? "restoran" : initialCategory,
+    business?.category ? resolveCategory(business.category) : resolveCategory(initialCategory),
   );
   const [current, setCurrent] = useState(business);
+  const { toast, showToast, hideToast } = useToast(3000);
+  const submittedRef = useRef(false);
   const fromBusiness = (b: Business) => ({
     name: b.name,
     address: b.street_address || b.address,
@@ -129,7 +140,15 @@ export default function OriginalIdentity({
       setLogoOperation("keep");
       if (logoInputRef.current) logoInputRef.current.value = "";
     }
-  }, [serverState]);
+    if (submittedRef.current) {
+      submittedRef.current = false;
+      if (serverState.error) {
+        showToast("error", serverState.error);
+      } else if (serverState.success || serverState.business) {
+        showToast("success", "Perubahan berhasil disimpan");
+      }
+    }
+  }, [serverState, showToast]);
   const update = (k: keyof typeof form, v: string) =>
     setForm((x) => ({ ...x, [k]: v }));
   const removeLogo = (e?: React.MouseEvent) => {
@@ -164,11 +183,20 @@ export default function OriginalIdentity({
     if (
       [form.name, form.address, form.city, form.province, form.phone]
         .some((value) => !value.trim())
-    )
-      return setError("Lengkapi semua informasi dasar yang wajib diisi.");
+    ) {
+      const msg = "Lengkapi semua informasi dasar yang wajib diisi.";
+      setError(msg);
+      showToast("error", msg);
+      return;
+    }
     const locationError = businessLocationProblem(form, business);
-    if (locationError) return setError(locationError);
+    if (locationError) {
+      setError(locationError);
+      showToast("error", locationError);
+      return;
+    }
     setError("");
+    submittedRef.current = true;
     if (!business)
       try {
         sessionStorage.setItem(
@@ -178,7 +206,7 @@ export default function OriginalIdentity({
       } catch {}
     const data = new FormData();
     Object.entries(form).forEach(([key, value]) => data.set(key, value));
-    data.set("category", category === "restoran" ? "restaurant" : "store");
+    data.set("category", category === "restoran" ? "restaurant" : category === "barbershop" ? "barbershop" : "store");
     data.set("ownerName", ownerName);
     if (onboarding) data.set("next", "setup");
     data.set("logoOperation", logoOperation);
@@ -191,7 +219,7 @@ export default function OriginalIdentity({
     <Container
       className={
         embedded
-          ? "w-full max-w-[1180px] text-white"
+          ? "w-full text-white"
           : "min-h-screen bg-[#1c222e] text-[#ffffff]"
       }
     >
@@ -211,8 +239,14 @@ export default function OriginalIdentity({
             </p>
           </>
         )}
-        <h1 className="mt-3 text-3xl font-normal sm:text-4xl">
-          {onboarding ? "Kenalkan usaha Anda" : "Pengaturan toko"}
+        <h1 className="mt-3 text-3xl font-semibold sm:text-4xl">
+          {onboarding
+            ? "Kenalkan usaha Anda"
+            : category === "restoran"
+              ? "Pengaturan restoran"
+              : category === "barbershop"
+                ? "Pengaturan barbershop"
+                : "Pengaturan toko"}
         </h1>
         <p className="mt-3 text-[#a4a7ac]">
           Lengkapi informasi usaha Anda. Identitas ini membantu pelanggan
@@ -223,7 +257,7 @@ export default function OriginalIdentity({
           className="mt-8 grid gap-5 lg:grid-cols-[1.65fr_.9fr]"
         >
           <section className="rounded-xl border border-[#454d5b] bg-[#273242] p-5 sm:p-6">
-            <h2 className="text-lg font-normal">Informasi dasar</h2>
+            <h2 className="text-lg font-medium text-white">Informasi dasar</h2>
             <p className="mt-1 text-sm text-[#a4a7ac]">
               Isian bertanda * wajib diisi.
             </p>
@@ -238,8 +272,9 @@ export default function OriginalIdentity({
               </Field>
               <BusinessLocationMap value={selectedPoint.success ? selectedPoint.data : null} disabled={pending} onChange={useMapLocation} />
               {mapNotice && <p role="status" className="text-xs text-[#c5cbd5]">{mapNotice}</p>}
-              <Field label="Detail Alamat *">
+              <Field label="Detail alamat *">
                 <input
+                  aria-label="Alamat usaha *"
                   className={input}
                   value={form.address}
                   onChange={(e) => update("address", e.target.value)}
@@ -264,7 +299,7 @@ export default function OriginalIdentity({
               </Field>
               <Field label="Deskripsi usaha">
                 <textarea
-                  className="min-h-28 rounded-lg border border-[#454d5b] p-3 text-sm outline-none focus:border-[#24cbc5]"
+                  className="min-h-28 rounded-lg border border-[#454d5b] bg-[#273242] p-3 text-sm font-normal text-white placeholder:font-normal placeholder:text-[#a4a7ac] outline-none focus:border-[#24cbc5] focus:ring-2 focus:ring-[#24cbc5]/20"
                   maxLength={300}
                   value={form.description}
                   onChange={(e) => update("description", e.target.value)}
@@ -278,7 +313,7 @@ export default function OriginalIdentity({
           </section>
           <aside className="flex flex-col gap-5">
             <section className="rounded-xl border border-[#454d5b] bg-[#273242] p-5">
-              <h2 className="font-normal">Logo usaha</h2>
+              <h2 className="font-medium text-white">Logo usaha</h2>
               <label className="mt-4 flex min-h-40 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[#454d5b] bg-[#1c222e] p-4 text-center">
                 {logo ? (
                   <>
@@ -327,7 +362,7 @@ export default function OriginalIdentity({
               )}
             </section>
             <section className="rounded-xl border border-[#454d5b] bg-[#273242] p-5">
-              <h2 className="font-normal">Kategori utama</h2>
+              <h2 className="font-medium text-white">Kategori utama</h2>
               <p className="mt-3 rounded-lg bg-[#1835d9]/15 p-3 text-sm font-normal text-[#24cbc5]">
                 {labels[category]}
               </p>
@@ -373,9 +408,10 @@ export default function OriginalIdentity({
           )}
         </form>
         {!onboarding && business && (
-          <BusinessHoursSettings business={business} />
+          <BusinessHoursSettings business={business} onNotify={showToast} />
         )}
       </div>
+      <ToastNotification toast={toast} onClose={hideToast} />
     </Container>
   );
 }
