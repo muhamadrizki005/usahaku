@@ -231,7 +231,7 @@ export function DashboardMobileMenu({
         first?.focus()
       }
     }
-    const desktop = window.matchMedia('(min-width: 1024px)')
+    const desktop = window.matchMedia('(min-width: 1536px)')
     const resized = () => {
       if (desktop.matches) setOpen(false)
     }
@@ -254,13 +254,13 @@ export function DashboardMobileMenu({
         aria-expanded={open}
         aria-haspopup="dialog"
         aria-controls={open ? id : undefined}
-        className="grid size-10 shrink-0 place-items-center rounded-xl border border-[#454d5b]/70 text-[#c5cbd5] hover:bg-[#273242] lg:hidden cursor-pointer"
+        className="grid size-10 shrink-0 place-items-center rounded-xl border border-[#454d5b]/70 text-[#c5cbd5] hover:bg-[#273242] min-[1536px]:hidden cursor-pointer"
       >
         <Menu className="size-5" />
       </button>
       {open &&
         createPortal(
-          <div className="fixed inset-0 z-50 flex lg:hidden">
+          <div className="fixed inset-0 z-50 flex min-[1536px]:hidden">
             <div
               className="fixed inset-0 bg-black/60 backdrop-blur-sm"
               onClick={() => setOpen(false)}
