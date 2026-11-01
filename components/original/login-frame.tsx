@@ -18,7 +18,7 @@ export function LoginFrame({title = 'Masuk ke Usahaku', description = 'Lanjutkan
       </header>
 
       <div className="relative z-10 grid min-h-[calc(100vh-136px)] lg:grid-cols-[42%_58%]">
-        <section className="bg-transparent px-5 py-12 sm:px-10 lg:flex lg:items-center lg:border-r lg:border-white/10 lg:px-16 xl:px-24">
+        <section className="order-2 bg-transparent px-5 py-12 sm:px-10 lg:order-none lg:flex lg:items-center lg:border-r lg:border-white/10 lg:px-16 xl:px-24">
           <div className="mx-auto w-full max-w-xl">
             <p className="text-xs font-normal tracking-[0.18em] text-[#24cbc5]">RUANG UNTUK USAHA ANDA</p>
             <h1 className="mt-5 max-w-lg text-4xl font-normal leading-[1.12] tracking-tight text-white sm:text-5xl">Selamat datang kembali<br />di ruang usaha Anda.</h1>
@@ -37,7 +37,7 @@ export function LoginFrame({title = 'Masuk ke Usahaku', description = 'Lanjutkan
           </div>
         </section>
 
-        <section className="relative z-10 flex items-center bg-transparent px-5 py-14 sm:px-10 lg:px-16 xl:px-24">
+        <section className="order-1 relative z-10 flex items-center bg-transparent px-5 py-8 sm:px-10 lg:order-none lg:py-14 lg:px-16 xl:px-24">
           <div className="mx-auto w-full max-w-[610px]">
             <nav className="flex gap-3 text-sm" aria-label="Jenis akun">
               <Link href="/login" aria-current={mode === 'owner' ? 'page' : undefined} className={`rounded-lg px-4 py-2 transition-colors ${mode === 'owner' ? 'bg-white/10 text-[#24cbc5]' : 'text-white hover:bg-white/5'}`}>Pemilik</Link>

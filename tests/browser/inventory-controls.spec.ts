@@ -30,16 +30,16 @@ test('inventory direction controls preview signed corrections and preserve audit
     const stock = async () => Number(ok(await admin.from('catalog_products').select('stock').eq('id', productId).single()).stock)
     await p.goto('/login'); await p.getByLabel('Email', { exact: true }).fill(email); await p.getByLabel('Kata sandi', { exact: true }).fill(password); await p.getByRole('button', { name: 'Masuk', exact: true }).click(); await expect(p).toHaveURL(url => url.pathname === '/dashboard')
     await p.goto('/dashboard/inventory'); await expect(p.getByRole('button', { name: 'Catat stok keluar', exact: true })).toHaveCount(0)
-    await p.getByRole('button', { name: 'Sesuaikan stok fisik', exact: true }).click()
-    const form = p.locator('#adjustment'), amount = form.getByLabel('Koreksi jumlah (selisih) *', { exact: true }), incoming = form.getByRole('button', { name: 'Masuk barang', exact: true }), outgoing = form.getByRole('button', { name: 'Keluar barang', exact: true }), save = form.getByRole('button', { name: 'Simpan penyesuaian', exact: true })
+    await expect(p.getByRole('button', { name: 'Sesuaikan stok fisik', exact: true })).toHaveCount(0); await expect(p.getByRole('button', { name: /Catat stok masuk/ })).toHaveCount(0); await p.getByRole('button', { name: /Catat perubahan stok/ }).click()
+    const form = p.locator('#adjustment'), amount = form.getByLabel('Jumlah perubahan *', { exact: true }), incoming = form.getByRole('button', { name: 'Masuk barang', exact: true }), outgoing = form.getByRole('button', { name: 'Keluar barang', exact: true }), save = form.getByRole('button', { name: 'Simpan perubahan stok', exact: true })
     await expect(amount).toHaveValue(''); await amount.fill('2,25'); await expect(form.getByText('12,75 kg', { exact: true })).toBeVisible(); await expect(save).toBeDisabled()
     await outgoing.click(); await expect(outgoing).toHaveAttribute('aria-pressed', 'true'); await expect(form.getByText('8,25 kg', { exact: true })).toBeVisible(); expect(await stock()).toBe(10.5)
-    await incoming.click(); await form.getByLabel('Alasan koreksi *', { exact: true }).fill('Selisih hitung fisik masuk uji'); await save.click(); await expect(amount).toHaveValue(''); await expect.poll(stock).toBe(12.75)
-    await amount.fill('1.25'); await outgoing.click(); await expect(form.getByText('11,5 kg', { exact: true })).toBeVisible(); await form.getByLabel('Alasan koreksi *', { exact: true }).fill('Selisih hitung fisik keluar uji'); await save.click(); await expect.poll(stock).toBe(11.5); await expect(amount).toHaveValue('')
-    const movements = ok(await admin.from('stock_movements').select('*').eq('product_id', productId).eq('kind', 'adjustment'))
+    await incoming.click(); await form.getByLabel('Alasan perubahan *', { exact: true }).fill('Selisih hitung fisik masuk uji'); await save.click(); await expect(amount).toHaveValue(''); await expect.poll(stock).toBe(12.75)
+    await amount.fill('1.25'); await outgoing.click(); await expect(form.getByText('11,5 kg', { exact: true })).toBeVisible(); await form.getByLabel('Alasan perubahan *', { exact: true }).fill('Selisih hitung fisik keluar uji'); await save.click(); await expect.poll(stock).toBe(11.5); await expect(amount).toHaveValue('')
+    const movements = ok(await admin.from('stock_movements').select('*').eq('product_id', productId).in('kind', ['in', 'out']))
     expect(movements.map((m: any) => Number(m.quantity)).sort((a: number, b: number) => a - b)).toEqual([-1.25, 2.25])
     await p.reload(); await expect(form.getByText('11,5 kg', { exact: true }).first()).toBeVisible()
-    await amount.fill('99'); await outgoing.click(); await form.getByLabel('Alasan koreksi *', { exact: true }).fill('Uji validasi pengurangan'); await expect(save).toBeDisabled(); await expect(form.getByText(/Hasil stok tidak boleh di bawah 0/)).toBeVisible()
+    await amount.fill('99'); await outgoing.click(); await form.getByLabel('Alasan perubahan *', { exact: true }).fill('Uji validasi pengurangan'); await expect(save).toBeDisabled(); await expect(form.getByText(/Hasil stok tidak boleh di bawah 0/)).toBeVisible()
     for (const invalid of ['-1', '1.2345', 'abc']) { await amount.fill(invalid); await expect(form.getByRole('alert')).toContainText('Masukkan jumlah positif'); await expect(save).toBeDisabled(); await expect(form).not.toContainText('NaN') }
     await amount.fill('0'); await expect(save).toBeDisabled(); expect(await stock()).toBe(11.5)
     await amount.fill('1'); await incoming.click()
@@ -49,8 +49,8 @@ test('inventory direction controls preview signed corrections and preserve audit
       await p.screenshot({ path: `${dir}/width-${width}.png`, fullPage: true })
     }
     await form.getByRole('button', { name: 'Batal', exact: true }).click(); await expect(amount).toHaveValue(''); expect(await stock()).toBe(11.5)
-    await p.getByRole('button', { name: /Catat stok masuk/ }).click(); await expect(incoming).toHaveAttribute('aria-pressed', 'true'); await amount.fill('0.5'); await form.getByLabel('Alasan koreksi *', { exact: true }).fill('Stok masuk uji pintasan'); await save.click(); await expect.poll(stock).toBe(12)
-    expect(ok(await admin.from('stock_movements').select('id').eq('product_id', productId).eq('kind', 'in'))).toHaveLength(1)
+    await p.getByRole('button', { name: /Catat perubahan stok/ }).click(); await expect(incoming).toHaveAttribute('aria-pressed', 'true'); await amount.fill('0.5'); await form.getByLabel('Alasan perubahan *', { exact: true }).fill('Stok masuk uji pintasan'); await save.click(); await expect.poll(stock).toBe(12)
+    expect(ok(await admin.from('stock_movements').select('id').eq('product_id', productId).eq('kind', 'in'))).toHaveLength(2)
     expect(errors).toEqual([]); results.push('Removed stock-out shortcut, positive/negative previews, comma/decimal corrections, required reason, audited +/- values, reload, overdraw/invalid/zero guard, cancel, four widths and stock-in shortcut passed'); passed = true
   } finally {
     await context.close()

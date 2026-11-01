@@ -77,14 +77,14 @@ export default function PosCustomerPicker({ value, onChange, member }: PosCustom
         <label className="text-xs font-normal text-[#c5cbd5]" htmlFor="customer">
           Pelanggan
         </label>
-        <button
+        {(member?.role === 'owner' || member?.role === 'admin') && <button
           type="button"
           onClick={() => setShowModal(true)}
           className="inline-flex items-center gap-1.5 text-xs font-normal text-[#24cbc5] hover:text-[#52e5df] transition-colors"
         >
           <UserPlus className="size-3.5" />
-          <span>Tambah member</span>
-        </button>
+          <span>Tambah pelanggan</span>
+        </button>}
       </div>
 
       <CustomSelect
@@ -183,7 +183,7 @@ export default function PosCustomerPicker({ value, onChange, member }: PosCustom
             <p aria-live="polite" className="text-xs text-[#a4a7ac]">
               {query.trim().length > 0
                 ? 'Ketik minimal 4 karakter untuk mencari member.'
-                : 'Cari nama/telepon atau klik Tambah member untuk mendaftar.'}
+                : member?.role === 'cashier' ? 'Cari pelanggan aktif berdasarkan nama atau nomor telepon.' : 'Cari nama/telepon atau klik Tambah pelanggan untuk mendaftar.'}
             </p>
           )}
         </div>
@@ -211,7 +211,7 @@ export default function PosCustomerPicker({ value, onChange, member }: PosCustom
             setCategory('pelanggan')
             onChange(newCustomer)
             setShowModal(false)
-            setToast(`Member ${newCustomer.name} berhasil didaftarkan dan dipilih.`)
+            setToast(`Pelanggan ${newCustomer.name} berhasil didaftarkan dan dipilih.`)
           }}
         />
       )}
@@ -312,7 +312,7 @@ function AddCustomerModal({
         <div className="flex items-start justify-between gap-3 border-b border-[#454d5b] pb-3">
           <div>
             <h3 id="modal-title" className="text-base font-semibold text-white">
-              Tambah Member Baru
+              Tambah pelanggan
             </h3>
             <p className="mt-1 text-xs text-[#a4a7ac]">
               Daftarkan pelanggan langsung dari kasir untuk transaksi ini.

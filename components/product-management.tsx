@@ -1,8 +1,10 @@
 'use client'
+import './mobile-record-table.css'
 
 import { productSkuPrefix } from '@/lib/product-sku'
+import { discountedPrice } from '@/lib/product-pricing'
 import { saveCatalogProduct, bulkCatalogProducts } from '@/app/catalog-actions'
-import { productCategories, formatQuantity, type CatalogProduct, type CatalogResult } from '@/lib/catalog'
+import { productCategories, productSchema, formatQuantity, type CatalogProduct, type CatalogResult } from '@/lib/catalog'
 import type { Role } from '@/lib/auth/permissions'
 import type { Business } from '@/lib/validation'
 
@@ -21,11 +23,13 @@ export default function ProductManagement({
   initialCategory = 'toko',
   business,
   initialProducts,
+  renderedAt,
 }: {
   role: Role
   initialCategory?: Category
   business: Business
   initialProducts: Product[]
+  renderedAt: string
 }) {
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
@@ -174,7 +178,7 @@ export default function ProductManagement({
         <span className="text-[#24cbc5]"><strong>{activeCount}</strong> aktif</span>
         <span className="text-[#a4a7ac]"><strong>{products.length - activeCount}</strong> nonaktif</span>
         <span className="ml-auto text-xs text-[#a4a7ac]">
-          {new Intl.DateTimeFormat('id-ID', { dateStyle: 'full', timeStyle: 'short', timeZone: 'Asia/Jakarta' }).format(new Date())}
+          {new Intl.DateTimeFormat('id-ID', { dateStyle: 'full', timeStyle: 'short', timeZone: 'Asia/Jakarta' }).format(new Date(renderedAt))}
         </span>
       </div>
 
@@ -256,8 +260,8 @@ export default function ProductManagement({
         )}
 
         <div className="overflow-x-auto rounded-b-2xl">
-          <table className="w-full min-w-[980px] text-left text-sm">
-            <thead className="border-b border-border bg-[#1c222e] text-xs text-[#a4a7ac]">
+          <table className="mobile-record-table w-full min-w-[980px] text-left text-sm">
+            <thead className="mobile-selection-header border-b border-border bg-[#1c222e] text-xs text-[#a4a7ac]">
               <tr>
                 <th className="w-12 px-4 py-3">
                   <input
@@ -279,7 +283,7 @@ export default function ProductManagement({
             <tbody>
               {filtered.slice((page - 1) * 50, page * 50).map(product => (
                 <tr key={product.id} className="border-b border-border/60 transition hover:bg-[#1c222e]/40">
-                  <td className="px-4 py-3">
+                  <td data-label="Pilih produk" className="px-4 py-3">
                     <input
                       type="checkbox"
                       checked={selected.includes(product.id)}
@@ -289,7 +293,7 @@ export default function ProductManagement({
                       aria-label={`Pilih ${product.name}`}
                     />
                   </td>
-                  <td className="px-4 py-3">
+                  <td data-label="Produk / SKU" data-primary="" className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-lg border border-[#24cbc5]/20 bg-[#24cbc5]/10 text-[#24cbc5]">
                         <ProductThumbnail src={product.image} />
@@ -302,12 +306,12 @@ export default function ProductManagement({
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-[#c5cbd5]">{product.category || '-'}</td>
-                  <td className="px-4 py-3 font-medium text-white">{money(product.price)}</td>
-                  <td className="px-4 py-3">
+                  <td data-label="Kategori" className="px-4 py-3 text-[#c5cbd5]">{product.category || '-'}</td>
+                  <td data-label="Harga jual" className="px-4 py-3 font-medium text-white">{money(product.price)}</td>
+                  <td data-label="Stok fisik" className="px-4 py-3">
                     {formatQuantity(product.stock)} {product.unit}
                   </td>
-                  <td className="px-4 py-3">
+                  <td data-label="Ketersediaan" className="px-4 py-3">
                     {product.stock === 0 ? (
                       <span className="rounded-full border border-red-500/30 bg-red-500/15 px-2.5 py-0.5 text-xs font-normal text-red-400">
                         Habis
@@ -322,7 +326,7 @@ export default function ProductManagement({
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3">
+                  <td data-label="Status produk" className="px-4 py-3">
                     {product.active ? (
                       <span className="rounded-full bg-[#24cbc5]/15 px-2.5 py-0.5 text-xs font-normal text-[#24cbc5]">
                         Aktif
@@ -333,7 +337,7 @@ export default function ProductManagement({
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3">
+                  <td data-label="Tindakan" data-actions="" className="px-4 py-3">
                     <button
                       type="button"
                       onClick={() => setEditor(product)}
@@ -395,6 +399,8 @@ export default function ProductManagement({
                 sku: p.sku,
                 barcode: p.barcode,
                 price: p.price,
+                discountKind: p.discountKind || 'none',
+                discountValue: p.discountValue || 0,
                 minimum: p.minStock,
                 initialStock: products.some(x => x.id === p.id) ? 0 : p.stock,
                 active: p.active,
@@ -429,6 +435,11 @@ function ProductEditor({
   onSave: (product: Product, file: File | null, key: string, imageAction: string) => Promise<CatalogResult>
 }) {
   const [draft, setDraft] = useState(product!)
+  const [priceText, setPriceText] = useState(product?.name ? String(product.price) : '')
+  const [stockText, setStockText] = useState(product?.name ? String(product.stock) : '')
+  const [minimumText, setMinimumText] = useState(product?.name ? String(product.minStock) : '')
+  const [discountKind, setDiscountKind] = useState(product?.discountKind || 'none')
+  const [discountText, setDiscountText] = useState(product?.discountValue ? String(product.discountValue) : '')
   const [customCategory, setCustomCategory] = useState(
     Boolean(product?.category && !productCategories.includes(product.category))
   )
@@ -437,23 +448,28 @@ function ProductEditor({
   const [file, setFile] = useState<File | null>(null)
   const [imageAction, setImageAction] = useState('keep')
   const [operationId] = useState(() => crypto.randomUUID())
+  const dialogRef = useRef<HTMLDialogElement>(null)
+  const saving = useRef(false)
 
   const isNew = !product?.name
+  let discountPreview: number | null = null
+  try { if (priceText && discountText) discountPreview = discountedPrice({ price: Number(priceText), discountKind, discountValue: Number(discountText) }) } catch {}
   const update = (key: keyof Product, value: string | number | boolean) =>
     setDraft(prev => ({ ...prev, [key]: value }))
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCancel()
-    }
+    const trigger = document.activeElement as HTMLElement | null
+    const dialog = dialogRef.current
     const prevOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    window.addEventListener('keydown', handleKeyDown)
+    dialog?.showModal()
+    dialog?.querySelector<HTMLInputElement>('input:not([type="file"])')?.focus()
     return () => {
+      dialog?.close()
       document.body.style.overflow = prevOverflow
-      window.removeEventListener('keydown', handleKeyDown)
+      if (trigger?.isConnected) trigger.focus({ preventScroll: true })
     }
-  }, [onCancel])
+  }, [])
 
   const removeImage = () => {
     update('image', '')
@@ -476,29 +492,45 @@ function ProductEditor({
   }
 
   const save = async () => {
-    if (pending) return
+    if (saving.current) return
     if (!draft.name.trim() || !draft.category.trim() || !draft.unit.trim()) {
       return setError('Nama, kategori, dan unit stok wajib diisi.')
     }
+    if (!priceText.trim()) return setError('Harga jual wajib diisi. Isi 0 jika harganya nol.')
+    if (!minimumText.trim()) return setError('Minimum stok wajib diisi. Isi 0 jika tidak ada batas minimum.')
+    if (discountKind !== 'none' && !discountText.trim()) return setError('Isi nilai diskon produk.')
+    const parsed = productSchema.safeParse({ name: draft.name, category: draft.category, unit: draft.unit, sku: draft.sku, barcode: draft.barcode, price: priceText, minimum: minimumText, initialStock: isNew ? stockText || '0' : '0', active: draft.active, discountKind, discountValue: discountKind === 'none' ? 0 : discountText })
+    if (!parsed.success) return setError(parsed.error.issues[0].message)
+    saving.current = true
     setPending(true)
     setError('')
     try {
-      const result = await onSave(draft, file, operationId, imageAction)
+      const result = await onSave({ ...draft, price: Number(parsed.data.price), minStock: Number(parsed.data.minimum), stock: isNew ? Number(parsed.data.initialStock) : draft.stock, discountKind: parsed.data.discountKind, discountValue: parsed.data.discountValue }, file, operationId, imageAction)
       if (result.error) setError(result.error)
     } catch {
       setError('Status penyimpanan belum pasti. Muat ulang untuk memeriksa.')
     } finally {
+      saving.current = false
       setPending(false)
     }
   }
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
+    <dialog
+      ref={dialogRef}
+      aria-busy={pending}
       aria-labelledby="product-editor-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 sm:p-6 backdrop-blur-sm animate-in fade-in duration-200"
-      onClick={onCancel}
+      className="fixed inset-0 m-0 max-h-none max-w-none h-dvh w-screen border-0 flex items-center justify-center bg-transparent text-white p-4 sm:p-6 backdrop:bg-black/75 backdrop:backdrop-blur-sm animate-in fade-in duration-200"
+      onCancel={event => { event.preventDefault(); if (!saving.current) onCancel() }}
+      onKeyDown={event => {
+        const dialog=dialogRef.current
+        if(event.key==='Escape'&&dialog?.querySelector('[role="listbox"]'))event.preventDefault()
+        if(event.key!=='Tab'||!dialog)return
+        const items=Array.from(dialog.querySelectorAll<HTMLElement>('button,input,select,textarea,a[href],[tabindex="0"]')).filter(el=>!el.matches(':disabled')&&el.getClientRects().length>0)
+        const first=items[0],last=items[items.length-1]
+        if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus()}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus()}
+      }}
+      onClick={event => { if (event.target === event.currentTarget && !saving.current) onCancel() }}
     >
       <div
         className="relative my-auto flex max-h-[92vh] w-full max-w-4xl flex-col rounded-3xl border border-border bg-[#273242] text-white shadow-2xl animate-in zoom-in-95 duration-200"
@@ -516,6 +548,7 @@ function ProductEditor({
           </div>
           <button
             type="button"
+            disabled={pending}
             onClick={onCancel}
             aria-label="Tutup editor"
             className="grid size-9 shrink-0 place-items-center rounded-xl text-[#a4a7ac] transition hover:bg-[#303640] hover:text-white"
@@ -525,7 +558,8 @@ function ProductEditor({
         </div>
 
         {/* Modal Scrollable Body */}
-        <div className="overflow-y-auto px-6 py-6 sm:px-8">
+        <div className="min-h-0 overflow-y-auto px-6 py-6 sm:px-8">
+          <fieldset disabled={pending} className="contents">
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="flex flex-col gap-4">
               <h3 className="font-normal text-white">Informasi produk</h3>
@@ -615,7 +649,7 @@ function ProductEditor({
                 />
               </label>
 
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div>
                 <div>
                   <label className="text-sm font-medium text-white">
                     SKU
@@ -635,15 +669,6 @@ function ProductEditor({
                       : 'Kosongkan untuk mempertahankan SKU saat ini.'}
                   </p>
                 </div>
-                <label className="text-sm font-medium text-white">
-                  Barcode
-                  <input
-                    value={draft.barcode}
-                    onChange={e => update('barcode', e.target.value)}
-                    placeholder="Contoh: 89912345678"
-                    className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]"
-                  />
-                </label>
               </div>
             </div>
 
@@ -655,11 +680,29 @@ function ProductEditor({
                 <input
                   type="number"
                   min="0"
-                  value={draft.price}
-                  onChange={e => update('price', Number(e.target.value))}
+                  placeholder="Contoh: 15000"
+                  value={priceText}
+                  onChange={e => setPriceText(e.target.value)}
                   className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]"
                 />
               </label>
+
+              <div className="space-y-3 rounded-xl border border-border p-3.5">
+                <label className="flex min-h-11 items-center gap-3 text-sm text-white">
+                  <input type="checkbox" checked={discountKind !== 'none'} onChange={e => setDiscountKind(e.target.checked ? 'percent' : 'none')} className="accent-[#24cbc5]" />
+                  Diskon produk
+                </label>
+                {discountKind !== 'none' && <>
+                  <label className="block text-sm text-white">Jenis diskon
+                    <CustomSelect ariaLabel="Jenis diskon produk" value={discountKind} options={[{label:'Persen (%)',value:'percent'},{label:'Rupiah (Rp)',value:'amount'}]} onChange={value=>{setDiscountKind(value as 'percent'|'amount');setDiscountText('')}} className="mt-1.5 w-full" />
+                  </label>
+                  <label className="block text-sm text-white">Nilai diskon {discountKind === 'percent' ? '(%)' : '(Rp)'}
+                    <input aria-label="Nilai diskon produk" type="number" min="0" max={discountKind === 'percent' ? 100 : Number(priceText) || 0} step={discountKind === 'percent' ? '0.01' : '1'} placeholder={discountKind === 'percent' ? 'Contoh: 10' : 'Contoh: 1000'} value={discountText} onChange={e=>setDiscountText(e.target.value)} className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]" />
+                  </label>
+                  {discountPreview !== null && <p className="text-sm text-[#24cbc5]">Harga setelah diskon: {money(discountPreview)} / {draft.unit || 'unit'}</p>}
+                  <p className="text-xs text-[#a4a7ac]">Potongan berlaku per unit; harga dibulatkan ke rupiah terdekat.</p>
+                </>}
+              </div>
 
               <label className="text-sm font-medium text-white">
                 Stok fisik
@@ -669,8 +712,9 @@ function ProductEditor({
                   step="0.001"
                   disabled={!isNew}
                   title="Ubah stok melalui inventori dengan alasan"
-                  value={draft.stock}
-                  onChange={e => update('stock', Number(e.target.value))}
+                  placeholder="Contoh: 10"
+                  value={stockText}
+                  onChange={e => setStockText(e.target.value)}
                   className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5] disabled:opacity-50"
                 />
               </label>
@@ -681,8 +725,9 @@ function ProductEditor({
                   type="number"
                   min="0"
                   step="0.001"
-                  value={draft.minStock}
-                  onChange={e => update('minStock', Number(e.target.value))}
+                  placeholder="Contoh: 5"
+                  value={minimumText}
+                  onChange={e => setMinimumText(e.target.value)}
                   className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]"
                 />
               </label>
@@ -706,13 +751,15 @@ function ProductEditor({
             </div>
           </div>
 
-          {error && <p className="mt-5 rounded-xl bg-[#4a252b] p-3 text-sm text-[#ffb4ae]">{error}</p>}
+          {error && <p role="alert" className="mt-5 rounded-xl bg-[#4a252b] p-3 text-sm text-[#ffb4ae]">{error}</p>}
+          </fieldset>
         </div>
 
         {/* Modal Footer */}
         <div className="flex items-center justify-end gap-3 border-t border-white/10 px-6 py-4 sm:px-8">
           <button
             type="button"
+            disabled={pending}
             onClick={onCancel}
             className="rounded-xl border border-border px-4 py-2.5 text-sm font-normal text-white transition hover:bg-[#303640]"
           >
@@ -728,7 +775,7 @@ function ProductEditor({
           </button>
         </div>
       </div>
-    </div>
+    </dialog>
   )
 }
 

@@ -1,5 +1,17 @@
 # Arah koreksi stok
 
+## Alur terbaru, 1 November 2026
+
+Satu tombol utama di header: **Catat perubahan stok**. Tombol **Sesuaikan stok fisik** di baris kondisi dihapus. Judul formulir, jumlah, alasan dan tombol simpan diselaraskan dengan perubahan stok umum. Pilihan Masuk/Keluar tetap menentukan delta bertanda; Keluar aktif tetap merah. Semua penulisan baru dari formulir memakai jenis `in`/`out` sesuai arah. Riwayat `adjustment`/Hitung fisik yang sudah ada tetap ditampilkan tanpa diubah. Schema/API dan otorisasi owner/admin tetap sama.
+
+Tes browser `inventory-controls.spec.ts` diperbarui untuk memastikan hanya satu tombol utama, delta pecahan masuk/keluar tersimpan dan diaudit, alasan wajib, overdraw/invalid/nol ditolak, batal tidak menulis, serta layout empat lebar tetap sesuai. Bukti lokal di `.cache/inventory-controls/` tidak untuk commit.
+
+Hasil aktual: typecheck lulus; tes browser Supabase lulus (17,7 detik), tanpa page error. Persistensi setelah reload, audit masuk/keluar dan viewport 320/390/768/1366px lulus; screenshot 390px diperiksa. Fixture dibersihkan dan hash data lama tetap identik. Tes memakai server pengguna yang sudah berjalan di port 3000; tidak menyalakan server tambahan. Build produksi tidak dijalankan pada perubahan ini.
+
+Design read: mempertahankan tombol utama dan panel existing, menghilangkan akses duplikat sesuai permintaan pengguna. ENERGY 1 / RHYTHM 1 / MOTION 0. Gate untuk perubahan ini: copy menjelaskan tindakan stok tanpa klaim baru; warna/font/radius/layout existing dipertahankan; kontrol Masuk/Keluar dan validasi memakai layanan yang sudah ada. Bukti verifikasi alur baru dicatat pada hasil tes browser.
+
+## Riwayat implementasi sebelumnya
+
 Perubahan 31 Oktober 2026 pada branch fix/inventory-adjustment-controls: hapus pintasan Catat stok keluar di baris kondisi inventori, pertahankan Sesuaikan stok fisik, dan letakkan dua tombol Masuk/Keluar di kanan input koreksi jumlah. Pintasan Catat stok masuk di header tetap ada.
 
 Jumlah dimasukkan positif, mendukung koma/titik dan maksimal tiga desimal. Pilihan Masuk/Keluar menentukan delta bertanda serta pratinjau stok. Input mulai kosong, nilai nol tidak dapat disimpan, alasan tetap wajib, dan pengurangan di bawah nol diblokir. Perubahan hanya disimpan ketika pengguna menekan Simpan penyesuaian. Kontrol terkunci selama penyimpanan.

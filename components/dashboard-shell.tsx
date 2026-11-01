@@ -147,7 +147,7 @@ export function DashboardShell({
             </div>
 
             {/* 2. TENGAH: Menu navigasi horizontal berada di tengah secara horizontal */}
-            <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center justify-center pointer-events-auto">
+            <div className="hidden min-[1536px]:flex min-w-0 flex-1 items-center justify-center">
               <DashboardTopNav
                 role={member.role}
                 category={business.category}

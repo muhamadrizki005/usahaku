@@ -12,7 +12,7 @@ test('setup categories, activate every day, QRIS preview and payment controls', 
   const ok = (result: any) => { if (result.error) throw Error('Fixture request failed: ' + result.error.code); return result.data }
   const legacy = ok(await admin.from('businesses').select('*').order('id'))
   const context = await browser.newContext({ baseURL, viewport: { width: 1440, height: 1000 } })
-  const page = await context.newPage(), dir = 'artifacts/setup-controls', results: string[] = []
+  const page = await context.newPage(), dir = '.cache/ui-ux-priority/setup-controls', results: string[] = []
   let userId = '', businessId = '', passed = false
   const pass = (message: string) => { results.push(message); console.log('PASS: ' + message) }
   try {
@@ -34,11 +34,11 @@ test('setup categories, activate every day, QRIS preview and payment controls', 
     const productDialog = page.getByRole('dialog', { name: 'Kelola produk', exact: true })
     const category = productDialog.getByLabel('Kategori *', { exact: true })
     for (const value of ['Makanan', 'Minuman', 'Bahan Pokok']) {
-      await category.selectOption(value)
-      await expect(category).toHaveValue(value)
+      await category.click();await productDialog.getByRole('option',{name:value,exact:true}).click()
+      await expect(category).toContainText(value)
       await expect(productDialog.getByLabel('Kategori lainnya *', { exact: true })).toHaveCount(0)
     }
-    await category.selectOption('Lainnya')
+    await category.click();await productDialog.getByRole('option',{name:'Lainnya',exact:true}).click()
     await productDialog.getByLabel('Nama produk *', { exact: true }).fill('Produk Kategori Manual')
     await productDialog.getByLabel('Harga jual *', { exact: true }).fill('10000')
     await productDialog.getByLabel('Stok *', { exact: true }).fill('1.250')
@@ -53,9 +53,9 @@ test('setup categories, activate every day, QRIS preview and payment controls', 
     await page.reload()
     await page.getByRole('button', { name: 'Kelola produk', exact: true }).click()
     await productDialog.getByRole('button', { name: 'Edit', exact: true }).click()
-    await expect(category).toHaveValue('Lainnya')
+    await expect(category).toContainText('Lainnya')
     await expect(productDialog.getByLabel('Kategori lainnya *', { exact: true })).toHaveValue('Perlengkapan Rumah')
-    await category.selectOption('Minuman')
+    await category.click();await productDialog.getByRole('option',{name:'Minuman',exact:true}).click()
     await expect(productDialog.getByLabel('Kategori lainnya *', { exact: true })).toHaveCount(0)
     await productDialog.getByRole('button', { name: 'Simpan produk', exact: true }).click()
     await expect(productDialog).toHaveCount(0)
@@ -92,7 +92,7 @@ test('setup categories, activate every day, QRIS preview and payment controls', 
     const payments = page.getByRole('dialog', { name: 'Atur pembayaran', exact: true })
     const aligned = async () => {
       const positions = []
-      for (const name of ['QRIS', 'Transfer bank', 'E-wallet']) positions.push((await payments.getByRole('switch', { name, exact: true }).boundingBox())!.x)
+      for (const name of ['QRIS', 'Transfer bank']) positions.push((await payments.getByRole('switch', { name, exact: true }).boundingBox())!.x)
       expect(Math.max(...positions) - Math.min(...positions)).toBeLessThan(1)
     }
     await aligned()
@@ -110,17 +110,13 @@ test('setup categories, activate every day, QRIS preview and payment controls', 
       await expect.poll(() => payments.getByAltText('Preview QRIS').evaluate((el: HTMLImageElement) => el.naturalHeight)).toBe(200)
       expect(await payments.getByAltText('Preview QRIS').evaluate(el => getComputedStyle(el).objectFit)).toBe('contain')
     }
-    await payments.getByRole('switch', { name: 'Tunai', exact: true }).click()
+    if(await payments.getByRole('switch', { name: 'Tunai', exact: true }).getAttribute('aria-checked')==='false')await payments.getByRole('switch', { name: 'Tunai', exact: true }).click()
     await payments.getByRole('button', { name: 'Tambah rekening', exact: true }).click()
     await payments.getByPlaceholder('Nama bank', { exact: true }).fill('Bank Uji')
     await payments.getByPlaceholder('Nama pemilik', { exact: true }).fill('Pemilik Uji')
     await payments.getByPlaceholder('Nomor rekening', { exact: true }).fill('00123456789')
     await payments.getByRole('button', { name: 'Tambah rekening', exact: true }).click()
     await payments.getByRole('button', { name: 'Hapus rekening', exact: true }).last().click()
-    await payments.getByRole('button', { name: 'Tambah akun e-wallet', exact: true }).click()
-    await payments.getByPlaceholder('Provider', { exact: true }).fill('Dompet Uji')
-    await payments.getByPlaceholder('Nama akun', { exact: true }).fill('Pemilik Uji')
-    await payments.getByPlaceholder('Nomor e-wallet', { exact: true }).fill('081234567890')
     await expect(page.getByText('2 dari 4 langkah utama selesai', { exact: true })).toBeVisible()
     await page.screenshot({ path: dir + '/payments-desktop.png', fullPage: true })
     for (const width of [320, 768]) {
@@ -140,23 +136,20 @@ test('setup categories, activate every day, QRIS preview and payment controls', 
     await page.getByRole('button', { name: 'Atur pembayaran', exact: true }).click()
     await expect(payments.getByAltText('Preview QRIS')).toBeVisible()
     await expect(payments.getByPlaceholder('Nomor rekening', { exact: true })).toHaveValue('00123456789')
-    for (const name of ['QRIS', 'Tunai', 'Transfer bank', 'E-wallet']) await expect(payments.getByRole('switch', { name, exact: true })).toHaveAttribute('aria-checked', 'true')
-    pass('QRIS PNG/JPEG/WebP tampil utuh; file rusak/besar ditolak; alignment desktop/320/768, tambah/hapus rekening, e-wallet dan reload berhasil')
+    for (const name of ['QRIS', 'Tunai', 'Transfer bank']) await expect(payments.getByRole('switch', { name, exact: true })).toHaveAttribute('aria-checked', 'true')
+    pass('QRIS PNG/JPEG/WebP tampil utuh; file rusak/besar ditolak; alignment desktop/320/768, tambah/hapus rekening, metode server dan reload berhasil')
 
-    await page.evaluate(() => {
-      const original = Storage.prototype.setItem
-      ;(window as any).restoreSetupStorage = () => { Storage.prototype.setItem = original }
-      Storage.prototype.setItem = function (key, value) { if (key.endsWith(':usahaku_payments')) throw new DOMException('quota', 'QuotaExceededError'); original.call(this, key, value) }
-    })
+    const savedPayment=ok(await admin.from('business_payments').select('*').eq('business_id',businessId).single())
+    ok(await client.rpc('save_business_payments',{target_id:businessId,expected_revision:savedPayment.revision,details:{cash:savedPayment.cash,qris:savedPayment.qris,transfer:savedPayment.transfer,banks:savedPayment.banks},asset_id:savedPayment.qris_asset}))
     await payments.getByPlaceholder('Nama bank', { exact: true }).fill('Perubahan belum tersimpan')
     await payments.getByRole('button', { name: 'Simpan pembayaran', exact: true }).click()
     await expect(payments).toBeVisible()
-    await expect(payments.getByText(/Pengaturan belum tersimpan/)).toBeVisible()
-    await page.evaluate(() => (window as any).restoreSetupStorage())
+    await expect(payments.getByText(/Pembayaran berubah di tab lain/)).toBeVisible()
     await payments.getByRole('button', { name: 'Batal', exact: true }).click()
+    await page.reload()
     await page.getByRole('button', { name: 'Atur pembayaran', exact: true }).click()
     await expect(payments.getByPlaceholder('Nama bank', { exact: true })).toHaveValue('Bank Uji')
-    pass('Kegagalan penyimpanan browser tidak menutup modal atau mengganti pengaturan tersimpan; container sampul dihapus')
+    pass('Penolakan revisi server tidak menutup modal atau mengganti pengaturan tersimpan; container sampul dihapus')
 
     let fileChooserOpened = false
     page.on('filechooser', () => { fileChooserOpened = true })
@@ -183,7 +176,7 @@ test('setup categories, activate every day, QRIS preview and payment controls', 
     pass('Tombol X menghapus preview tanpa membuka pemilih file; Batal mempertahankan foto; hapus+Simpan persisten; checklist/progres dan ringkasan pembayaran konsisten')
     await page.goto('/onboarding/setup')
     await page.getByRole('button', { name: 'Atur pembayaran', exact: true }).click()
-    for (const name of ['Tunai', 'Transfer bank', 'E-wallet']) await payments.getByRole('switch', { name, exact: true }).click()
+    for (const name of ['Tunai', 'Transfer bank']) await payments.getByRole('switch', { name, exact: true }).click()
     await payments.getByRole('switch', { name: 'QRIS', exact: true }).click()
     const onlyQris = await sharp({create:{width:32,height:32,channels:3,background:'#ffffff'}}).png().toBuffer()
     await payments.locator('input[type=file]').setInputFiles({name:'only-qris.png',mimeType:'image/png',buffer:onlyQris})
@@ -198,13 +191,15 @@ test('setup categories, activate every day, QRIS preview and payment controls', 
     await page.reload()
     await expect(page.getByText('2 dari 4 langkah utama selesai', { exact: true })).toBeVisible()
     await page.getByRole('button', { name: 'Atur pembayaran', exact: true }).click()
-    for (const name of ['QRIS', 'Tunai', 'Transfer bank', 'E-wallet']) await expect(payments.getByRole('switch', { name, exact: true })).toHaveAttribute('aria-checked','false')
+    for (const name of ['QRIS', 'Tunai', 'Transfer bank']) await expect(payments.getByRole('switch', { name, exact: true })).toHaveAttribute('aria-checked','false')
     await expect(payments.getByAltText('Preview QRIS')).toHaveCount(0)
     pass('QRIS sebagai satu-satunya metode juga dapat dihapus dan disimpan; reload tetap nonaktif dan progres pembayaran kembali belum diatur')
     passed = true
   } finally {
     await context.close()
     if (businessId) {
+      const assets=ok(await admin.from('business_payment_assets').select('path').eq('business_id',businessId))
+      if(assets.length)ok(await admin.storage.from('business-payment-qr').remove(assets.map((asset:any)=>asset.path)))
       for (const table of ['staff_audit_logs', 'business_members']) ok(await admin.from(table).delete().eq('business_id', businessId))
       ok(await admin.from('businesses').delete().eq('id', businessId))
     }

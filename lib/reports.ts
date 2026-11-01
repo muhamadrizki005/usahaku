@@ -21,7 +21,7 @@ const scaled=(value:number)=>{const n=Number(value),s=Math.round(n*1000);if(!Num
 export function reportSummary(data:ReportData){
   let gross=BigInt(0),discount=BigInt(0),net=BigInt(0),units=BigInt(0),refund=BigInt(0)
   const completed=data.sales.filter(s=>s.status==='completed'),best=new Map<string,{id:string;name:string;sku:string;unit:string;quantity:bigint;gross:bigint}>()
-  for(const s of completed){gross+=whole(s.subtotal);discount+=whole(s.discount);net+=whole(s.total);for(const l of s.lines){const qty=scaled(l.quantity);units+=qty;const key=l.id+'|'+l.unit,p=best.get(key)||{id:l.id,name:l.name,sku:l.sku,unit:l.unit,quantity:BigInt(0),gross:BigInt(0)};p.quantity+=qty;p.gross+=whole(l.total);best.set(key,p)}}
+  for(const s of completed){gross+=whole(s.subtotal);discount+=whole(s.discount);net+=whole(Number(s.total)-Number(s.tax_amount||0));for(const l of s.lines){const qty=scaled(l.quantity);units+=qty;const key=l.id+'|'+l.unit,p=best.get(key)||{id:l.id,name:l.name,sku:l.sku,unit:l.unit,quantity:BigInt(0),gross:BigInt(0)};p.quantity+=qty;p.gross+=whole(l.original_total??l.total);best.set(key,p)}}
   for(const s of data.refunds)refund+=whole(s.refund_amount??0)
   const count=BigInt(completed.length)
   return{gross,discount,net,units,refund,count:completed.length,cancelled:data.sales.length-completed.length,average:count?(net+count/BigInt(2))/count:BigInt(0),best:Array.from(best.values())}
@@ -38,12 +38,12 @@ export function reportCsv(data:ReportData,filter:ReportFilter,businessName:strin
   row(['Laporan penjualan',businessName]);row(['Tanggal awal WIB',filter.from,'Tanggal akhir WIB',filter.to]);row(['Pembayaran',reportPayment(filter),'Diambil',saleDate(data.generatedAt)])
   row([]);row(['RINGKASAN']);row(['Metrik','Nilai'])
   for(const [label,value] of [['Subtotal selesai',summary.gross.toString()],['Diskon selesai',summary.discount.toString()],['Omzet selesai',summary.net.toString()],['Transaksi selesai',String(summary.count)],['Rata-rata transaksi selesai',summary.average.toString()],['Produk terjual (gabungan satuan)',reportUnits(summary.units)],['Dibatalkan dari penjualan periode ini',String(summary.cancelled)],['Refund manual menurut tanggal pembatalan',summary.refund.toString()]])row([label,value])
-  row([]);row(['PENJUALAN']);row(['Referensi','Tanggal penjualan WIB','Kasir','Pelanggan','Pembayaran','Status','Subtotal rupiah','Diskon rupiah','Total transaksi asli rupiah','Omzet diakui rupiah','Tanggal pembatalan WIB','Alasan pembatalan'])
-  for(const s of data.sales)row([saleCode(s),saleDate(s.created_at),s.actor_name,s.customer,paymentLabel[s.payment],s.status==='completed'?'Selesai':'Dibatalkan',s.subtotal,s.discount,s.total,s.status==='completed'?s.total:0,s.cancelled_at?saleDate(s.cancelled_at):'',s.cancellation_reason||''])
+  row([]);row(['PENJUALAN']);row(['Referensi','Tanggal penjualan WIB','Kasir','Pelanggan','Pembayaran','Status','Subtotal rupiah','Diskon rupiah','Pajak rupiah','Total transaksi asli rupiah','Omzet diakui rupiah','Tanggal pembatalan WIB','Alasan pembatalan'])
+  for(const s of data.sales)row([saleCode(s),saleDate(s.created_at),s.actor_name,s.customer,paymentLabel[s.payment],s.status==='completed'?'Selesai':'Dibatalkan',s.subtotal,s.discount,s.tax_amount||0,s.total,s.status==='completed'?Number(s.total)-Number(s.tax_amount||0):0,s.cancelled_at?saleDate(s.cancelled_at):'',s.cancellation_reason||''])
   row([]);row(['REFUND']);row(['Referensi','Tanggal penjualan WIB','Tanggal pembatalan WIB','Petugas pembatalan','Pelanggan','Pembayaran','Refund manual rupiah','Alasan'])
   for(const s of data.refunds)row([saleCode(s),saleDate(s.created_at),saleDate(s.cancelled_at!),s.cancelled_by_name,s.customer,paymentLabel[s.payment],s.refund_amount,s.cancellation_reason])
   row([]);row(['PRODUK']);row(['Produk','SKU','Satuan','Jumlah terjual','Nilai sebelum diskon rupiah'])
   for(const p of rankProducts(data,'gross'))row([p.name,p.sku,p.unit,reportUnits(p.quantity),p.gross.toString()])
-  row([]);row(['CATATAN','Omzet mengecualikan pembatalan dari tanggal asal. Refund mengikuti tanggal pembatalan dan tidak dikurangi ulang. Harga modal/HPP belum tersedia; ini bukan laporan laba.'])
+  row([]);row(['CATATAN','Omzet tidak termasuk pajak. Total transaksi termasuk pajak. Omzet mengecualikan pembatalan dari tanggal asal. Refund mengikuti tanggal pembatalan dan tidak dikurangi ulang. Harga modal/HPP belum tersedia; ini bukan laporan laba.'])
   return '\uFEFF'+lines.join('\r\n')+'\r\n'
 }

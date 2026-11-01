@@ -63,7 +63,7 @@ export default function OriginalSignup() {
       </header>
 
       <div className="relative z-10 grid lg:grid-cols-[42%_58%]">
-        <section className="bg-transparent px-5 py-12 sm:px-10 lg:flex lg:min-h-[calc(100vh-136px)] lg:items-center lg:border-r lg:border-white/10 lg:px-16 xl:px-24">
+        <section className="order-2 bg-transparent px-5 py-12 sm:px-10 lg:order-none lg:flex lg:min-h-[calc(100vh-136px)] lg:items-center lg:border-r lg:border-white/10 lg:px-16 xl:px-24">
           <div className="mx-auto w-full max-w-xl">
             <p className="text-xs font-normal tracking-[0.18em] text-[#24cbc5]">RUANG UNTUK USAHA ANDA</p>
             <h1 className="mt-5 max-w-lg text-4xl font-normal leading-[1.12] tracking-tight sm:text-5xl">Langkah pertama untuk<br />usaha yang lebih<br />tertata.</h1>
@@ -80,7 +80,7 @@ export default function OriginalSignup() {
           </div>
         </section>
 
-        <section className="bg-transparent px-5 py-12 sm:px-10 lg:px-16 lg:py-16 xl:px-24">
+        <section className="order-1 bg-transparent px-5 py-8 sm:px-10 lg:order-none lg:px-16 lg:py-16 xl:px-24">
           <div className="mx-auto w-full max-w-[610px]">
             <div className="flex items-center gap-3 text-sm">
               <span className="rounded-full bg-[#1835d9] px-3 py-1.5 font-normal text-white">01 Akun pemilik</span>

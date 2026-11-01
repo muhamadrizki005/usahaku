@@ -14,5 +14,5 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
 
   const { category } = await searchParams
   const initialCategory = 'toko' as const
-  return <ProductManagement role={member.role} initialCategory={initialCategory} business={business} initialProducts={await readProducts(supabase,business.id)} />
+  return <ProductManagement role={member.role} initialCategory={initialCategory} business={business} initialProducts={await readProducts(supabase,business.id)} renderedAt={new Date().toISOString()} />
 }
