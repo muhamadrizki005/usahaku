@@ -1,0 +1,47 @@
+.sale-receipt {
+  box-sizing: border-box;
+  width: 80mm;
+  max-width: 100%;
+  padding: 4mm;
+  background: #fff;
+  color: #111;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.sale-receipt p, .sale-receipt h2, .sale-receipt dl, .sale-receipt dd { margin: 0; }
+.receipt-header, .receipt-footer { text-align: center; padding: 3mm 0; }
+.receipt-header { border-top: 3px double currentColor; }
+.receipt-header h2 { font: inherit; font-size: 15px; font-weight: 600; text-transform: uppercase; }
+.sale-receipt .receipt-double-rule { border-bottom: 3px double #111 !important; }
+.sale-receipt .receipt-dashed-rule { border-bottom: 1px dashed #111 !important; }
+.receipt-metadata, .receipt-totals, .receipt-payment, .receipt-refund { padding: 3mm 0; }
+.receipt-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2mm; }
+.receipt-row dd { min-width: 0; text-align: right; }
+.receipt-metadata .receipt-row { grid-template-columns: 25mm minmax(0, 1fr); gap: 1mm; }
+.receipt-metadata .receipt-row dd { text-align: left; }
+.receipt-metadata .receipt-row dd::before { content: ': '; }
+.receipt-metadata .receipt-row:first-child { grid-template-columns: minmax(0, 1fr); gap: 0; margin-bottom: 1mm; }
+.receipt-metadata .receipt-row:first-child dt::after { content: ' :'; }
+.receipt-metadata .receipt-row:first-child dd::before { content: none; }
+.receipt-items { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 10px; line-height: 1.6; }
+.receipt-name-column { width: 40%; }
+.receipt-quantity-column { width: 18%; }
+.receipt-price-column { width: 21%; }
+.receipt-items th, .receipt-items td { padding: 2mm 0 2mm 1mm; text-align: right; vertical-align: top; font-weight: 400; }
+.receipt-items th:first-child, .receipt-items td:first-child { padding-left: 0; text-align: left; }
+.receipt-items thead { display: table-header-group; }
+.receipt-items tr { break-inside: avoid; }
+.receipt-item-discount { display: block; font-size: 9px; }
+.receipt-payment .receipt-row:first-child, .receipt-cancelled { font-weight: 600; }
+.receipt-cancelled { text-align: center; padding: 2mm 0; }
+.receipt-header, .receipt-metadata, .receipt-totals, .receipt-payment, .receipt-refund, .receipt-footer { break-inside: avoid; }
+@media print {
+  .sale-receipt { margin: 0; box-shadow: none; print-color-adjust: exact; }
+  #pos-print-root .sale-receipt { background: #fff !important; color: #111 !important; }
+  #pos-print-root .sale-receipt .receipt-double-rule,
+  #pos-print-root .sale-receipt .receipt-dashed-rule { border-color: #111 !important; }
+  #pos-print-root { width: 80mm; max-width: 100%; }
+}
