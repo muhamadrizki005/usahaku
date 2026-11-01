@@ -1,3 +1,5 @@
+import { quote } from './pos'
+
 export type ProductDiscount = { price: number; discountKind?: 'none' | 'percent' | 'amount'; discountValue?: number }
 
 export function discountedPrice(product: ProductDiscount): number {
@@ -24,4 +26,12 @@ export function productQuote(lines: { product: ProductDiscount; quantity: number
   const tax = Number((BigInt(net) * BigInt(Math.round(taxRate * 100)) + BigInt(5000)) / BigInt(10000))
   if (net + tax > 999999999999) throw Error('Total melebihi batas transaksi.')
   return { subtotal, discount: subtotal - net, net, tax, total: net + tax }
+}
+
+export function checkoutQuote(lines: { product: ProductDiscount; quantity: number }[], taxRate = 0, kind = 'none', value = '0') {
+  if (!['none', 'percent', 'amount'].includes(kind)) throw Error('Jenis diskon keseluruhan tidak valid.')
+  const products = productQuote(lines)
+  const order = quote([{ product: { price: products.net }, quantity: 1 }], kind, value)
+  const taxed = productQuote([{ product: { price: order.total }, quantity: 1 }], taxRate)
+  return { subtotal: products.subtotal, productDiscount: products.discount, orderDiscount: order.discount, discount: products.discount + order.discount, net: order.total, tax: taxed.tax, total: taxed.total }
 }
