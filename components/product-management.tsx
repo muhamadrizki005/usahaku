@@ -2,7 +2,7 @@
 
 import { productSkuPrefix } from '@/lib/product-sku'
 import { saveCatalogProduct, bulkCatalogProducts } from '@/app/catalog-actions'
-import { productCategories, productSchema, formatQuantity, type CatalogProduct, type CatalogResult } from '@/lib/catalog'
+import { productCategories, formatQuantity, type CatalogProduct, type CatalogResult } from '@/lib/catalog'
 import type { Role } from '@/lib/auth/permissions'
 import type { Business } from '@/lib/validation'
 
@@ -428,30 +428,19 @@ function ProductEditor({
   onCancel: () => void
   onSave: (product: Product, file: File | null, key: string, imageAction: string) => Promise<CatalogResult>
 }) {
-  const isNew = !product?.name
-
-  const [name, setName] = useState(() => product?.name || '')
-  const [category, setCategory] = useState(() => product?.category || '')
+  const [draft, setDraft] = useState(product!)
   const [customCategory, setCustomCategory] = useState(
     Boolean(product?.category && !productCategories.includes(product.category))
   )
-  const [customCategoryText, setCustomCategoryText] = useState(
-    Boolean(product?.category && !productCategories.includes(product.category)) ? (product?.category || '') : ''
-  )
-  const [unit, setUnit] = useState(() => product?.unit || '')
-  const [sku, setSku] = useState(() => product?.sku || '')
-
-  const [price, setPrice] = useState(() => (!isNew && product?.price !== undefined ? String(product.price) : ''))
-  const [stock, setStock] = useState(() => (!isNew && product?.stock !== undefined ? String(product.stock) : ''))
-  const [minStock, setMinStock] = useState(() => (!isNew && product?.minStock !== undefined ? String(product.minStock) : ''))
-  const [active, setActive] = useState(() => product?.active ?? true)
-  const [image, setImage] = useState(() => product?.image || '')
-
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [imageAction, setImageAction] = useState('keep')
   const [operationId] = useState(() => crypto.randomUUID())
+
+  const isNew = !product?.name
+  const update = (key: keyof Product, value: string | number | boolean) =>
+    setDraft(prev => ({ ...prev, [key]: value }))
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -467,7 +456,7 @@ function ProductEditor({
   }, [onCancel])
 
   const removeImage = () => {
-    setImage('')
+    update('image', '')
     setFile(null)
     setImageAction('remove')
     if (fileRef.current) fileRef.current.value = ''
@@ -482,73 +471,19 @@ function ProductEditor({
     setImageAction('replace')
     setError('')
     const reader = new FileReader()
-    reader.onload = () => setImage(String(reader.result))
+    reader.onload = () => update('image', String(reader.result))
     reader.readAsDataURL(fileInput)
   }
 
-  const resolvedCategory = (customCategory ? customCategoryText : category).trim()
-
   const save = async () => {
     if (pending) return
-
-    const trimmedName = name.trim()
-    const trimmedUnit = unit.trim()
-
-    if (!trimmedName || !resolvedCategory || !trimmedUnit) {
+    if (!draft.name.trim() || !draft.category.trim() || !draft.unit.trim()) {
       return setError('Nama, kategori, dan unit stok wajib diisi.')
     }
-
-    if (!price.trim()) {
-      return setError('Harga jual wajib diisi.')
-    }
-    const cleanPrice = price.trim()
-    if (!/^(0|[1-9]\d{0,11})$/.test(cleanPrice)) {
-      return setError('Harga harus rupiah bulat, 0–999.999.999.999.')
-    }
-
-    const cleanMinStock = minStock.trim().replace(',', '.')
-    if (!cleanMinStock) {
-      return setError('Minimum stok wajib diisi.')
-    }
-    if (!/^(0|[1-9]\d*)(\.\d{1,3})?$/.test(cleanMinStock)) {
-      return setError('Minimum stok harus angka dengan maksimal 3 desimal.')
-    }
-
-    let cleanStock = '0'
-    if (isNew) {
-      if (stock.trim()) {
-        const rawStock = stock.trim().replace(',', '.')
-        if (!/^(0|[1-9]\d*)(\.\d{1,3})?$/.test(rawStock)) {
-          return setError('Stok fisik harus angka dengan maksimal 3 desimal.')
-        }
-        cleanStock = rawStock
-      }
-    } else {
-      cleanStock = String(product?.stock ?? 0)
-    }
-
-    const parsed = productSchema.safeParse({ name: trimmedName, category: resolvedCategory, unit: trimmedUnit, sku: sku.trim(), barcode: product?.barcode || '', price: cleanPrice, minimum: cleanMinStock, initialStock: isNew ? cleanStock : '0', active })
-    if (!parsed.success) return setError(parsed.error.issues[0].message)
-
     setPending(true)
     setError('')
     try {
-      const payload: Product = {
-        id: product?.id || crypto.randomUUID(),
-        name: trimmedName,
-        category: resolvedCategory,
-        unit: trimmedUnit,
-        sku: sku.trim(),
-        barcode: product?.barcode || '',
-        price: Number(cleanPrice),
-        stock: Number(cleanStock),
-        minStock: Number(cleanMinStock),
-        active,
-        revision: product?.revision ?? 0,
-        stockRevision: product?.stockRevision ?? 0,
-        image,
-      }
-      const result = await onSave(payload, file, operationId, imageAction)
+      const result = await onSave(draft, file, operationId, imageAction)
       if (result.error) setError(result.error)
     } catch {
       setError('Status penyimpanan belum pasti. Muat ulang untuk memeriksa.')
@@ -596,9 +531,9 @@ function ProductEditor({
               <h3 className="font-normal text-white">Informasi produk</h3>
 
               <div className="relative flex min-h-32 flex-col items-center justify-center rounded-2xl border border-dashed border-[#24cbc5]/40 bg-[#24cbc5]/10 p-4">
-                {image ? (
+                {draft.image ? (
                   <>
-                    <img src={image} alt="Preview produk" className="size-20 rounded-xl object-cover" />
+                    <img src={draft.image} alt="Preview produk" className="size-20 rounded-xl object-cover" />
                     <button
                       type="button"
                       onClick={removeImage}
@@ -624,170 +559,154 @@ function ProductEditor({
                 </label>
               </div>
 
-              <div>
-                <label className="text-sm font-medium text-white" htmlFor="product-name-input">
-                  Nama produk *
-                </label>
+              <label className="text-sm font-medium text-white">
+                Nama produk *
                 <input
-                  id="product-name-input"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
+                  value={draft.name}
+                  onChange={e => update('name', e.target.value)}
                   placeholder="Contoh: Kopi Susu Aren"
                   className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]"
                 />
-              </div>
+              </label>
 
               <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium text-white" id="product-category-label">
-                    Kategori *
-                  </label>
+                <label className="text-sm font-medium text-white">
+                  Kategori *
                   <CustomSelect
-                    value={customCategory ? 'Lainnya' : category}
+                    value={customCategory ? 'Lainnya' : draft.category}
                     options={[
                       { value: '', label: 'Pilih kategori', disabled: true },
                       ...productCategories.map(value => ({ value, label: value })),
                       { value: 'Lainnya', label: 'Lainnya' },
                     ]}
                     onChange={val => {
-                      const isCustom = val === 'Lainnya'
-                      setCustomCategory(isCustom)
-                      if (!isCustom) {
-                        setCategory(val)
-                        setCustomCategoryText('')
-                      }
+                      const custom = val === 'Lainnya'
+                      setCustomCategory(custom)
+                      update('category', custom ? '' : val)
                     }}
                     placeholder="Pilih kategori"
                     ariaLabel="Kategori *"
                     className="mt-1.5 w-full"
                   />
-                </div>
+                </label>
                 {customCategory && (
-                  <div>
-                    <label className="block text-sm font-medium text-white" htmlFor="custom-category-input">
-                      Kategori lainnya *
-                    </label>
+                  <label className="block text-sm font-medium text-white">
+                    Kategori lainnya *
                     <input
-                      id="custom-category-input"
                       maxLength={100}
-                      value={customCategoryText}
-                      onChange={e => setCustomCategoryText(e.target.value)}
+                      value={draft.category}
+                      onChange={e => update('category', e.target.value)}
                       placeholder="Masukkan nama kategori"
                       className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]"
                     />
-                  </div>
+                  </label>
                 )}
               </div>
 
-              <div>
-                <label className="text-sm font-medium text-white" htmlFor="product-unit-input">
-                  Unit stok *
-                </label>
+              <label className="text-sm font-medium text-white">
+                Unit stok *
                 <input
-                  id="product-unit-input"
-                  value={unit}
+                  value={draft.unit}
                   disabled={!isNew}
-                  title={isNew ? undefined : 'Satuan tetap setelah produk dibuat'}
-                  onChange={e => setUnit(e.target.value)}
-                  placeholder="pcs/porsi/kg/botol/..."
+                  title="Satuan tetap setelah produk dibuat"
+                  onChange={e => update('unit', e.target.value)}
+                  placeholder="pcs, porsi, kg, botol..."
                   className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5] disabled:opacity-50"
                 />
-              </div>
+              </label>
 
-              <div>
-                <label className="text-sm font-medium text-white" htmlFor="product-sku-input">
-                  SKU
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="text-sm font-medium text-white">
+                    SKU
+                    <input
+                      aria-label="SKU"
+                      aria-describedby="product-sku-help"
+                      maxLength={64}
+                      placeholder={isNew ? `${productSkuPrefix(draft.category, draft.name)}001` : product?.sku}
+                      value={draft.sku}
+                      onChange={e => update('sku', e.target.value)}
+                      className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]"
+                    />
+                  </label>
+                  <p id="product-sku-help" className="mt-1 text-xs text-[#a4a7ac]">
+                    {isNew
+                      ? 'Kosongkan untuk SKU otomatis. Nomor ditetapkan saat disimpan; dapat diisi sendiri.'
+                      : 'Kosongkan untuk mempertahankan SKU saat ini.'}
+                  </p>
+                </div>
+                <label className="text-sm font-medium text-white">
+                  Barcode
+                  <input
+                    value={draft.barcode}
+                    onChange={e => update('barcode', e.target.value)}
+                    placeholder="Contoh: 89912345678"
+                    className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]"
+                  />
                 </label>
-                <input
-                  id="product-sku-input"
-                  aria-label="SKU"
-                  aria-describedby="product-sku-help"
-                  maxLength={64}
-                  placeholder={isNew ? `${productSkuPrefix(resolvedCategory, name)}001` : product?.sku}
-                  value={sku}
-                  onChange={e => setSku(e.target.value)}
-                  className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]"
-                />
-                <p id="product-sku-help" className="mt-1 text-xs text-[#a4a7ac]">
-                  {isNew
-                    ? 'Kosongkan untuk SKU otomatis. Nomor ditetapkan saat disimpan; dapat diisi sendiri.'
-                    : 'Kosongkan untuk mempertahankan SKU saat ini.'}
-                </p>
               </div>
             </div>
 
             <div className="flex flex-col gap-4">
               <h3 className="font-normal text-white">Harga & pengaturan penjualan</h3>
 
-              <div>
-                <label className="text-sm font-medium text-white" htmlFor="product-price-input">
-                  Harga jual *
-                </label>
+              <label className="text-sm font-medium text-white">
+                Harga jual *
                 <input
-                  id="product-price-input"
-                  type="text"
-                  inputMode="numeric"
-                  value={price}
-                  onChange={e => setPrice(e.target.value)}
-                  placeholder="Contoh: 15000"
+                  type="number"
+                  min="0"
+                  value={draft.price}
+                  onChange={e => update('price', Number(e.target.value))}
                   className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]"
                 />
-              </div>
+              </label>
 
-              <div>
-                <label className="text-sm font-medium text-white" htmlFor="product-stock-input">
-                  Stok fisik
-                </label>
+              <label className="text-sm font-medium text-white">
+                Stok fisik
                 <input
-                  id="product-stock-input"
-                  type="text"
-                  inputMode="decimal"
+                  type="number"
+                  min="0"
+                  step="0.001"
                   disabled={!isNew}
-                  title={isNew ? undefined : 'Ubah stok melalui inventori dengan alasan'}
-                  value={stock}
-                  onChange={e => setStock(e.target.value)}
-                  placeholder="0"
+                  title="Ubah stok melalui inventori dengan alasan"
+                  value={draft.stock}
+                  onChange={e => update('stock', Number(e.target.value))}
                   className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5] disabled:opacity-50"
                 />
-              </div>
+              </label>
 
-              <div>
-                <label className="text-sm font-medium text-white" htmlFor="product-minstock-input">
-                  Minimum stok *
-                </label>
+              <label className="text-sm font-medium text-white">
+                Minimum stok *
                 <input
-                  id="product-minstock-input"
-                  type="text"
-                  inputMode="decimal"
-                  value={minStock}
-                  onChange={e => setMinStock(e.target.value)}
-                  placeholder="0"
+                  type="number"
+                  min="0"
+                  step="0.001"
+                  value={draft.minStock}
+                  onChange={e => update('minStock', Number(e.target.value))}
                   className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]"
                 />
-              </div>
+              </label>
 
-              <div>
-                <label className="text-sm font-medium text-white" id="product-status-label">
-                  Status produk
-                </label>
+              <label className="text-sm font-medium text-white">
+                Status produk
                 <CustomSelect
-                  value={active ? 'Aktif' : 'Nonaktif'}
+                  value={draft.active ? 'Aktif' : 'Nonaktif'}
                   options={['Aktif', 'Nonaktif']}
-                  onChange={val => setActive(val === 'Aktif')}
+                  onChange={val => update('active', val === 'Aktif')}
                   ariaLabel="Status produk"
                   className="mt-1.5 w-full"
                 />
-              </div>
+              </label>
 
               <div className="rounded-2xl border border-[#24cbc5]/20 bg-[#24cbc5]/10 p-4 text-sm text-[#24cbc5]">
-                {active
+                {draft.active
                   ? 'Produk aktif dan tersedia untuk ditampilkan di kasir.'
                   : 'Produk nonaktif tidak muncul di kasir, tetapi riwayat transaksi dan stok fisiknya tetap dipertahankan.'}
               </div>
             </div>
           </div>
 
-          {error && <p role="alert" className="mt-5 rounded-xl bg-[#4a252b] p-3 text-sm text-[#ffb4ae]">{error}</p>}
+          {error && <p className="mt-5 rounded-xl bg-[#4a252b] p-3 text-sm text-[#ffb4ae]">{error}</p>}
         </div>
 
         {/* Modal Footer */}

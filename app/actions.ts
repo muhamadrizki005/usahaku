@@ -287,3 +287,124 @@ export async function signOut() {
   await clearRecovery()
   redirect('/login')
 }
+
+export async function updateAccountProfile(_: ActionState, form: FormData): Promise<ActionState> {
+  const { supabase, user, member } = await requireAccount()
+  if (member && !member.active) return { error: 'Akses dinonaktifkan. Hubungi owner.' }
+
+  const rawName = form.get('name')
+  const rawPhone = form.get('phone')
+
+  const name = typeof rawName === 'string' ? rawName.trim() : ''
+  const phone = typeof rawPhone === 'string' ? rawPhone.trim() : ''
+
+  if (!name || name.length < 2) {
+    return { error: 'Nama lengkap minimal 2 karakter.' }
+  }
+  if (name.length > 100) {
+    return { error: 'Nama lengkap maksimal 100 karakter.' }
+  }
+  if (phone && !/^(\+62|62|0)[0-9]{8,13}$/.test(phone.replace(/[\s-]/g, ''))) {
+    return { error: 'Format nomor telepon belum sesuai (contoh: 081234567890).' }
+  }
+
+  const updatedMetadata: Record<string, any> = {
+    ...user.user_metadata,
+    full_name: name,
+    name: name,
+    phone: phone || null,
+  }
+
+  const { error: userError } = await supabase.auth.updateUser({
+    data: updatedMetadata,
+  })
+
+  if (userError) {
+    return { error: 'Gagal memperbarui profil: ' + userError.message }
+  }
+
+  if (member) {
+    const admin = createAdminClient()
+    await admin.from('business_members').update({ name }).eq('id', member.id)
+  }
+
+  revalidatePath('/account')
+  revalidatePath('/dashboard', 'layout')
+  revalidatePath('/dashboard')
+
+  return { success: 'Informasi profil berhasil disimpan.' }
+}
+
+const accountPasswordSchema = z
+  .string()
+  .min(8, 'Kata sandi minimal 8 karakter.')
+  .max(128, 'Maksimal 128 karakter.')
+  .refine((v) => /[a-zA-Z]/.test(v), { message: 'Kata sandi harus mengandung huruf.' })
+  .refine((v) => /[0-9]/.test(v), { message: 'Kata sandi harus mengandung angka.' })
+  .refine((v) => /[^a-zA-Z0-9]/.test(v), { message: 'Kata sandi harus mengandung simbol / karakter khusus.' })
+
+const accountPasswordChangeSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Isi kata sandi saat ini atau sementara.').max(128),
+    password: accountPasswordSchema,
+    confirmation: z.string(),
+  })
+  .refine((d) => d.password === d.confirmation, {
+    message: 'Konfirmasi kata sandi belum sama.',
+    path: ['confirmation'],
+  })
+
+export async function updateAccountPassword(_: ActionState, form: FormData): Promise<ActionState> {
+  const { supabase, user, member } = await requireAccount()
+  if (member && !member.active) return { error: 'Akses dinonaktifkan. Hubungi owner.' }
+
+  const parsed = accountPasswordChangeSchema.safeParse(fields(form))
+  if (!parsed.success) return invalid(parsed.error)
+
+  const current = z.string().min(1).max(128).safeParse(form.get('currentPassword'))
+  if (!current.success || !user.email) return { error: 'Isi kata sandi saat ini atau sementara.' }
+
+  const { error: verifyError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: current.data,
+  })
+  if (verifyError) return { error: 'Kata sandi saat ini tidak sesuai.' }
+
+  const { error } = await supabase.auth.updateUser({ password: parsed.data.password })
+  if (error) return { error: 'Sandi belum diperbarui. Gunakan sandi baru minimal 8 karakter dengan huruf, angka, dan simbol.' }
+
+  if (member?.must_change_password) {
+    const admin = createAdminClient()
+    await admin
+      .from('business_members')
+      .update({ must_change_password: false, changed_by: user.id })
+      .eq('id', member.id)
+      .eq('user_id', user.id)
+  }
+
+  revalidatePath('/account')
+  return { success: 'Kata sandi berhasil diperbarui.' }
+}
+
+export async function updateAccountAvatar(avatarUrl: string | null): Promise<ActionState> {
+  const { supabase, user, member } = await requireAccount()
+  if (member && !member.active) return { error: 'Akses dinonaktifkan. Hubungi owner.' }
+
+  const updatedMetadata: Record<string, any> = {
+    ...user.user_metadata,
+    avatar_url: avatarUrl,
+  }
+
+  const { error } = await supabase.auth.updateUser({
+    data: updatedMetadata,
+  })
+
+  if (error) return { error: 'Gagal memperbarui foto profil: ' + error.message }
+
+  revalidatePath('/account')
+  revalidatePath('/dashboard', 'layout')
+  revalidatePath('/dashboard')
+
+  return { success: avatarUrl ? 'Foto profil berhasil diperbarui.' : 'Foto profil berhasil dihapus.' }
+}
+

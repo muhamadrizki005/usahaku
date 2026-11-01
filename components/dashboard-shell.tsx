@@ -16,7 +16,6 @@ import {
   CheckCircle2,
   ChevronDown,
   LogOut,
-  Settings2,
   Store,
   User,
   Users,
@@ -63,11 +62,13 @@ export function DashboardShell({
   member,
   children,
   assistantConfigured = false,
+  userAvatar = null,
 }: {
   business: Business
   member: Member
   children: ReactNode
   assistantConfigured?: boolean
+  userAvatar?: string | null
 }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -294,9 +295,17 @@ export function DashboardShell({
                     setShowNotifications(false)
                   }}
                 >
-                  <span className="grid size-8 place-items-center rounded-full bg-[#1835d9] text-xs font-semibold text-white shadow-xs">
-                    {initials}
-                  </span>
+                  {userAvatar ? (
+                    <img
+                      src={userAvatar}
+                      alt={ownerName}
+                      className="size-8 rounded-full object-cover shrink-0 ring-1 ring-white/20"
+                    />
+                  ) : (
+                    <span className="grid size-8 place-items-center rounded-full bg-[#1835d9] text-xs font-semibold text-white shadow-xs shrink-0">
+                      {initials}
+                    </span>
+                  )}
                   <span className="hidden text-left sm:block">
                     <span className="block max-w-36 truncate text-xs font-normal text-white leading-tight">
                       {ownerName}
@@ -314,14 +323,27 @@ export function DashboardShell({
 
                 {showAccount && (
                   <div className="absolute right-0 top-12 z-50 w-64 rounded-2xl border border-[#454d5b] bg-[#273242] p-2 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150">
-                    <div className="border-b border-[#454d5b] px-3 py-2.5 mb-1">
-                      <p className="text-xs font-normal text-white">{ownerName}</p>
-                      <p className="text-[11px] text-[#a4a7ac] truncate">
-                        {businessName}
-                      </p>
-                      <span className="mt-1.5 inline-block rounded-md bg-[#1835d9]/25 border border-[#1835d9]/40 px-2 py-0.5 text-[10px] font-normal text-[#24cbc5]">
-                        {roleNames[member.role]}
-                      </span>
+                    <div className="border-b border-[#454d5b] px-3 py-2.5 mb-1 flex items-center gap-3">
+                      {userAvatar ? (
+                        <img
+                          src={userAvatar}
+                          alt={ownerName}
+                          className="size-9 rounded-full object-cover shrink-0 ring-1 ring-white/20"
+                        />
+                      ) : (
+                        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#1835d9] text-xs font-semibold text-white shadow-xs">
+                          {initials}
+                        </span>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-normal text-white truncate">{ownerName}</p>
+                        <p className="text-[11px] text-[#a4a7ac] truncate">
+                          {businessName}
+                        </p>
+                        <span className="mt-1 inline-block rounded-md bg-[#1835d9]/25 border border-[#1835d9]/40 px-2 py-0.5 text-[10px] font-normal text-[#24cbc5]">
+                          {roleNames[member.role]}
+                        </span>
+                      </div>
                     </div>
                     <button
                       className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm text-[#c5cbd5] hover:bg-[#1c222e] hover:text-white transition cursor-pointer"
@@ -341,17 +363,6 @@ export function DashboardShell({
                         }}
                       >
                         <Users className="size-4 text-[#24cbc5]" /> Staf & akses
-                      </button>
-                    )}
-                    {member.role === 'owner' && (
-                      <button
-                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm text-[#c5cbd5] hover:bg-[#1c222e] hover:text-white transition cursor-pointer"
-                        onClick={() => {
-                          setShowAccount(false)
-                          router.push('/dashboard/settings')
-                        }}
-                      >
-                        <Settings2 className="size-4 text-[#24cbc5]" /> Pengaturan bisnis
                       </button>
                     )}
                     <div className="border-t border-[#454d5b] my-1" />
