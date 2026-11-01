@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { discountedPrice } from './product-pricing'
 
 export const productCategories = ['Makanan', 'Minuman', 'Bahan Pokok']
 
@@ -16,11 +17,13 @@ export const productSchema=z.object({
   unit:z.string().trim().min(1,'Unit stok wajib diisi.').max(30),sku:z.string().trim().max(64),barcode:z.string().trim().max(100),
   price:z.union([z.string(),z.number()]).transform(String).refine(v=>/^(0|[1-9]\d{0,11})$/.test(v),'Harga harus rupiah bulat, 0–999.999.999.999.'),
   minimum:qty,initialStock:qty,active:z.boolean(),
-}).strict()
-export type CatalogRow={id:string;business_id:string;name:string;category:string;unit:string;sku:string;barcode:string;price:number;stock:number;minimum_stock:number;active:boolean;revision:number;stock_revision:number;image_path:string|null;created_at:string;updated_at:string}
-export type CatalogProduct={id:string;name:string;category:string;unit:string;sku:string;barcode:string;price:number;stock:number;minStock:number;active:boolean;revision:number;stockRevision:number;image?:string}
+  discountKind:z.enum(['none','percent','amount']).default('none'),
+  discountValue:z.coerce.number().finite().nonnegative().default(0),
+}).strict().superRefine((p,ctx)=>{try{discountedPrice({price:Number(p.price),discountKind:p.discountKind,discountValue:p.discountValue})}catch{ctx.addIssue({code:'custom',message:'Diskon persen maksimal 100% (2 desimal); diskon rupiah harus bulat dan tidak melebihi harga.',path:['discountValue']})}})
+export type CatalogRow={id:string;business_id:string;name:string;category:string;unit:string;sku:string;barcode:string;price:number;discount_kind?:'none'|'percent'|'amount';discount_value?:number;stock:number;minimum_stock:number;active:boolean;revision:number;stock_revision:number;image_path:string|null;created_at:string;updated_at:string}
+export type CatalogProduct={id:string;name:string;category:string;unit:string;sku:string;barcode:string;price:number;discountKind?:'none'|'percent'|'amount';discountValue?:number;stock:number;minStock:number;active:boolean;revision:number;stockRevision:number;image?:string}
 export type StockRow={id:string;product_id:string;kind:'initial'|'in'|'out'|'adjustment'|'sale'|'sale_cancel';quantity:number;before_stock:number;after_stock:number;product_name:string;unit:string;reason:string;actor_name:string;created_at:string}
 export type CatalogResult={error?:string;success?:string;warning?:string;product?:CatalogProduct}
-export function catalogView(p:CatalogRow):CatalogProduct{return{id:p.id,name:p.name,category:p.category,unit:p.unit,sku:p.sku,barcode:p.barcode,price:Number(p.price),stock:Number(p.stock),minStock:Number(p.minimum_stock),active:p.active,revision:p.revision,stockRevision:p.stock_revision,...(p.image_path?{image:`/api/products/${p.id}/image?v=${p.revision}`}:{})}}
+export function catalogView(p:CatalogRow):CatalogProduct{return{id:p.id,name:p.name,category:p.category,unit:p.unit,sku:p.sku,barcode:p.barcode,price:Number(p.price),discountKind:p.discount_kind||'none',discountValue:Number(p.discount_value||0),stock:Number(p.stock),minStock:Number(p.minimum_stock),active:p.active,revision:p.revision,stockRevision:p.stock_revision,...(p.image_path?{image:`/api/products/${p.id}/image?v=${p.revision}`}:{})}}
 export const formatQuantity=(n:number)=>new Intl.NumberFormat('id-ID',{maximumFractionDigits:3}).format(n)
 export function adjustedStock(stock:number,delta:string){try{return (Math.round(stock*1000)+Math.round(Number(quantity(delta,true))*1000))/1000}catch{return NaN}}

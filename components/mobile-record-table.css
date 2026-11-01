@@ -1,0 +1,19 @@
+@media (max-width: 639px) {
+  .mobile-record-table,
+  .mobile-record-table tbody { display: block; width: 100%; min-width: 0; }
+  .mobile-record-table thead { display: none; }
+  .mobile-record-table tbody > tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-bottom: 1px solid #454d5b; padding-block: .5rem; }
+  .mobile-record-table td { display: block; min-width: 0; max-width: none; padding: .75rem; overflow-wrap: anywhere; }
+  .mobile-record-table td::before { content: attr(data-label); display: block; margin-bottom: .35rem; color: #a4a7ac; font-size: .75rem; font-weight: 400; }
+  .mobile-record-table td[data-primary],
+  .mobile-record-table td[data-actions] { grid-column: 1 / -1; }
+  .mobile-record-table td[data-actions] button,
+  .mobile-record-table td[data-actions] a { display: inline-flex; align-items: center; min-height: 40px; }
+  .mobile-record-table td > div { min-width: 0; }
+  .mobile-record-table td[data-primary] > div > div:last-child { min-width: 0; }
+  .mobile-record-table .mobile-selection-header { display: block; }
+  .mobile-record-table .mobile-selection-header tr { display: block; }
+  .mobile-record-table .mobile-selection-header th { display: none; }
+  .mobile-record-table .mobile-selection-header th:first-child { display: flex; align-items: center; gap: .75rem; width: auto; }
+  .mobile-record-table .mobile-selection-header th:first-child::after { content: 'Pilih semua produk'; font-weight: 400; }
+}
