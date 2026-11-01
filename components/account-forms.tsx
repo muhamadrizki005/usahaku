@@ -44,21 +44,21 @@ function Feedback({ state }: { state: ActionState }) {
         </p>
       )}
       {showPassword && state.temporaryPassword && (
-        <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
-          <p>
+        <div className="rounded-xl border border-amber-500/40 bg-[#1c222e] p-4 text-xs text-amber-300">
+          <p className="text-[#c5cbd5]">
             Sandi sementara · berikan secara pribadi. Tampilan ini disembunyikan
             setelah dua menit.
           </p>
           <code
             data-testid="temporary-password"
-            className="mt-3 block select-all break-all text-lg font-normal"
+            className="mt-2 block select-all break-all rounded-lg border border-amber-500/30 bg-[#273242] p-2.5 text-base font-semibold text-amber-200"
           >
             {state.temporaryPassword}
           </code>
           <button
             type="button"
             onClick={() => setShowPassword(false)}
-            className="mt-3 underline"
+            className="mt-2 text-xs text-[#a4a7ac] underline hover:text-white"
           >
             Sembunyikan sandi
           </button>
@@ -379,12 +379,16 @@ export function StaffActions({ member }: { member: Member }) {
   return (
     <form action={action} className="space-y-3">
       <input type="hidden" name="id" value={member.id} />
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap items-center gap-2">
         <button
           name="operation"
           value={member.active ? "deactivate" : "activate"}
           disabled={pending}
-          className="rounded-lg border border-[#454d5b] px-3 py-2 text-sm"
+          className={`rounded-xl border px-3 py-1.5 text-xs font-normal transition-colors disabled:opacity-50 cursor-pointer ${
+            member.active
+              ? "border-[#454d5b] text-[#c5cbd5] hover:border-rose-500/40 hover:bg-rose-500/10 hover:text-rose-300"
+              : "border-[#24cbc5]/30 bg-[#24cbc5]/10 text-[#24cbc5] hover:bg-[#24cbc5]/20"
+          }`}
         >
           {member.active ? "Nonaktifkan" : "Aktifkan"}
         </button>
@@ -392,7 +396,7 @@ export function StaffActions({ member }: { member: Member }) {
           name="operation"
           value="reset"
           disabled={pending}
-          className="rounded-lg border border-[#454d5b] px-3 py-2 text-sm"
+          className="rounded-xl border border-[#454d5b] bg-[#273242] px-3 py-1.5 text-xs font-normal text-[#c5cbd5] hover:border-[#24cbc5]/40 hover:bg-[#303640] hover:text-white transition-colors disabled:opacity-50 cursor-pointer"
         >
           Reset kata sandi
         </button>

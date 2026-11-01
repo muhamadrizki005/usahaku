@@ -126,7 +126,7 @@ export function DashboardSidebar({
         {items.map(([label, Icon, path]) => {
           const assistantToggle = path === '/dashboard/assistant' && assistantVisible !== undefined
           const active =
-            assistantToggle ? assistantVisible : currentPath === path || (path !== '/dashboard' && currentPath.startsWith(path + '/'))
+            assistantToggle ? assistantVisible : path === '/dashboard/settings' ? currentPath === '/dashboard/settings' || (currentPath.startsWith('/dashboard/settings?') && !currentPath.includes('/staff')) : currentPath === path || (path !== '/dashboard' && currentPath.startsWith(path + '/'))
           return (
             <button
               key={path}
@@ -171,8 +171,7 @@ function NavigationItems({
   return dashboardItemsForRole(role, category).map(([label, Icon, path]) => {
     const assistantToggle = path === '/dashboard/assistant' && assistantVisible !== undefined
     const active =
-      assistantToggle ? assistantVisible : currentPath === path ||
-      (path !== '/dashboard' && currentPath.startsWith(path + '/'))
+      assistantToggle ? assistantVisible : path === '/dashboard/settings' ? currentPath === '/dashboard/settings' || (currentPath.startsWith('/dashboard/settings?') && !currentPath.includes('/staff')) : currentPath === path || (path !== '/dashboard' && currentPath.startsWith(path + '/'))
     return (
       <button
         key={path}

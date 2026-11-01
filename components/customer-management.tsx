@@ -6,18 +6,27 @@ import {X} from 'lucide-react'
 import { CustomSelect } from '@/components/ui/custom-select'
 import {saveCustomer} from '@/app/customer-actions'
 import {customerSchema,normalizeCustomerPhone,matchesCustomer,type Customer} from '@/lib/customers'
-import type {Member} from '@/lib/validation'
+import type {Business, Member} from '@/lib/validation'
 import DashboardSection from './dashboard-section'
 
 const card='rounded-2xl border border-[#454d5b] bg-[#273242] p-5 shadow-sm'
 const input='mt-1 w-full rounded-lg border border-[#454d5b] bg-[#273242] px-3 py-2.5 text-sm'
 const button='rounded-xl border border-[#454d5b] px-4 py-2.5 text-sm font-normal disabled:opacity-40'
-export default function CustomerManagement({initialCustomers,member}:{initialCustomers:Customer[];member:Member}){
+export default function CustomerManagement({initialCustomers,member,business}:{initialCustomers:Customer[];member:Member;business?:Business}){
   const [customers,setCustomers]=useState(initialCustomers),[query,setQuery]=useState(''),[status,setStatus]=useState('all'),[page,setPage]=useState(0),[editor,setEditor]=useState<Customer|null|undefined>(undefined),[notice,setNotice]=useState('')
   const router=useRouter(),[locked,setLocked]=useState(false)
   useEffect(()=>setCustomers(initialCustomers),[initialCustomers])
   const visible=customers.filter(c=>(status==='all'||c.active===(status==='active'))&&matchesCustomer(c,query))
-  return <DashboardSection title="Pelanggan" role={member.role}><div className="mb-5 flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-[#a4a7ac]">Kelola profil dan riwayat belanja pelanggan usaha ini.</p><button disabled={locked} onClick={()=>{setEditor(null);setNotice('')}} className={button+' bg-[#1835d9] text-white hover:bg-[#132c9e]'}>Tambah pelanggan</button></div>{notice&&<p role="status" className="mb-4 rounded-xl bg-[#24cbc5]/10 p-3 text-sm text-[#24cbc5]">{notice}</p>}{editor!==undefined&&<CustomerEditor key={editor?.id||'new'} customer={editor} onLock={setLocked} onClose={()=>{setEditor(undefined);router.refresh()}} onSaved={c=>{setCustomers(rows=>[...rows.filter(v=>v.id!==c.id),c].sort((a,b)=>a.name.localeCompare(b.name,'id')));setEditor(undefined);setNotice('Pelanggan berhasil disimpan.');router.refresh()}}/>}<div className={card+(editor!==undefined?' mt-5':'')}><div className="flex flex-wrap gap-3"><input aria-label="Cari pelanggan" placeholder="Cari nama atau nomor telepon" value={query} maxLength={100} onChange={e=>{setQuery(e.target.value);setPage(0)}} className={input+' min-w-0 flex-1'} /><CustomSelect
+  const todayWib = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' })
+  return <DashboardSection
+    title="Pelanggan"
+    breadcrumbTitle="Pelanggan"
+    businessName={business?.name}
+    description="Kelola profil dan riwayat belanja pelanggan usaha ini."
+    meta={`${customers.length} pelanggan terdaftar • ${todayWib} • WIB`}
+    action={<button disabled={locked} onClick={()=>{setEditor(null);setNotice('')}} className={button+' bg-[#1835d9] text-white hover:bg-[#132c9e]'}>Tambah pelanggan</button>}
+    role={member.role}
+  >{notice&&<p role="status" className="mb-4 rounded-xl bg-[#24cbc5]/10 p-3 text-sm text-[#24cbc5]">{notice}</p>}{editor!==undefined&&<CustomerEditor key={editor?.id||'new'} customer={editor} onLock={setLocked} onClose={()=>{setEditor(undefined);router.refresh()}} onSaved={c=>{setCustomers(rows=>[...rows.filter(v=>v.id!==c.id),c].sort((a,b)=>a.name.localeCompare(b.name,'id')));setEditor(undefined);setNotice('Pelanggan berhasil disimpan.');router.refresh()}}/>}<div className={card+(editor!==undefined?' mt-5':'')}><div className="flex flex-wrap gap-3"><input aria-label="Cari pelanggan" placeholder="Cari nama atau nomor telepon" value={query} maxLength={100} onChange={e=>{setQuery(e.target.value);setPage(0)}} className={input+' min-w-0 flex-1'} /><CustomSelect
   ariaLabel="Filter status pelanggan"
   value={status}
   onChange={val => { setStatus(val); setPage(0) }}
