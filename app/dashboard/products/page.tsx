@@ -1,4 +1,4 @@
-import { readProducts, readStockHistory } from '@/lib/catalog-server'
+import { readProducts, readCustomCategories, readCustomUnits } from '@/lib/catalog-server'
 import { requireBusiness } from '@/lib/access'
 import { rolesForPath } from '@/lib/auth/permissions'
 import ProductManagement from '@/components/product-management'
@@ -14,5 +14,21 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
 
   const { category } = await searchParams
   const initialCategory = 'toko' as const
-  return <ProductManagement role={member.role} initialCategory={initialCategory} business={business} initialProducts={await readProducts(supabase,business.id)} renderedAt={new Date().toISOString()} />
+  const [products, customCategories, customUnits] = await Promise.all([
+    readProducts(supabase, business.id),
+    readCustomCategories(supabase, business.id),
+    readCustomUnits(supabase, business.id),
+  ])
+
+  return (
+    <ProductManagement
+      role={member.role}
+      initialCategory={initialCategory}
+      business={business}
+      initialProducts={products}
+      initialCustomCategories={customCategories}
+      initialCustomUnits={customUnits}
+      renderedAt={new Date().toISOString()}
+    />
+  )
 }

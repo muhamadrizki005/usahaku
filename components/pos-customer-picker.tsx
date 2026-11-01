@@ -80,7 +80,7 @@ export default function PosCustomerPicker({ value, onChange, member }: PosCustom
         {(member?.role === 'owner' || member?.role === 'admin') && <button
           type="button"
           onClick={() => setShowModal(true)}
-          className="inline-flex items-center gap-1.5 text-xs font-normal text-[#24cbc5] hover:text-[#52e5df] transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-full border border-[#1835d9] bg-[#1835d9]/10 px-2.5 py-1 text-xs font-normal text-[#24cbc5] hover:bg-[#1835d9]/25 hover:border-[#2b4af5] hover:text-white transition-all cursor-pointer shadow-xs"
         >
           <UserPlus className="size-3.5" />
           <span>Tambah pelanggan</span>

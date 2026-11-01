@@ -4,7 +4,7 @@ import './mobile-record-table.css'
 import { productSkuPrefix } from '@/lib/product-sku'
 import { discountedPrice } from '@/lib/product-pricing'
 import { saveCatalogProduct, bulkCatalogProducts } from '@/app/catalog-actions'
-import { productCategories, productSchema, formatQuantity, type CatalogProduct, type CatalogResult } from '@/lib/catalog'
+import { productCategories, defaultProductUnits, productSchema, formatQuantity, type CatalogProduct, type CatalogResult } from '@/lib/catalog'
 import type { Role } from '@/lib/auth/permissions'
 import type { Business } from '@/lib/validation'
 
@@ -23,17 +23,23 @@ export default function ProductManagement({
   initialCategory = 'toko',
   business,
   initialProducts,
+  initialCustomCategories = [],
+  initialCustomUnits = [],
   renderedAt,
 }: {
   role: Role
   initialCategory?: Category
   business: Business
   initialProducts: Product[]
+  initialCustomCategories?: string[]
+  initialCustomUnits?: string[]
   renderedAt: string
 }) {
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
   const [products, setProducts] = useState<Product[]>(initialProducts)
+  const [customCategories, setCustomCategories] = useState<string[]>(initialCustomCategories)
+  const [customUnits, setCustomUnits] = useState<string[]>(initialCustomUnits)
   const [query, setQuery] = useState('')
   const [filterCategory, setFilterCategory] = useState('Semua kategori')
   const [filterStatus, setFilterStatus] = useState('Semua status')
@@ -44,9 +50,46 @@ export default function ProductManagement({
   const [page, setPage] = useState(1)
 
   useEffect(() => setProducts(initialProducts), [initialProducts])
+  useEffect(() => setCustomCategories(initialCustomCategories), [initialCustomCategories])
+  useEffect(() => setCustomUnits(initialCustomUnits), [initialCustomUnits])
 
   const businessName = business.name
-  const categories = ['Semua kategori', ...Array.from(new Set(products.map(p => p.category).filter(Boolean)))]
+
+  const availableCategories = useMemo(() => {
+    const set = new Set<string>()
+    const list: string[] = []
+    const add = (item: string) => {
+      const trimmed = item.trim()
+      const lower = trimmed.toLowerCase()
+      if (trimmed && !set.has(lower)) {
+        set.add(lower)
+        list.push(trimmed)
+      }
+    }
+    productCategories.forEach(add)
+    customCategories.forEach(add)
+    products.forEach(p => { if (p.category) add(p.category) })
+    return list
+  }, [customCategories, products])
+
+  const availableUnits = useMemo(() => {
+    const set = new Set<string>()
+    const list: string[] = []
+    const add = (item: string) => {
+      const trimmed = item.trim()
+      const lower = trimmed.toLowerCase()
+      if (trimmed && !set.has(lower)) {
+        set.add(lower)
+        list.push(trimmed)
+      }
+    }
+    defaultProductUnits.forEach(add)
+    customUnits.forEach(add)
+    products.forEach(p => { if (p.unit) add(p.unit) })
+    return list
+  }, [customUnits, products])
+
+  const categories = useMemo(() => ['Semua kategori', ...availableCategories], [availableCategories])
 
   const filtered = useMemo(
     () =>
@@ -383,6 +426,8 @@ export default function ProductManagement({
         <ProductEditor
           key={editor?.id}
           product={editor}
+          availableCategories={availableCategories}
+          availableUnits={availableUnits}
           fileRef={fileRef}
           onCancel={() => setEditor(false)}
           onSave={async (p, file, key, imageAction) => {
@@ -410,7 +455,22 @@ export default function ProductManagement({
             if (file) data.set('image', file)
             const result = await saveCatalogProduct(data)
             if (!result.error && result.product) {
-              setProducts(items => [result.product!, ...items.filter(x => x.id !== p.id)])
+              const saved = result.product
+              setProducts(items => [saved, ...items.filter(x => x.id !== p.id)])
+              setCustomCategories(prev => {
+                const lower = saved.category.trim().toLowerCase()
+                if (!prev.some(c => c.toLowerCase() === lower) && !productCategories.some(c => c.toLowerCase() === lower)) {
+                  return [...prev, saved.category.trim()]
+                }
+                return prev
+              })
+              setCustomUnits(prev => {
+                const lower = saved.unit.trim().toLowerCase()
+                if (!prev.some(u => u.toLowerCase() === lower) && !defaultProductUnits.some(u => u.toLowerCase() === lower)) {
+                  return [...prev, saved.unit.trim()]
+                }
+                return prev
+              })
               setEditor(false)
               setNotice([result.success, result.warning].filter(Boolean).join(' '))
               router.refresh()
@@ -425,24 +485,49 @@ export default function ProductManagement({
 
 function ProductEditor({
   product,
+  availableCategories,
+  availableUnits,
   fileRef,
   onCancel,
   onSave,
 }: {
   product: Product | null
+  availableCategories: string[]
+  availableUnits: string[]
   fileRef: React.RefObject<HTMLInputElement | null>
   onCancel: () => void
   onSave: (product: Product, file: File | null, key: string, imageAction: string) => Promise<CatalogResult>
 }) {
+  const isNew = !product?.name
   const [draft, setDraft] = useState(product!)
   const [priceText, setPriceText] = useState(product?.name ? String(product.price) : '')
   const [stockText, setStockText] = useState(product?.name ? String(product.stock) : '')
   const [minimumText, setMinimumText] = useState(product?.name ? String(product.minStock) : '')
   const [discountKind, setDiscountKind] = useState(product?.discountKind || 'none')
   const [discountText, setDiscountText] = useState(product?.discountValue ? String(product.discountValue) : '')
-  const [customCategory, setCustomCategory] = useState(
-    Boolean(product?.category && !productCategories.includes(product.category))
-  )
+
+  // Category selection
+  const initialCategoryMatched = useMemo(() => {
+    if (!product?.category) return ''
+    const match = availableCategories.find(c => c.toLowerCase() === product.category.trim().toLowerCase())
+    return match || product.category.trim()
+  }, [product?.category, availableCategories])
+
+  const [selectedCategory, setSelectedCategory] = useState<string>(() => (isNew ? '' : initialCategoryMatched))
+  const [customCategory, setCustomCategory] = useState<boolean>(false)
+  const [customCategoryText, setCustomCategoryText] = useState<string>('')
+
+  // Unit selection
+  const initialUnitMatched = useMemo(() => {
+    if (!product?.unit) return 'pcs'
+    const match = availableUnits.find(u => u.toLowerCase() === product.unit.trim().toLowerCase())
+    return match || product.unit.trim()
+  }, [product?.unit, availableUnits])
+
+  const [selectedUnit, setSelectedUnit] = useState<string>(() => (isNew ? 'pcs' : initialUnitMatched))
+  const [customUnit, setCustomUnit] = useState<boolean>(false)
+  const [customUnitText, setCustomUnitText] = useState<string>('')
+
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
   const [file, setFile] = useState<File | null>(null)
@@ -450,8 +535,6 @@ function ProductEditor({
   const [operationId] = useState(() => crypto.randomUUID())
   const dialogRef = useRef<HTMLDialogElement>(null)
   const saving = useRef(false)
-
-  const isNew = !product?.name
   let discountPreview: number | null = null
   try { if (priceText && discountText) discountPreview = discountedPrice({ price: Number(priceText), discountKind, discountValue: Number(discountText) }) } catch {}
   const update = (key: keyof Product, value: string | number | boolean) =>
@@ -493,19 +576,55 @@ function ProductEditor({
 
   const save = async () => {
     if (saving.current) return
-    if (!draft.name.trim() || !draft.category.trim() || !draft.unit.trim()) {
+    const rawCat = customCategory ? customCategoryText.trim() : selectedCategory.trim()
+    const matchedCat = availableCategories.find(c => c.toLowerCase() === rawCat.toLowerCase()) || rawCat
+
+    let finalUnit = draft.unit.trim()
+    if (isNew) {
+      const rawUnit = customUnit ? customUnitText.trim() : selectedUnit.trim()
+      const matchedU = availableUnits.find(u => u.toLowerCase() === rawUnit.toLowerCase()) || rawUnit
+      finalUnit = matchedU
+    }
+
+    if (!draft.name.trim() || !matchedCat || !finalUnit) {
       return setError('Nama, kategori, dan unit stok wajib diisi.')
     }
     if (!priceText.trim()) return setError('Harga jual wajib diisi. Isi 0 jika harganya nol.')
     if (!minimumText.trim()) return setError('Minimum stok wajib diisi. Isi 0 jika tidak ada batas minimum.')
     if (discountKind !== 'none' && !discountText.trim()) return setError('Isi nilai diskon produk.')
-    const parsed = productSchema.safeParse({ name: draft.name, category: draft.category, unit: draft.unit, sku: draft.sku, barcode: draft.barcode, price: priceText, minimum: minimumText, initialStock: isNew ? stockText || '0' : '0', active: draft.active, discountKind, discountValue: discountKind === 'none' ? 0 : discountText })
+    const parsed = productSchema.safeParse({
+      name: draft.name,
+      category: matchedCat,
+      unit: finalUnit,
+      sku: draft.sku,
+      barcode: draft.barcode,
+      price: priceText,
+      minimum: minimumText,
+      initialStock: isNew ? stockText || '0' : '0',
+      active: draft.active,
+      discountKind,
+      discountValue: discountKind === 'none' ? 0 : discountText,
+    })
     if (!parsed.success) return setError(parsed.error.issues[0].message)
     saving.current = true
     setPending(true)
     setError('')
     try {
-      const result = await onSave({ ...draft, price: Number(parsed.data.price), minStock: Number(parsed.data.minimum), stock: isNew ? Number(parsed.data.initialStock) : draft.stock, discountKind: parsed.data.discountKind, discountValue: parsed.data.discountValue }, file, operationId, imageAction)
+      const result = await onSave(
+        {
+          ...draft,
+          category: matchedCat,
+          unit: finalUnit,
+          price: Number(parsed.data.price),
+          minStock: Number(parsed.data.minimum),
+          stock: isNew ? Number(parsed.data.initialStock) : draft.stock,
+          discountKind: parsed.data.discountKind,
+          discountValue: parsed.data.discountValue,
+        },
+        file,
+        operationId,
+        imageAction
+      )
       if (result.error) setError(result.error)
     } catch {
       setError('Status penyimpanan belum pasti. Muat ulang untuk memeriksa.')
@@ -603,51 +722,117 @@ function ProductEditor({
                 />
               </label>
 
-              <div className="space-y-3">
-                <label className="text-sm font-medium text-white">
-                  Kategori *
-                  <CustomSelect
-                    value={customCategory ? 'Lainnya' : draft.category}
-                    options={[
-                      { value: '', label: 'Pilih kategori', disabled: true },
-                      ...productCategories.map(value => ({ value, label: value })),
-                      { value: 'Lainnya', label: 'Lainnya' },
-                    ]}
-                    onChange={val => {
-                      const custom = val === 'Lainnya'
-                      setCustomCategory(custom)
-                      update('category', custom ? '' : val)
-                    }}
-                    placeholder="Pilih kategori"
-                    ariaLabel="Kategori *"
-                    className="mt-1.5 w-full"
-                  />
-                </label>
-                {customCategory && (
-                  <label className="block text-sm font-medium text-white">
-                    Kategori lainnya *
-                    <input
-                      maxLength={100}
-                      value={draft.category}
-                      onChange={e => update('category', e.target.value)}
-                      placeholder="Masukkan nama kategori"
-                      className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]"
-                    />
+              {/* Kategori Dropdown & Custom Input */}
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-white">
+                    Kategori *
                   </label>
+                  <div className="mt-1.5">
+                    <CustomSelect
+                      value={customCategory ? 'Lainnya' : selectedCategory}
+                      options={[
+                        { value: '', label: 'Pilih kategori', disabled: true },
+                        ...availableCategories.map(value => ({ value, label: value })),
+                        { value: 'Lainnya', label: 'Lainnya' },
+                      ]}
+                      onChange={val => {
+                        const isOther = val === 'Lainnya'
+                        setCustomCategory(isOther)
+                        if (!isOther) {
+                          setSelectedCategory(val)
+                          update('category', val)
+                        } else {
+                          update('category', customCategoryText)
+                        }
+                      }}
+                      placeholder="Pilih kategori"
+                      ariaLabel="Kategori *"
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+                {customCategory && (
+                  <div className="pt-1">
+                    <label className="block text-sm font-medium text-white">
+                      Kategori lainnya *
+                      <input
+                        maxLength={100}
+                        value={customCategoryText}
+                        onChange={e => {
+                          setCustomCategoryText(e.target.value)
+                          update('category', e.target.value)
+                        }}
+                        placeholder="Masukkan nama kategori baru"
+                        className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]"
+                      />
+                    </label>
+                  </div>
                 )}
               </div>
 
-              <label className="text-sm font-medium text-white">
-                Unit stok *
-                <input
-                  value={draft.unit}
-                  disabled={!isNew}
-                  title="Satuan tetap setelah produk dibuat"
-                  onChange={e => update('unit', e.target.value)}
-                  placeholder="pcs, porsi, kg, botol..."
-                  className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5] disabled:opacity-50"
-                />
-              </label>
+              {/* Unit Stok Dropdown & Custom Input */}
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-white">
+                    Unit stok *
+                  </label>
+                  <div className="mt-1.5">
+                    {isNew ? (
+                      <CustomSelect
+                        value={customUnit ? 'Lainnya' : selectedUnit}
+                        options={[
+                          { value: '', label: 'Pilih unit stok', disabled: true },
+                          ...availableUnits.map(value => ({ value, label: value })),
+                          { value: 'Lainnya', label: 'Lainnya' },
+                        ]}
+                        onChange={val => {
+                          const isOther = val === 'Lainnya'
+                          setCustomUnit(isOther)
+                          if (!isOther) {
+                            setSelectedUnit(val)
+                            update('unit', val)
+                          } else {
+                            update('unit', customUnitText)
+                          }
+                        }}
+                        placeholder="Pilih unit stok"
+                        ariaLabel="Unit stok *"
+                        className="w-full"
+                      />
+                    ) : (
+                      <CustomSelect
+                        value={draft.unit}
+                        disabled={true}
+                        options={[{ value: draft.unit, label: draft.unit }]}
+                        onChange={() => {}}
+                        ariaLabel="Unit stok (satuan tetap setelah produk dibuat)"
+                        className="w-full opacity-60"
+                      />
+                    )}
+                  </div>
+                  {!isNew && (
+                    <p className="mt-1 text-xs text-[#a4a7ac]">Satuan tetap setelah produk dibuat.</p>
+                  )}
+                </div>
+                {isNew && customUnit && (
+                  <div className="pt-1">
+                    <label className="block text-sm font-medium text-white">
+                      Unit stok lainnya *
+                      <input
+                        maxLength={30}
+                        value={customUnitText}
+                        onChange={e => {
+                          setCustomUnitText(e.target.value)
+                          update('unit', e.target.value)
+                        }}
+                        placeholder="Masukkan nama unit baru (mis. gram, meter, dus)"
+                        className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]"
+                      />
+                    </label>
+                  </div>
+                )}
+              </div>
 
               <div>
                 <div>
@@ -657,7 +842,7 @@ function ProductEditor({
                       aria-label="SKU"
                       aria-describedby="product-sku-help"
                       maxLength={64}
-                      placeholder={isNew ? `${productSkuPrefix(draft.category, draft.name)}001` : product?.sku}
+                      placeholder={isNew ? `${productSkuPrefix(customCategory ? customCategoryText.trim() : selectedCategory, draft.name)}001` : product?.sku}
                       value={draft.sku}
                       onChange={e => update('sku', e.target.value)}
                       className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]"
@@ -689,7 +874,7 @@ function ProductEditor({
 
               <div className="space-y-3 rounded-xl border border-border p-3.5">
                 <label className="flex min-h-11 items-center gap-3 text-sm text-white">
-                  <input type="checkbox" checked={discountKind !== 'none'} onChange={e => setDiscountKind(e.target.checked ? 'percent' : 'none')} className="accent-[#24cbc5]" />
+                  <input type="checkbox" checked={discountKind !== 'none'} onChange={e => setDiscountKind(e.target.checked ? 'percent' : 'none')} className="rounded-full cursor-pointer" />
                   Diskon produk
                 </label>
                 {discountKind !== 'none' && <>

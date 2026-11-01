@@ -2,7 +2,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { requireBusiness } from '@/lib/access'
-import { catalogView, productSchema, quantity, type CatalogRow, type CatalogResult } from '@/lib/catalog'
+import { catalogView, defaultProductUnits, productCategories, productSchema, quantity, type CatalogRow, type CatalogResult } from '@/lib/catalog'
 import { prepareBusinessLogo } from '@/lib/business-logo-server'
 import { replaceProductImage,cleanupProductImages } from '@/lib/product-images'
 
@@ -30,6 +30,21 @@ export async function saveCatalogProduct(form:FormData):Promise<CatalogResult>{
     if(result.error||!result.data)warning='Produk tersimpan; penghapusan gambar belum pasti. Muat ulang untuk memeriksa.';else saved=result.data
   }
   try{if(!await cleanupProductImages(saved.id))warning||='Produk tersimpan; pembersihan gambar lama akan dicoba kembali.'}catch{warning||='Produk tersimpan; pembersihan gambar lama akan dicoba kembali.'}
+
+  // Gracefully persist custom category and unit if not present
+  try {
+    const cat = parsed.data.category.trim()
+    if (cat && !productCategories.some(c => c.toLowerCase() === cat.toLowerCase())) {
+      await supabase.from('product_categories').insert({ business_id: business.id, name: cat })
+    }
+  } catch {}
+  try {
+    const un = parsed.data.unit.trim()
+    if (un && !defaultProductUnits.some(u => u.toLowerCase() === un.toLowerCase())) {
+      await supabase.from('product_units').insert({ business_id: business.id, name: un })
+    }
+  } catch {}
+
   refresh();return{success:'Produk berhasil disimpan.',warning,product:catalogView(saved)}
 }
 export async function moveCatalogStock(form:FormData):Promise<CatalogResult>{
