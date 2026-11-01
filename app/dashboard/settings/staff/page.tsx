@@ -1,13 +1,18 @@
 import { requireBusiness } from '@/lib/access'
 import { StaffManagement } from '@/components/staff-management'
+import { readBusinessRoles, readRoleMemberCounts } from '@/lib/roles-server'
 
 export default async function StaffPage() {
   const { supabase, business } = await requireBusiness(['owner'])
-  const { data: members, error } = await supabase
-    .from('business_members')
-    .select('*')
-    .eq('business_id', business.id)
-    .order('created_at')
+  const [{ data: members, error }, roles, roleCounts] = await Promise.all([
+    supabase
+      .from('business_members')
+      .select('*')
+      .eq('business_id', business.id)
+      .order('created_at'),
+    readBusinessRoles(supabase, business.id),
+    readRoleMemberCounts(supabase, business.id),
+  ])
 
   return (
     <div className="w-full text-white">
@@ -16,7 +21,12 @@ export default async function StaffPage() {
           Daftar staf belum dapat dimuat. Muat ulang sebelum mengelola akses.
         </div>
       ) : (
-        <StaffManagement members={members || []} business={business} />
+        <StaffManagement
+          members={members || []}
+          business={business}
+          initialRoles={roles}
+          roleCounts={roleCounts}
+        />
       )}
     </div>
   )

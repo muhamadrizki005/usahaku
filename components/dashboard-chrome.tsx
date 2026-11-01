@@ -1,3 +1,4 @@
+import { canAccessPath } from '@/lib/auth/rbac'
 'use client'
 
 import { useEffect, useId, useRef, useState } from 'react'
