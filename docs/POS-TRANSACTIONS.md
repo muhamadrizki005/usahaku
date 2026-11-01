@@ -2,7 +2,7 @@
 
 # Tahap 5 — POS dan transaksi toko
 
-> Pembaruan 1 November 2026: diskon total toko diganti diskon per produk, dan owner dapat mengatur pajak yang ditambahkan setelah diskon. Lihat [PRODUCT-DISCOUNTS-TAX.md](PRODUCT-DISCOUNTS-TAX.md) untuk aturan terkini. Keterangan diskon transaksi dan ketiadaan pajak di bawah merupakan riwayat tahap awal.
+> Pembaruan terkini 1 November 2026: diskon produk dan diskon keseluruhan owner/admin tersedia bersamaan; pajak dihitung setelah keduanya. Lihat [POS-ORDER-DISCOUNTS.md](POS-ORDER-DISCOUNTS.md). Keterangan tahap awal di bawah dipertahankan sebagai riwayat.
 
 Persetujuan pengguna 22 Oktober 2026: tunai, QRIS dan transfer manual sekaligus; diskon nominal/persen hanya owner/admin; pembatalan transaksi selesai hanya owner/admin dengan alasan. Kasir tetap hanya membaca transaksi sendiri. Tampilan POS yang sudah ada dipertahankan, Inter lokal dan palet per halaman tidak berubah.
 

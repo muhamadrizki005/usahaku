@@ -46,7 +46,10 @@ export default function SaleReceipt({ sale, business, id }: { sale: Sale; busine
       <dl className="receipt-totals receipt-double-rule">
         <ReceiptRow label="Total Item">{sale.lines.length}</ReceiptRow>
         <ReceiptRow label="Subtotal">{rupiah(Number(sale.subtotal))}</ReceiptRow>
-        <ReceiptRow label="Diskon">{rupiah(Number(sale.discount))}</ReceiptRow>
+        {sale.product_discount != null && sale.order_discount != null ? <>
+          <ReceiptRow label="Diskon produk">{rupiah(Number(sale.product_discount))}</ReceiptRow>
+          <ReceiptRow label="Diskon keseluruhan">{rupiah(Number(sale.order_discount))}</ReceiptRow>
+        </> : <ReceiptRow label="Diskon">{rupiah(Number(sale.discount))}</ReceiptRow>}
         {sale.tax_rate !== undefined && <ReceiptRow label={`Pajak (${Number(sale.tax_rate)}%)`}>{rupiah(Number(sale.tax_amount || 0))}</ReceiptRow>}
       </dl>
       <dl className="receipt-payment receipt-double-rule">

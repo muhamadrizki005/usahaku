@@ -1,6 +1,6 @@
 # Diskon produk dan pajak toko
 
-Persetujuan 1 November 2026: diskon transaksi toko diganti diskon per produk. Owner/admin mengelola diskon di Tambah/Ubah produk; kasir hanya memakai harga tersimpan. Owner mengatur pajak melalui **Kasir → Pengaturan pajak toko**, default 0%. Restoran tetap menggunakan alur pembayaran restorannya.
+Aturan terkini: diskon produk tetap tersedia, ditambah diskon keseluruhan owner/admin sebelum pajak. Lihat [POS-ORDER-DISCOUNTS.md](POS-ORDER-DISCOUNTS.md). Ketentuan penggantian diskon total di bawah mencatat implementasi awal, sebelum pengguna meminta kedua diskon tersedia bersamaan.
 
 ## Aturan perhitungan
 

@@ -8,6 +8,8 @@ Footer berisi ucapan terima kasih dan instruksi menyimpan bukti pembayaran. Tida
 
 ## Nomor transaksi
 
+Pembaruan diskon keseluruhan: struk transaksi baru menyajikan Diskon produk dan Diskon keseluruhan terpisah dari snapshot server. Total historis tetap sama dan transaksi lama tetap memakai baris Diskon gabungan. Lihat `POS-ORDER-DISCOUNTS.md`.
+
 Migrasi tambahan: `supabase/migrations/202611010004_receipt_numbers.sql`.
 
 - Format baru `TRX-KODETOKO-YYYYMMDD-0001`; UUID tetap menjadi primary key dan parameter URL transaksi.
