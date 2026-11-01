@@ -13,7 +13,7 @@ export function RestaurantField({ label, children }: { label: string; children: 
   const id = useId(), labelId = id + '-label'
   return <div className="min-w-0 text-sm text-[#c5cbd5]"><label id={labelId} htmlFor={id}>{label}</label>{isValidElement(children) ? cloneElement(children as ReactElement<{ id?: string; 'aria-labelledby'?: string }>, { id, 'aria-labelledby': labelId }) : children}</div>
 }
-export function RestaurantDialog({ title, busy, close, children }: { title: string; busy: boolean; close: () => void; children: ReactNode }) {
+export function RestaurantDialog({ title, busy, close, children, wide = false }: { title: string; busy: boolean; close: () => void; children: ReactNode; wide?: boolean }) {
   const dialog = useRef<HTMLDialogElement>(null)
   useEffect(() => {
     const el = dialog.current, previous = document.activeElement
@@ -29,7 +29,7 @@ export function RestaurantDialog({ title, busy, close, children }: { title: stri
     el.showModal(); el.addEventListener('keydown', trap)
     return () => { el.removeEventListener('keydown', trap); el.close(); if (previous instanceof HTMLElement && previous.isConnected) previous.focus() }
   }, [])
-  return <dialog ref={dialog} aria-label={title} onCancel={e => { e.preventDefault(); if (!busy) close() }} className="m-auto max-h-[90dvh] w-[calc(100%_-_2rem)] max-w-[640px] overflow-y-auto rounded-2xl border border-[#454d5b] bg-[#273242] p-5 text-white backdrop:bg-black/60 sm:p-6">
+  return <dialog ref={dialog} aria-label={title} onCancel={e => { e.preventDefault(); if (!busy) close() }} className={`m-auto max-h-[90dvh] w-[calc(100%_-_2rem)] ${wide ? 'max-w-[900px]' : 'max-w-[640px]'} overflow-y-auto rounded-2xl border border-[#454d5b] bg-[#273242] p-5 text-white backdrop:bg-black/60 sm:p-6`}>
     <div className="mb-5 flex items-center justify-between gap-4"><h2 className="min-w-0 break-words text-lg font-semibold [overflow-wrap:anywhere]">{title}</h2><button type="button" disabled={busy} onClick={close} aria-label="Tutup dialog" className={restaurantButton + ' shrink-0'}>Tutup</button></div>{children}
   </dialog>
 }

@@ -119,7 +119,7 @@ export async function createBusiness(_: ActionState, form: FormData): Promise<Ac
   try { if (form.get('logoOperation') === 'replace') logo = await prepareBusinessLogo(form.get('logo')) } catch (error) { return { error: (error as Error).message } }
   const p = parsed.data
   const profile = { store_name: p.name, owner_name: String(user.user_metadata.full_name || user.user_metadata.name || 'Pemilik usaha'), store_phone: p.phone, store_street: p.address, store_city: p.city, store_province: p.province, store_description: p.description }
-  const { data: id, error } = await supabase.rpc('create_business_profile_with_location', { ...profile, business_category: category.data, store_district: p.district, store_village: p.village }).abortSignal(AbortSignal.timeout(15000)).retry(false)
+  const { data: id, error } = await supabase.rpc('create_business_profile_with_map', { ...profile, business_category: category.data, store_district: p.district, store_village: p.village, store_latitude: p.latitude, store_longitude: p.longitude }).abortSignal(AbortSignal.timeout(15000)).retry(false)
   if (error) {
     const { data } = await supabase.from('business_members').select('id').eq('user_id', user.id).maybeSingle()
     if (data) return redirectAfterLogin()
@@ -153,7 +153,7 @@ export async function saveBusinessProfile(_: ActionState, form: FormData): Promi
   let logo: Buffer | undefined
   try { if (operation.data === 'replace') logo = await prepareBusinessLogo(form.get('logo')) } catch (error) { return { error: (error as Error).message } }
   const p = parsed.data
-  const { data, error } = await supabase.rpc('save_business_profile_with_location', { target_id: business.id, expected_revision: revision.data, new_name: p.name, new_phone: p.phone, new_street: p.address, new_city: p.city, new_province: p.province, new_description: p.description, new_district: p.district, new_village: p.village }).abortSignal(AbortSignal.timeout(15000)).retry(false)
+  const { data, error } = await supabase.rpc('save_business_profile_with_map', { target_id: business.id, expected_revision: revision.data, new_name: p.name, new_phone: p.phone, new_street: p.address, new_city: p.city, new_province: p.province, new_description: p.description, new_district: p.district, new_village: p.village, new_latitude: p.latitude, new_longitude: p.longitude }).abortSignal(AbortSignal.timeout(15000)).retry(false)
   if (error || !data) return { error: 'Profil belum dapat dipastikan tersimpan atau telah diubah di tab lain. Muat ulang sebelum mencoba lagi.' }
   let saved = data
   let warning: string | undefined

@@ -2,6 +2,8 @@
 import { BusinessHoursSettings } from "@/components/business-hours";
 import { BusinessHeader } from "@/components/business-header";
 import { BusinessLocationFields } from "@/components/business-location-fields";
+import { BusinessLocationMap } from "@/components/business-location-map";
+import { mapPointSchema, type MapAddress } from "@/lib/business-map";
 import { businessLocationProblem } from "@/lib/business-regions";
 import {
   ChangeEvent,
@@ -64,6 +66,8 @@ export default function OriginalIdentity({
     province: b.province || "",
     district: b.district || "",
     village: b.village || "",
+    latitude: b.latitude == null ? "" : String(b.latitude),
+    longitude: b.longitude == null ? "" : String(b.longitude),
     phone: b.phone,
     description: b.description || "",
   });
@@ -84,6 +88,8 @@ export default function OriginalIdentity({
           province: "",
           district: "",
           village: "",
+          latitude: "",
+          longitude: "",
           phone: "",
           description: "",
         },
@@ -96,6 +102,13 @@ export default function OriginalIdentity({
     "keep" | "replace" | "remove"
   >("keep");
   const [error, setError] = useState("");
+  const [mapNotice, setMapNotice] = useState("");
+  const selectedPoint = mapPointSchema.safeParse({ latitude: Number(form.latitude), longitude: Number(form.longitude) });
+  const useMapLocation = (value: MapAddress | null) => {
+    if (!value) { setForm(current => ({ ...current, latitude: '', longitude: '' })); setMapNotice('Titik dihapus dari formulir. Simpan perubahan untuk menerapkannya.'); return; }
+    setForm(current => ({ ...current, address: value.address, province: value.province, city: value.city, district: value.district || '', village: value.village || '', latitude: String(value.latitude), longitude: String(value.longitude) }));
+    setMapNotice(value.incomplete ? 'Titik dipilih. Periksa alamat dan lengkapi wilayah yang masih kosong.' : 'Alamat dari peta diterapkan. Periksa kembali sebelum menyimpan.');
+  };
   const [logoError, setLogoError] = useState("");
   useEffect(() => {
     if (!business)
@@ -103,7 +116,7 @@ export default function OriginalIdentity({
         const saved = JSON.parse(
           sessionStorage.getItem(`usahaku_identity:${userId}`) || "null",
         );
-        if (saved?.form) setForm(current=>({...current,...saved.form,district:saved.form.district||'',village:saved.form.village||''}));
+        if (saved?.form) setForm(current=>({...current,...saved.form,district:saved.form.district||'',village:saved.form.village||'',latitude:saved.form.latitude||'',longitude:saved.form.longitude||''}));
       } catch {}
   }, [userId, business]);
   useEffect(() => {
@@ -223,6 +236,8 @@ export default function OriginalIdentity({
                   placeholder="Nama usaha Anda"
                 />
               </Field>
+              <BusinessLocationMap value={selectedPoint.success ? selectedPoint.data : null} disabled={pending} onChange={useMapLocation} />
+              {mapNotice && <p role="status" className="text-xs text-[#c5cbd5]">{mapNotice}</p>}
               <Field label="Detail Alamat *">
                 <input
                   className={input}
@@ -236,7 +251,7 @@ export default function OriginalIdentity({
                 previous={business}
                 disabled={pending}
                 onChange={(location) =>
-                  setForm((current) => ({ ...current, ...location }))
+                  setForm((current) => ({ ...current, ...location, latitude: '', longitude: '' }))
                 }
               />
               <Field label="Nomor kontak usaha *">

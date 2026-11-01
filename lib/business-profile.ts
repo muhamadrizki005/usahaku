@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { profileCoordinates, coordinatePairProblem } from './business-map'
 
 export const businessDays = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'] as const
 export type BusinessDay = typeof businessDays[number]
@@ -37,8 +38,11 @@ export const profileSchema = z.object({
   province: z.string().trim().min(1, 'Isi provinsi.').max(100),
   district: z.string().trim().max(100).default(''),
   village: z.string().trim().max(100).default(''),
+  ...profileCoordinates,
   description: z.string().trim().max(300),
 }).superRefine((value, ctx) => {
+  const coordinateError = coordinatePairProblem(value)
+  if (coordinateError) ctx.addIssue({ code: 'custom', message: coordinateError })
   if ([value.address, value.village, value.district, value.city, value.province].filter(Boolean).join(', ').length > 500) ctx.addIssue({ code: 'custom', message: 'Alamat lengkap maksimal 500 karakter.' })
 })
 export function businessInitials(name: string) {

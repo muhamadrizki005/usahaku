@@ -46,5 +46,24 @@ test('location migration persists atomic profile changes and preserves owner, te
     const created = (await db.query<{ id: string }>(`select public.create_business_profile_with_location('restaurant','Resto Uji','Owner','0812','Jalan','Kota Bandung','Jawa Barat','','Coblong','Dago') as id`)).rows[0].id
     const restaurant = (await db.query(`select category,district,village,onboarding_completed_at from public.businesses where id=$1`, [created])).rows[0] as Record<string, unknown>
     assert.deepEqual(restaurant, { category: 'restaurant', district: 'Coblong', village: 'Dago', onboarding_completed_at: null })
+    await db.exec('reset role')
+    await db.exec(await readFile('supabase/migrations/202610310006_business_map_coordinates.sql', 'utf8'))
+    assert.equal((await db.query('select id from public.businesses where latitude is not null or longitude is not null')).rows.length, 0)
+    await asUser(owner)
+    const saveMap = (latitude: number | null, longitude: number | null, version = Number(saved.profile_revision)) => db.query(`select * from public.save_business_profile_with_map($1,$2,'Toko Lama','0812','Jalan','Kota Bandung','Jawa Barat','','Coblong','Dago',$3,$4)`, [old, version, latitude, longitude])
+    await assert.rejects(saveMap(-6.89, null))
+    await assert.rejects(saveMap(-6.89, 200))
+    const mapped = (await saveMap(-6.89, 107.61)).rows[0] as Record<string, unknown>
+    assert.equal(mapped.latitude, -6.89); assert.equal(mapped.longitude, 107.61)
+    await assert.rejects(saveMap(-6.8, 107.6))
+    for (const user of [other, staff, cashier]) { await asUser(user); await assert.rejects(saveMap(-6.8, 107.6, Number(mapped.profile_revision))) }
+    await asUser(owner)
+    const removed = (await saveMap(null, null, Number(mapped.profile_revision))).rows[0] as Record<string, unknown>
+    assert.equal(removed.latitude, null); assert.equal(removed.longitude, null)
+    const fresh = randomUUID(); await db.exec('reset role'); await db.query('insert into auth.users(id) values($1)', [fresh]); await asUser(fresh)
+    await assert.rejects(db.query(`select public.create_business_profile_with_map('store','Toko Peta','Owner','0812','Jalan','Kota Bandung','Jawa Barat','','Coblong','Dago',-6.89,null)`))
+    assert.equal((await db.query('select id from public.businesses where owner_id=$1', [fresh])).rows.length, 0)
+    const mapCreated = (await db.query<{ id: string }>(`select public.create_business_profile_with_map('store','Toko Peta','Owner','0812','Jalan','Kota Bandung','Jawa Barat','','Coblong','Dago',-6.89,107.61) as id`)).rows[0].id
+    assert.deepEqual((await db.query('select latitude,longitude from public.businesses where id=$1', [mapCreated])).rows[0], { latitude: -6.89, longitude: 107.61 })
   } finally { await db.close() }
 })
