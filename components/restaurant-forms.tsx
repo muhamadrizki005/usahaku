@@ -6,7 +6,7 @@ import type { RestaurantMenu, RestaurantTable } from '@/lib/restaurant'
 import { rupiah } from '@/lib/pos'
 
 export const restaurantPanel = 'rounded-2xl border border-[#454d5b]/50 bg-[#273242] p-5 sm:p-6'
-export const restaurantInput = 'mt-1 min-h-11 w-full min-w-0 rounded-lg border border-[#454d5b] bg-[#273242] px-3 py-2 text-sm text-white outline-none focus:border-[#24cbc5] focus:ring-2 focus:ring-[#24cbc5]/20'
+export const restaurantInput = 'mt-1 min-h-11 w-full min-w-0 rounded-lg border border-[#454d5b] bg-[#273242] px-3 py-2 text-sm font-normal text-white placeholder:font-normal placeholder:text-[#a4a7ac] outline-none focus:border-[#24cbc5] focus:ring-2 focus:ring-[#24cbc5]/20'
 export const restaurantButton = 'min-h-11 rounded-lg border border-[#454d5b] px-4 py-2 text-sm text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5] disabled:opacity-50'
 export const restaurantPrimary = restaurantButton + ' border-transparent bg-[#1835d9] hover:bg-[#132c9e]'
 export function RestaurantField({ label, children }: { label: string; children: ReactNode }) {

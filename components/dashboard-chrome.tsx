@@ -119,7 +119,7 @@ export function DashboardSidebar({
 
   return (
     <aside
-      className="hidden lg:flex flex-col items-center shrink-0 self-center my-auto z-20 print:hidden lg:-ml-4"
+      className="hidden lg:flex flex-col items-center shrink-0 self-start mt-[calc(50vh-140px)] sticky top-1/2 -translate-y-1/2 z-20 print:hidden lg:-ml-4"
       aria-label="Sidebar navigasi sekunder"
     >
       <div className="flex flex-col items-center gap-3 rounded-full border border-[#454d5b]/80 bg-[#273242]/90 p-2 sm:p-2.5 shadow-2xl backdrop-blur-md">

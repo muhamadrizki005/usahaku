@@ -5,9 +5,8 @@ body {
 
 html:has(.dashboard-ambient),
 body:has(.dashboard-ambient) {
-  height: 100dvh;
-  max-height: 100dvh;
-  overflow: hidden !important;
+  min-height: 100%;
+  overflow-x: hidden;
 }
 
 .dashboard-ambient {
@@ -33,9 +32,8 @@ body:has(.dashboard-ambient) {
       rgb(24 53 217 / 0.085) 44%,
       rgb(24 53 217 / 0) 78%
     );
-  height: 100dvh;
-  max-height: 100dvh;
-  overflow: hidden;
+  min-height: 100dvh;
+  overflow-x: hidden;
   position: relative;
   background-color: #1c222e;
   background-image: var(--dashboard-ambient-image);
