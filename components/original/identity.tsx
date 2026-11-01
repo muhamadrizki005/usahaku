@@ -239,7 +239,7 @@ export default function OriginalIdentity({
             </p>
           </>
         )}
-        <h1 className="mt-3 text-3xl font-normal sm:text-4xl">
+        <h1 className="mt-3 text-3xl font-semibold sm:text-4xl">
           {onboarding
             ? "Kenalkan usaha Anda"
             : category === "restoran"
