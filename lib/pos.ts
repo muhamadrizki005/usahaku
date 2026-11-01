@@ -9,8 +9,8 @@ export function salesSummary(sales:Sale[],now=new Date()){
   const dates=Array.from({length:7},(_,i)=>day(new Date(now.getTime()-(6-i)*86400000)))
   const done=sales.filter(s=>s.status==='completed'),today=done.filter(s=>day(new Date(s.created_at))===day(now))
   const daily=dates.map(d=>done.filter(s=>day(new Date(s.created_at))===d).reduce((n,s)=>n+Number(s.total)-Number(s.tax_amount||0),0))
-  const best=new Map<string,{name:string;units:number;gross:number}>()
-  for(const s of done)for(const l of s.lines){const b=best.get(l.id)||{name:l.name,units:0,gross:0};b.units=Math.round((b.units+Number(l.quantity))*1000)/1000;b.gross+=Number(l.original_total??l.total);best.set(l.id,b)}
+  const best=new Map<string,{id:string;name:string;units:number;gross:number}>()
+  for(const s of done)for(const l of s.lines){const b=best.get(l.id)||{id:l.id,name:l.name,units:0,gross:0};b.units=Math.round((b.units+Number(l.quantity))*1000)/1000;b.gross+=Number(l.original_total??l.total);best.set(l.id,b)}
   return{revenue:today.reduce((n,s)=>n+Number(s.total)-Number(s.tax_amount||0),0),count:today.length,units:Math.round(today.reduce((n,s)=>n+s.lines.reduce((n,l)=>n+Number(l.quantity),0),0)*1000)/1000,daily,labels:dates.map(d=>new Date(d+'T12:00:00+07:00').toLocaleDateString('id-ID',{weekday:'short',timeZone:'Asia/Jakarta'})),best:Array.from(best.values()).sort((a,b)=>b.units-a.units).slice(0,5)}
 }
 // Positive amounts: PostgreSQL numeric round(...,0), half up per line.

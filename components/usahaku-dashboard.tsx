@@ -19,6 +19,17 @@ const labels: Record<Category, string> = {
 
 const money = (value: number) => `Rp${Math.round(value).toLocaleString('id-ID')}`
 
+function ProductThumbnail({ image, name }: { image?: string; name: string }) {
+  const [failed, setFailed] = useState(false)
+  return (
+    <div className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-[#24cbc5]/10 text-[#24cbc5] border border-[#24cbc5]/20">
+      {image && !failed ? (
+        <img src={image} alt={`Foto ${name}`} width={40} height={40} className="size-full object-cover" onError={() => setFailed(true)} />
+      ) : <Package className="size-4.5" aria-hidden="true" />}
+    </div>
+  )
+}
+
 function LoadingScreen() {
   return (
     <div className="grid min-h-[calc(100dvh-96px)] place-items-center bg-[#1c222e] px-6 text-[#ffffff]">
@@ -247,6 +258,7 @@ export default function UsahakuDashboard({
   }
 
   const summary = salesSummary(sales)
+  const productImages = new Map(initialProducts.map(product => [product.id, product.image]))
   const { revenue } = summary
   const hour = Number(
     new Intl.DateTimeFormat('en-GB', {
@@ -366,15 +378,13 @@ export default function UsahakuDashboard({
             <div className="space-y-3">
               {summary.best.map((product, i) => (
                 <div
-                  key={`${product.name}-${i}`}
+                  key={product.id}
                   className="flex items-center gap-3.5 rounded-xl border border-transparent p-2.5 hover:border-[#454d5b]/60 hover:bg-[#1c222e]/40 transition"
                 >
                   <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-[#303640] text-xs font-semibold text-[#c5cbd5]">
                     {i + 1}
                   </span>
-                  <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#24cbc5]/10 text-[#24cbc5] border border-[#24cbc5]/20">
-                    <Package className="size-4.5" />
-                  </div>
+                  <ProductThumbnail key={productImages.get(product.id) || 'no-image'} image={productImages.get(product.id)} name={product.name} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-normal text-white">{product.name}</p>
                     <p className="text-xs text-[#a4a7ac]">{product.units.toLocaleString('id-ID')} terjual</p>
