@@ -408,9 +408,9 @@ export default function LandingPage() {
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         className="mx-auto max-w-[1800px] px-5 py-20 sm:px-8 lg:px-12"
       >
-        <p className="text-xs font-normal tracking-[0.18em] text-accent">SATU PLATFORM, LIMA KATEGORI</p>
-        <h2 className="mt-4 max-w-2xl text-4xl font-medium tracking-tight">Usaha Anda punya cara kerja sendiri. Kami mengikutinya.</h2>
-        <p className="mt-5 max-w-2xl leading-7 text-muted-foreground">Pilih satu kategori utama saat menyiapkan usaha. Navigasi, data ringkasan, dan modul yang tampil akan menyesuaikan kebutuhan operasionalnya.</p>
+        <p className="text-xs font-normal tracking-[0.18em] text-[#24cbc5]">SATU PLATFORM, LIMA KATEGORI</p>
+        <h2 className="mt-4 max-w-2xl text-4xl font-medium tracking-tight text-white">Usaha Anda punya cara kerja sendiri. Kami mengikutinya.</h2>
+        <p className="mt-5 max-w-2xl leading-7 text-[#c5cbd5]">Pilih satu kategori utama saat menyiapkan usaha. Navigasi, data ringkasan, dan modul yang tampil akan menyesuaikan kebutuhan operasionalnya.</p>
         <div className="mt-10 grid gap-5 lg:grid-cols-3">
           {categories.map(({ label, icon: Icon, description, features: items, link }, index) => (
             <motion.article
@@ -419,23 +419,23 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.55, delay: index * 0.12, ease: [0.22, 1, 0.36, 1] }}
-              className="rounded-2xl border border-border bg-card p-6"
+              className="group flex flex-col rounded-2xl bg-[#273242] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.22)] transition-all duration-300 ease-out hover:-translate-y-1 hover:bg-[#2d3a4d] hover:shadow-[0_8px_30px_rgba(0,0,0,0.32)]"
             >
-              <div className="grid size-11 place-items-center rounded-xl bg-accent/10 text-accent">
+              <div className="grid size-11 place-items-center rounded-xl bg-[#24cbc5]/10 text-[#24cbc5] transition-colors duration-300 group-hover:bg-[#24cbc5]/15">
                 <Icon aria-hidden="true" />
               </div>
-              <h3 className="mt-6 text-xl font-normal">{label}</h3>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">{description}</p>
+              <h3 className="mt-6 text-xl font-normal text-white">{label}</h3>
+              <p className="mt-3 text-sm leading-6 text-[#c5cbd5]">{description}</p>
               <ul className="mt-6 flex flex-col gap-3 text-sm">
                 {items.map((item) => (
-                  <li key={item} className="flex items-center gap-2">
-                    <Check className="text-accent" aria-hidden="true" />
-                    {item}
+                  <li key={item} className="flex items-center gap-2 text-[#c5cbd5]">
+                    <Check className="size-4 shrink-0 text-[#24cbc5]" aria-hidden="true" />
+                    <span>{item}</span>
                   </li>
                 ))}
               </ul>
-              <a href="#fitur" onClick={(e) => handleAnchorClick(e, 'fitur')} className="mt-7 inline-flex items-center gap-2 text-sm font-normal text-accent hover:underline">
-                {link} <ArrowRight aria-hidden="true" />
+              <a href="#fitur" onClick={(e) => handleAnchorClick(e, 'fitur')} className="mt-7 inline-flex items-center gap-2 text-sm font-normal text-[#24cbc5] hover:underline">
+                {link} <ArrowRight aria-hidden="true" className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
               </a>
             </motion.article>
           ))}
@@ -554,7 +554,7 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.55, delay: index * 0.12, ease: [0.22, 1, 0.36, 1] }}
-              className="rounded-2xl border border-border bg-card p-6"
+              className="group flex flex-col rounded-2xl bg-[#273242] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.22)] transition-all duration-300 ease-out hover:-translate-y-1 hover:bg-[#2d3a4d] hover:shadow-[0_8px_30px_rgba(0,0,0,0.32)]"
             >
               <h3 className="text-xl font-normal">{title}</h3>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">{description}</p>

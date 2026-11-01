@@ -1,4 +1,4 @@
-import { BarChart3, CreditCard, Database, LayoutDashboard, Package, Settings2, ShoppingBag, Sparkles, Users, Utensils, Table2 } from 'lucide-react'
+import { BarChart3, CreditCard, Database, Home, LayoutDashboard, Package, Settings2, ShoppingBag, Sparkles, Users, Utensils, Table2 } from 'lucide-react'
 
 export const topNavigationItems = [
   ['Ringkasan', LayoutDashboard, '/dashboard'],
@@ -11,6 +11,7 @@ export const topNavigationItems = [
 ] as const
 
 export const sidebarNavigationItems = [
+  ['Home', Home, '/dashboard'],
   ['Asisten Bisnis AI', Sparkles, '/dashboard/assistant'],
   ['Pengaturan', Settings2, '/dashboard/settings'],
 ] as const
@@ -23,11 +24,15 @@ export const restaurantTopNavigationItems = [
   ['Transaksi', CreditCard, '/dashboard/transactions'],
   ['Laporan', BarChart3, '/dashboard/reports'],
 ] as const
-export const restaurantSidebarNavigationItems = [['Pengaturan', Settings2, '/dashboard/settings']] as const
+export const restaurantSidebarNavigationItems = [
+  ['Home', Home, '/dashboard'],
+  ['Pengaturan', Settings2, '/dashboard/settings'],
+] as const
 
 export const dashboardNavigation = [
   ...topNavigationItems,
-  ...sidebarNavigationItems,
+  ['Asisten Bisnis AI', Sparkles, '/dashboard/assistant'],
+  ['Pengaturan', Settings2, '/dashboard/settings'],
 ] as const
 
 export type DashboardNavigationItem = (typeof dashboardNavigation)[number]
