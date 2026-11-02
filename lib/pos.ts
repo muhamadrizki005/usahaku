@@ -4,6 +4,7 @@ export const saleCode=(sale:Pick<Sale,'id'> & Pick<Partial<Sale>,'receipt_number
 export const rupiah=(n:number)=>`Rp${n.toLocaleString('id-ID')}`
 export const saleDate=(s:string)=>new Date(s).toLocaleString('id-ID',{timeZone:'Asia/Jakarta',dateStyle:'medium',timeStyle:'short'})+' WIB'
 export const paymentLabel={cash:'Tunai',qris:'QRIS usaha',transfer:'Transfer',ewallet:'E-wallet'}
+export const paymentMethods = ['cash', 'qris', 'transfer', 'ewallet'] as const
 export function salesSummary(sales:Sale[],now=new Date()){
   const day=(date:Date)=>new Date(date.getTime()+7*3600000).toISOString().slice(0,10)
   const dates=Array.from({length:7},(_,i)=>day(new Date(now.getTime()-(6-i)*86400000)))

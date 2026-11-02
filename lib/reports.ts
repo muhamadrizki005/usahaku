@@ -1,6 +1,6 @@
 import type {Sale} from './pos'
-import {paymentLabel,saleCode,saleDate} from './pos'
-export type ReportFilter={from:string;to:string;payment:'all'|'cash'|'qris'|'transfer'}
+import {paymentLabel,paymentMethods,saleCode,saleDate} from './pos'
+export type ReportFilter={from:string;to:string;payment:'all'|Sale['payment']}
 export type ReportData={sales:Sale[];refunds:Sale[];generatedAt:string}
 export const wibDate=(date:Date)=>new Date(date.getTime()+7*3600000).toISOString().slice(0,10)
 export function defaultReportFilter(now=new Date()):ReportFilter{return{from:wibDate(new Date(now.getTime()-6*86400000)),to:wibDate(now),payment:'all'}}
@@ -10,7 +10,7 @@ export function parseReportFilter(params:Record<string,unknown>,now=new Date()):
   if(typeof from!=='string'||typeof to!=='string'||!validDate(from)||!validDate(to))throw Error('Tanggal tidak valid. Gunakan tanggal kalender tahun 2000–2100.')
   const days=(Date.parse(to+'T00:00:00Z')-Date.parse(from+'T00:00:00Z'))/86400000+1
   if(days<1||days>366)throw Error('Tanggal akhir harus setelah atau sama dengan tanggal awal; maksimal 366 hari.')
-  if(typeof payment!=='string'||!['all','cash','qris','transfer'].includes(payment))throw Error('Metode pembayaran tidak valid.')
+  if(typeof payment!=='string'||!['all',...paymentMethods].includes(payment))throw Error('Metode pembayaran tidak valid.')
   return{from,to,payment:payment as ReportFilter['payment']}
 }
 export function reportBounds(filter:ReportFilter){return{start:new Date(filter.from+'T00:00:00+07:00').toISOString(),end:new Date(Date.parse(filter.to+'T00:00:00+07:00')+86400000).toISOString()}}

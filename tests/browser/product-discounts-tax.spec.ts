@@ -25,7 +25,7 @@ test('product discounts and owner tax persist, cashier charges verified prices, 
     const owner=await account(),p=owner.page
     await p.goto('/dashboard/products');await p.getByRole('button',{name:'Tambah produk',exact:true}).click()
     let dialog=p.getByRole('dialog',{name:'Tambah produk',exact:true})
-    await dialog.getByLabel('Unit stok *',{exact:true}).fill('kotak')
+    await dialog.getByLabel('Unit stok *',{exact:true}).click();await dialog.getByRole('option',{name:'Lainnya',exact:true}).click();await dialog.getByLabel('Unit stok lainnya *',{exact:true}).fill('kotak')
     await dialog.getByLabel('Nama produk *',{exact:true}).fill('Susu UHT Uji');await dialog.getByLabel('Kategori *',{exact:true}).click();await dialog.getByRole('option',{name:'Minuman',exact:true}).click();await dialog.getByLabel('Harga jual *',{exact:true}).fill('10000');await dialog.getByLabel('Stok fisik',{exact:true}).fill('20');await dialog.getByLabel('Minimum stok *',{exact:true}).fill('0')
     await dialog.getByLabel('Diskon produk',{exact:true}).check();await dialog.getByLabel('Nilai diskon produk',{exact:true}).fill('101');await dialog.getByRole('button',{name:'Simpan produk',exact:true}).click();await expect(dialog.getByRole('alert')).toContainText('maksimal 100%')
     await dialog.getByLabel('Nilai diskon produk',{exact:true}).fill('10');await expect(dialog).toContainText('Harga setelah diskon: Rp9.000');await dialog.getByRole('button',{name:'Simpan produk',exact:true}).click();await expect(dialog).toHaveCount(0)

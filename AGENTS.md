@@ -20,6 +20,7 @@
 - On 23 October 2026 the user authorized store sales reports and CSV/PDF export. Owner/admin only; cashiers retain only their own transaction history, not business reports or report exports. Preserve the existing dashboard/table/form styles. Filter dates in WIB and payment method. Exclude cancelled sales from their original sale period; report manual refunds separately by cancellation date without subtracting them twice. Never imply profit without cost/HPP data or automatic bank/QRIS refunds. Report/export data must come from verified server/database reads. See `docs/SALES-REPORTS.md`.
 - Keep Supabase demo accounts/data unchanged. Tests use new accounts and clean up only IDs created by that run.
 - On 1 November 2026 the user restored store order-level discounts alongside product discounts. Owner/admin may apply percent/fixed order discounts after product discounts and before tax; cashiers may not apply order discounts. Preserve historical totals and atomic/idempotent checkout. Empty carts hide customer and checkout controls until products are added. See `docs/POS-ORDER-DISCOUNTS.md`.
+- On 2 November 2026 the user authorized repairing store loyalty/e-wallet integration and audited checkout/report issues. Loyalty settings are owner-only; complete point history is owner/admin-only, while cashiers retain only their own POS transaction access. Invalid quantity drafts must block checkout. Preserve legacy financial values and use additive reconciliation migrations; see `docs/STORE-CHECKOUT-RECONCILIATION.md`.
 
 <!-- antislop:start -->
 ## antislop
