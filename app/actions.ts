@@ -1,5 +1,6 @@
 'use server'
 
+import { normalizeRoleKey } from '@/lib/auth/rbac'
 import { randomBytes } from 'node:crypto'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
@@ -442,4 +443,48 @@ export async function saveLoyaltySettings(_: ActionState, form: FormData): Promi
     refreshBusinessViews()
     return { success: 'Pengaturan poin member berhasil disimpan.', business: result.data as Business }
   } catch { return { error: loyaltySaveError() } }
+}
+
+
+export async function updateStaffRole(memberId: string, newRole: string): Promise<ActionState> {
+  const { business, user, supabase } = await requireBusiness(['owner'], true)
+  const normRole = normalizeRoleKey(newRole)
+  if (normRole === 'owner' || normRole === 'pemilik') {
+    return { error: 'Tidak dapat mengubah role staf menjadi Pemilik.' }
+  }
+
+  const { data: bRoles } = await supabase
+    .from('business_roles')
+    .select('id, name')
+    .eq('business_id', business.id)
+
+  const isValidRole =
+    normRole === 'admin' ||
+    normRole === 'cashier' ||
+    bRoles?.some(r => r.id === newRole || normalizeRoleKey(r.name) === normRole)
+
+  if (!isValidRole && bRoles && bRoles.length > 0) {
+    return { error: 'Role yang dipilih tidak tersedia pada usaha ini.' }
+  }
+
+  const admin = createAdminClient()
+  const { data: target } = await admin
+    .from('business_members')
+    .select('id, role')
+    .eq('id', memberId)
+    .eq('business_id', business.id)
+    .neq('role', 'owner')
+    .single()
+
+  if (!target) return { error: 'Anggota staf tidak ditemukan.' }
+
+  const { error } = await admin
+    .from('business_members')
+    .update({ role: newRole, changed_by: user.id })
+    .eq('id', memberId)
+    .eq('business_id', business.id)
+
+  if (error) return { error: 'Gagal memperbarui role staf.' }
+  revalidatePath('/dashboard/settings/staff')
+  return { success: 'Role staf berhasil diperbarui.' }
 }

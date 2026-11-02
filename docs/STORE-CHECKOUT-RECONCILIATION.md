@@ -34,3 +34,11 @@ Peringatan destructive operations pada SQL Editor disebabkan penggantian policy 
 Pengguna mengonfirmasi migrasi berhasil dijalankan; pengujian integrasi Supabase setelah migrasi lulus. Akun uji dibersihkan, hash data usaha lama tetap identik, dan tidak ditemukan page error. Server QA sementara sudah dimatikan setelah pengujian.
 
 Artefak di `.cache/store-fixes/` tidak untuk commit. Perubahan lokal generated `next-env.d.ts` yang sudah ada sebelum tugas dipertahankan terpisah dari implementasi.
+
+## Integrasi main setelah perbaikan
+
+Konflik dengan `origin/main` pada commit `0d13f49` diselesaikan di `components/pos-management.tsx`. Header bersama, reset margin/padding/border fieldset, dan checkbox melingkar dari main dipertahankan bersama draft jumlah, pesan validasi, normalisasi pecahan, serta guard checkout dari perbaikan ini. Penambahan custom role/RBAC dari main tetap disertakan; integrasi ini tidak memperluas izin operasional role tersebut.
+
+Verifikasi hasil gabungan: typecheck lulus, 75 tes unit/database lulus (termasuk RBAC dan rekonsiliasi schema), serta build produksi webpack lulus pada salinan terpisah. Lima tes browser lulus: diskon keseluruhan, alur POS, jumlah desktop/HP, e-wallet/poin/laporan/akses, dan onboarding. Pengujian menggunakan akun terpisah, membersihkan data uji, serta memastikan data usaha lama tidak berubah. Percobaan browser pertama terhalang jaringan sandbox sebelum pembuatan data uji; pengulangan dengan akses Supabase lulus.
+
+Tidak ada migrasi tambahan untuk resolusi konflik ini. Commit dan push hasil merge dilakukan pengguna.

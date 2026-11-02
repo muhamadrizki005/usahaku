@@ -28,7 +28,7 @@ export default function DashboardSection({
         <div>
           <p className="flex items-center gap-1.5 text-xs text-[#a4a7ac]">
             <span>{businessName || 'Usahaku'}</span>
-            <span className="text-white/30">›</span>
+            <span className="text-white/30">&gt;</span>
             <span className="font-medium text-[#24cbc5]">{breadcrumbTitle || title}</span>
           </p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white sm:text-3xl">

@@ -1,5 +1,6 @@
 'use client'
 
+import { canAccessPath } from '@/lib/auth/rbac'
 import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { usePathname } from 'next/navigation'
