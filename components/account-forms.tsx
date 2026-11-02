@@ -311,12 +311,36 @@ export function EmailForm({ recovery = false }: { recovery?: boolean }) {
 export function StaffForm({
   disabled,
   onCancel,
+  availableRoles,
 }: {
   disabled: boolean;
   onCancel: () => void;
+  availableRoles?: { id: string; name: string; is_default?: boolean }[];
 }) {
   const [state, action, pending] = useActionState(createStaff, {});
   const roleId = useId();
+
+  const roleOptions =
+    availableRoles && availableRoles.length > 0
+      ? availableRoles.map((r) => {
+          const norm = r.name.toLowerCase().trim();
+          let value = r.name;
+          if (norm === 'admin toko' || norm === 'admin') value = 'admin';
+          else if (norm === 'petugas kasir' || norm === 'kasir') value = 'cashier';
+          return {
+            value,
+            label: r.name,
+          };
+        })
+      : [
+          { value: 'cashier', label: 'Petugas Kasir' },
+          { value: 'admin', label: 'Admin Toko' },
+        ];
+
+  const defaultRoleValue = roleOptions.some((opt) => opt.value === 'cashier')
+    ? 'cashier'
+    : roleOptions[0]?.value || 'cashier';
+
   return (
     <form
       action={action}
@@ -344,11 +368,8 @@ export function StaffForm({
           <CustomSelect
             id={roleId}
             name="role"
-            defaultValue="cashier"
-            options={[
-              { value: 'cashier', label: 'Kasir' },
-              { value: 'admin', label: 'Admin toko' },
-            ]}
+            defaultValue={defaultRoleValue}
+            options={roleOptions}
             ariaLabel="Peran staf"
             className="w-full"
           />
