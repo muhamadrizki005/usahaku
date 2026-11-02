@@ -13,6 +13,7 @@ import { siteUrl } from '@/lib/auth/site-url'
 import { businessSchema, ownerLoginSchema, passwordSchema, registerSchema, staffEmail, staffLoginSchema, staffSchema, type ActionState, type Business } from '@/lib/validation'
 import { profileSchema, businessHoursSchema } from '@/lib/business-profile'
 import { businessLocationProblem } from '@/lib/business-regions'
+import { loyaltySettingsSchema, loyaltySaveError } from '@/lib/loyalty'
 import { detailedLocationProblem } from '@/lib/business-region-details'
 import { prepareBusinessLogo, uploadBusinessLogo, cleanupBusinessLogos } from '@/lib/business-logo-server'
 import { businessCategorySchema, businessSlug } from '@/lib/business-categories'
@@ -111,6 +112,8 @@ export async function createBusiness(_: ActionState, form: FormData): Promise<Ac
   if (user.app_metadata.account_type === 'staff') return { error: 'Akun staf tidak dapat membuat usaha. Hubungi owner.' }
   const category = businessCategorySchema.safeParse(form.get('category') || 'store')
   if (!category.success) return { error: 'Kategori usaha belum didukung.' }
+  const loyalty = category.data === 'store' && form.has('loyaltyActive') ? loyaltySettingsSchema.safeParse({ active: form.get('loyaltyActive') === 'true', nominal: form.get('loyaltyPointNominal') }) : null
+  if (loyalty && !loyalty.success) return { error: loyaltySaveError('22023') }
   const parsed = profileSchema.safeParse(fields(form))
   if (!parsed.success) return invalid(parsed.error)
   const locationError = businessLocationProblem(parsed.data) || detailedLocationProblem(parsed.data)
@@ -124,6 +127,12 @@ export async function createBusiness(_: ActionState, form: FormData): Promise<Ac
     const { data } = await supabase.from('business_members').select('id').eq('user_id', user.id).maybeSingle()
     if (data) return redirectAfterLogin()
     return { error: 'Usaha belum dapat dipastikan tersimpan. Muat ulang untuk memeriksa hasil sebelum mencoba lagi.' }
+  }
+  if (loyalty?.success) {
+    try {
+      const result = await supabase.rpc('save_business_loyalty_settings', { target_id: id, new_active: loyalty.data.active, new_nominal: loyalty.data.nominal }).abortSignal(AbortSignal.timeout(15000)).retry(false)
+      if (result.error || !result.data) return { error: 'Usaha sudah tersimpan. Muat ulang untuk melanjutkan pengaturan poin. ' + loyaltySaveError(result.error?.code) }
+    } catch { return { error: 'Usaha sudah tersimpan. Muat ulang untuk memeriksa pengaturan poin.' } }
   }
   let notice = ''
   if (logo) {
@@ -170,26 +179,15 @@ export async function saveBusinessProfile(_: ActionState, form: FormData): Promi
     } else saved = result.data
   }
   try { if (!await cleanupBusinessLogos(business.id)) warning ||= 'Profil tersimpan. Pembersihan logo lama akan dicoba kembali.' } catch { warning ||= 'Profil tersimpan. Pembersihan logo lama akan dicoba kembali.' }
-  if (form.has('loyaltyActive')) {
-    const loyaltyActive = form.get('loyaltyActive') === 'true';
-    const rawNominal = form.get('loyaltyPointNominal');
-    const loyaltyPointNominal = Math.max(1, Math.round(Number(rawNominal) || 50000));
-    try {
-      const { data: loyaltyData } = await supabase.rpc('save_business_loyalty_settings', {
-        target_id: business.id,
-        new_active: loyaltyActive,
-        new_nominal: loyaltyPointNominal,
-      });
-      if (loyaltyData) saved = loyaltyData;
-    } catch {
+  if (form.has('loyaltyActive') && business.category === 'store') {
+    const loyalty = loyaltySettingsSchema.safeParse({ active: form.get('loyaltyActive') === 'true', nominal: form.get('loyaltyPointNominal') })
+    if (!loyalty.success) warning = 'Profil tersimpan, tetapi nominal program poin tidak valid. Simpan pengaturan poin secara terpisah.'
+    else {
       try {
-        const admin = createAdminClient();
-        const { data: updatedBiz } = await admin.from('businesses').update({
-          loyalty_active: loyaltyActive,
-          loyalty_point_nominal: loyaltyPointNominal,
-        }).eq('id', business.id).select().maybeSingle();
-        if (updatedBiz) saved = updatedBiz;
-      } catch {}
+        const result = await supabase.rpc('save_business_loyalty_settings', { target_id: business.id, new_active: loyalty.data.active, new_nominal: loyalty.data.nominal }).abortSignal(AbortSignal.timeout(15000)).retry(false)
+        if (result.error || !result.data) { refreshBusinessViews(); return { error: 'Profil tersimpan. ' + loyaltySaveError(result.error?.code), business: saved, warning } }
+        else saved = result.data
+      } catch { refreshBusinessViews(); return { error: 'Profil tersimpan. ' + loyaltySaveError(), business: saved, warning } }
     }
   }
   refreshBusinessViews()
@@ -433,47 +431,15 @@ export async function updateAccountAvatar(avatarUrl: string | null): Promise<Act
 
 
 export async function saveLoyaltySettings(_: ActionState, form: FormData): Promise<ActionState> {
-  const { supabase, business } = await requireBusiness(['owner', 'admin'], true);
-  const loyaltyActive = form.get('loyaltyActive') === 'true';
-  const rawNominal = form.get('loyaltyPointNominal');
-  const parsedNominal = z.coerce.number().positive('Nominal transaksi per poin harus lebih besar dari 0.').max(1000000000).safeParse(rawNominal);
-  if (!parsedNominal.success) {
-    return { error: 'Nominal transaksi per poin harus lebih besar dari Rp0.' };
-  }
-  const nominal = Math.round(parsedNominal.data);
+  const { supabase, business } = await requireBusiness(['owner'], true)
+  if (business.category !== 'store') return { error: 'Program poin hanya tersedia untuk usaha toko.' }
+  if (!['true', 'false'].includes(String(form.get('loyaltyActive')))) return { error: 'Pilihan program poin tidak valid.' }
+  const parsed = loyaltySettingsSchema.safeParse({ active: form.get('loyaltyActive') === 'true', nominal: form.get('loyaltyPointNominal') })
+  if (!parsed.success) return { error: loyaltySaveError('22023') }
   try {
-    const { data, error } = await supabase.rpc('save_business_loyalty_settings', {
-      target_id: business.id,
-      new_active: loyaltyActive,
-      new_nominal: nominal,
-    });
-    if (!error && data) {
-      refreshBusinessViews();
-      return { success: 'Pengaturan poin member berhasil disimpan.', business: data as Business };
-    }
-  } catch {}
-  try {
-    const admin = createAdminClient();
-    const { data: updated, error: updateErr } = await admin.from('businesses').update({
-      loyalty_active: loyaltyActive,
-      loyalty_point_nominal: nominal,
-    }).eq('id', business.id).select().maybeSingle();
-    if (!updateErr && updated) {
-      refreshBusinessViews();
-      return { success: 'Pengaturan poin member berhasil disimpan.', business: updated as Business };
-    }
-    if (updateErr) {
-      console.error('Loyalty settings update error:', updateErr);
-      if (updateErr.code === '42703' || updateErr.message?.includes('column') || updateErr.message?.includes('loyalty')) {
-        return { error: 'Kolom loyalty points belum ada di database Supabase. Jalankan migrasi 202611010006_loyalty_points.sql di Supabase SQL Editor.' };
-      }
-      return { error: updateErr.message || 'Pengaturan poin member belum dapat disimpan.' };
-    }
-  } catch (err) {
-    console.error('Loyalty settings update exception:', err);
-    return { error: (err instanceof Error ? err.message : String(err)) || 'Pengaturan poin member belum dapat disimpan.' };
-  }
-
-  refreshBusinessViews();
-  return { success: 'Pengaturan poin member berhasil disimpan.' };
+    const result = await supabase.rpc('save_business_loyalty_settings', { target_id: business.id, new_active: parsed.data.active, new_nominal: parsed.data.nominal }).abortSignal(AbortSignal.timeout(15000)).retry(false)
+    if (result.error || !result.data) return { error: loyaltySaveError(result.error?.code) }
+    refreshBusinessViews()
+    return { success: 'Pengaturan poin member berhasil disimpan.', business: result.data as Business }
+  } catch { return { error: loyaltySaveError() } }
 }

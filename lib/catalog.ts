@@ -12,76 +12,27 @@ export type ParsedQuantity = {
 }
 
 export function parseQuantityInput(raw: string): ParsedQuantity {
-  if (!raw || typeof raw !== 'string') {
-    return { valid: false, value: 0, formatted: '', error: 'Jumlah wajib diisi.' }
+  const invalid = (error: string): ParsedQuantity => ({ valid: false, value: 0, formatted: '', error })
+  if (typeof raw !== 'string' || !raw.trim()) return invalid('Jumlah wajib diisi.')
+  const text = raw.trim()
+  if (text.length > 64) return invalid('Jumlah terlalu panjang.')
+  if (text.startsWith('-')) return invalid('Jumlah tidak boleh bernilai negatif.')
+  const fraction = text.match(/^(?:(\d+)\s+)?(\d+)\s*\/\s*(\d+)$/)
+  if (fraction) {
+    const whole = BigInt(fraction[1] || '0'), numerator = BigInt(fraction[2]), denominator = BigInt(fraction[3])
+    if (denominator === BigInt(0)) return invalid('Pembagian dengan nol tidak diperbolehkan.')
+    const scaled = ((whole * denominator + numerator) * BigInt(2000) + denominator) / (denominator * BigInt(2))
+    if (scaled <= BigInt(0)) return invalid('Jumlah harus lebih besar dari 0.')
+    if (scaled > BigInt('999999999999')) return invalid('Jumlah di luar batas yang diperbolehkan.')
+    const value = Number(scaled) / 1000
+    return { valid: true, value, formatted: String(value) }
   }
-  const trimmed = raw.trim()
-  if (!trimmed) {
-    return { valid: false, value: 0, formatted: '', error: 'Jumlah wajib diisi.' }
-  }
-
-  // Reject negative quantities
-  if (trimmed.startsWith('-')) {
-    return { valid: false, value: 0, formatted: '', error: 'Jumlah tidak boleh bernilai negatif.' }
-  }
-
-  // 1. Mixed fraction: e.g. "1 1/2", "2 1/4"
-  const mixedMatch = trimmed.match(/^(\d+)\s+(\d+)\s*\/\s*(\d+)$/)
-  if (mixedMatch) {
-    const whole = Number(mixedMatch[1])
-    const num = Number(mixedMatch[2])
-    const den = Number(mixedMatch[3])
-    if (den === 0) {
-      return { valid: false, value: 0, formatted: '', error: 'Pembagian dengan nol tidak diperbolehkan.' }
-    }
-    const val = whole + num / den
-    const rounded = Math.round(val * 1000) / 1000
-    if (rounded <= 0) {
-      return { valid: false, value: 0, formatted: '', error: 'Jumlah harus lebih besar dari 0.' }
-    }
-    if (rounded > 999999999.999) {
-      return { valid: false, value: 0, formatted: '', error: 'Jumlah di luar batas yang diperbolehkan.' }
-    }
-    return { valid: true, value: rounded, formatted: String(rounded) }
-  }
-
-  // 2. Simple fraction: e.g. "1/2", "1/4", "3/4"
-  const fractionMatch = trimmed.match(/^(\d+)\s*\/\s*(\d+)$/)
-  if (fractionMatch) {
-    const num = Number(fractionMatch[1])
-    const den = Number(fractionMatch[2])
-    if (den === 0) {
-      return { valid: false, value: 0, formatted: '', error: 'Pembagian dengan nol tidak diperbolehkan.' }
-    }
-    const val = num / den
-    const rounded = Math.round(val * 1000) / 1000
-    if (rounded <= 0) {
-      return { valid: false, value: 0, formatted: '', error: 'Jumlah harus lebih besar dari 0.' }
-    }
-    if (rounded > 999999999.999) {
-      return { valid: false, value: 0, formatted: '', error: 'Jumlah di luar batas yang diperbolehkan.' }
-    }
-    return { valid: true, value: rounded, formatted: String(rounded) }
-  }
-
-  // 3. Decimal or integer: e.g. "0.5", "0,5", "10", "1.25"
-  const normalized = trimmed.replace(',', '.')
-  if (!/^(0|[1-9]\d*)(\.\d{1,3})?$/.test(normalized)) {
-    return { valid: false, value: 0, formatted: '', error: 'Jumlah harus berupa angka atau pecahan dengan maksimal 3 desimal.' }
-  }
-  const val = Number(normalized)
-  if (!Number.isFinite(val) || isNaN(val)) {
-    return { valid: false, value: 0, formatted: '', error: 'Format angka tidak valid.' }
-  }
-  const rounded = Math.round(val * 1000) / 1000
-  if (rounded <= 0) {
-    return { valid: false, value: 0, formatted: '', error: 'Jumlah harus lebih besar dari 0.' }
-  }
-  if (rounded > 999999999.999) {
-    return { valid: false, value: 0, formatted: '', error: 'Jumlah di luar batas yang diperbolehkan.' }
-  }
-
-  return { valid: true, value: rounded, formatted: normalized }
+  const normalized = text.replace(',', '.')
+  if (!/^(0|[1-9]\d*)(\.\d{1,3})?$/.test(normalized)) return invalid('Jumlah harus berupa angka atau pecahan dengan maksimal 3 desimal.')
+  const value = Number(normalized)
+  if (!Number.isFinite(value) || value > 999999999.999) return invalid('Jumlah di luar batas yang diperbolehkan.')
+  if (value <= 0) return invalid('Jumlah harus lebih besar dari 0.')
+  return { valid: true, value, formatted: normalized }
 }
 
 export function quantity(value: unknown, signed=false): string {

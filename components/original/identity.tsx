@@ -192,12 +192,17 @@ export default function OriginalIdentity({
       setLogo(logoFor(serverState.business));
       setSelectedFile(null);
       setLogoOperation("keep");
+      setLoyaltyActive(Boolean(serverState.business.loyalty_active));
+      setLoyaltyPointNominal(Number(serverState.business.loyalty_point_nominal || 50000));
+      setNominalInput(Number(serverState.business.loyalty_point_nominal || 50000).toLocaleString("id-ID"));
       if (logoInputRef.current) logoInputRef.current.value = "";
     }
     if (submittedRef.current) {
       submittedRef.current = false;
       if (serverState.error) {
         showToast("error", serverState.error);
+      } else if (serverState.warning) {
+        showToast("error", serverState.warning);
       } else if (serverState.success || serverState.business) {
         showToast("success", "Perubahan berhasil disimpan");
       }
@@ -439,7 +444,7 @@ export default function OriginalIdentity({
             </section>
 
             {/* Program Poin Member Section */}
-            <section className="rounded-xl border border-[#454d5b] bg-[#273242] p-5 shadow-sm transition-all duration-300">
+            {category === "toko" && <section className="rounded-xl border border-[#454d5b] bg-[#273242] p-5 shadow-sm transition-all duration-300">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="font-medium text-white">Program Poin Member</h2>
@@ -557,7 +562,7 @@ export default function OriginalIdentity({
                   </button>
                 </div>
               )}
-            </section>
+            </section>}
           </aside>
           <div className="flex items-center justify-between border-t border-[#454d5b] pt-5 lg:col-span-2">
             <button
