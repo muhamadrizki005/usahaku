@@ -1,6 +1,6 @@
-import { normalizeRoleKey } from '@/lib/auth/rbac'
 'use server'
 
+import { normalizeRoleKey } from '@/lib/auth/rbac'
 import { randomBytes } from 'node:crypto'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
