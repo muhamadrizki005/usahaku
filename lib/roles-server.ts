@@ -27,12 +27,16 @@ export async function seedDefaultBusinessRoles(
     permissions: DEFAULT_CASHIER_PERMISSIONS,
   }
 
-  await supabase
+  const { error } = await supabase
     .from('business_roles')
     .upsert([adminRole, cashierRole], {
       onConflict: 'business_id,name',
       ignoreDuplicates: true,
     })
+
+  if (error && error.code !== 'PGRST205') {
+    console.error('Error seeding default roles:', error)
+  }
 }
 
 export async function readBusinessRoles(
@@ -47,6 +51,31 @@ export async function readBusinessRoles(
     .order('name', { ascending: true })
 
   if (error) {
+    if (error.code === 'PGRST205' || error.message?.includes('schema cache')) {
+      // Graceful fallback to default roles if migration hasn't been executed on remote Supabase yet
+      return [
+        {
+          id: 'default-admin',
+          business_id: businessId,
+          name: 'Admin Toko',
+          description: 'Akses operasional toko termasuk produk, stok, kasir, transaksi, pelanggan, dan laporan.',
+          is_default: true,
+          permissions: DEFAULT_ADMIN_PERMISSIONS,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        {
+          id: 'default-cashier',
+          business_id: businessId,
+          name: 'Petugas Kasir',
+          description: 'Akses transaksi penjualan di kasir (POS) dan melihat transaksi sendiri.',
+          is_default: true,
+          permissions: DEFAULT_CASHIER_PERMISSIONS,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ]
+    }
     console.error('Error fetching business roles:', error)
     return []
   }
@@ -92,4 +121,3 @@ export async function readRoleMemberCounts(
   }
   return counts
 }
-

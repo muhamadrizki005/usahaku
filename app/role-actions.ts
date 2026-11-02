@@ -29,6 +29,9 @@ export type RoleActionState = {
   role?: any
 }
 
+const MISSING_TABLE_MSG =
+  'Tabel peran ("public.business_roles") belum ada di database Supabase. Jalankan file migrasi 202611010009_custom_roles_and_rbac.sql di Supabase SQL Editor.'
+
 export async function createBusinessRole(
   _prevState: RoleActionState,
   formData: FormData
@@ -65,6 +68,9 @@ export async function createBusinessRole(
     .eq('business_id', business.id)
 
   if (checkError) {
+    if (checkError.code === 'PGRST205' || checkError.message?.includes('schema cache')) {
+      return { error: MISSING_TABLE_MSG }
+    }
     return { error: 'Gagal memeriksa nama role. Coba lagi.' }
   }
 
@@ -85,6 +91,9 @@ export async function createBusinessRole(
     .single()
 
   if (insertError || !created) {
+    if (insertError?.code === 'PGRST205' || insertError?.message?.includes('schema cache')) {
+      return { error: MISSING_TABLE_MSG }
+    }
     return { error: 'Gagal membuat role baru. Coba lagi.' }
   }
 
@@ -127,21 +136,28 @@ export async function updateBusinessRole(
     .single()
 
   if (fetchError || !targetRole) {
+    if (fetchError?.code === 'PGRST205' || fetchError?.message?.includes('schema cache')) {
+      return { error: MISSING_TABLE_MSG }
+    }
     return { error: 'Role tidak ditemukan pada usaha ini.' }
   }
 
   // If default role, preserve its original name so system roles stay consistent
   const finalName = targetRole.is_default ? targetRole.name : name
 
-  if (!targetRole.is_default) {
-    // Check duplicate name on other roles in same business
-    const { data: others } = await supabase
+  // Check unique name if custom role name changed
+  if (!targetRole.is_default && normalizeRoleKey(targetRole.name) !== normName) {
+    if (normName === 'owner' || normName === 'pemilik') {
+      return { error: 'Nama role tidak boleh menggunakan nama khusus Pemilik.' }
+    }
+
+    const { data: existing } = await supabase
       .from('business_roles')
       .select('id, name')
       .eq('business_id', business.id)
       .neq('id', id)
 
-    if (others?.some(r => normalizeRoleKey(r.name) === normName)) {
+    if (existing?.some(r => normalizeRoleKey(r.name) === normName)) {
       return { error: `Role dengan nama "${name}" sudah ada pada usaha ini.` }
     }
   }
@@ -160,19 +176,24 @@ export async function updateBusinessRole(
     .single()
 
   if (updateError || !updated) {
+    if (updateError?.code === 'PGRST205' || updateError?.message?.includes('schema cache')) {
+      return { error: MISSING_TABLE_MSG }
+    }
     return { error: 'Gagal memperbarui role. Coba lagi.' }
   }
 
   revalidatePath('/dashboard/settings/staff')
-  return { success: `Hak akses role "${finalName}" berhasil diperbarui.`, role: updated }
+  return { success: `Role "${finalName}" berhasil diperbarui.`, role: updated }
 }
 
 export async function deleteBusinessRole(roleId: string): Promise<{ error?: string; success?: string }> {
   const { business, supabase } = await requireBusiness(['owner'])
 
-  if (!roleId) return { error: 'ID role tidak valid.' }
+  if (!roleId || typeof roleId !== 'string') {
+    return { error: 'ID role tidak valid.' }
+  }
 
-  // 1. Fetch role
+  // 1. Fetch target role
   const { data: targetRole, error: fetchError } = await supabase
     .from('business_roles')
     .select('*')
@@ -181,6 +202,9 @@ export async function deleteBusinessRole(roleId: string): Promise<{ error?: stri
     .single()
 
   if (fetchError || !targetRole) {
+    if (fetchError?.code === 'PGRST205' || fetchError?.message?.includes('schema cache')) {
+      return { error: MISSING_TABLE_MSG }
+    }
     return { error: 'Role tidak ditemukan pada usaha ini.' }
   }
 
@@ -218,10 +242,12 @@ export async function deleteBusinessRole(roleId: string): Promise<{ error?: stri
     .eq('business_id', business.id)
 
   if (deleteError) {
+    if (deleteError?.code === 'PGRST205' || deleteError?.message?.includes('schema cache')) {
+      return { error: MISSING_TABLE_MSG }
+    }
     return { error: 'Gagal menghapus role. Coba lagi.' }
   }
 
   revalidatePath('/dashboard/settings/staff')
   return { success: `Role "${targetRole.name}" berhasil dihapus.` }
 }
-
