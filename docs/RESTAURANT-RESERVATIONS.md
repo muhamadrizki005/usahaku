@@ -72,3 +72,21 @@ Tes restoran lama disesuaikan dengan navigasi hamburger pada viewport laptop, la
 Hard Gate PASS: aksi database/browser dan kondisi gagal/retry diuji, role/tenant dijaga, modal keyboard/Escape serta overflow diuji. Purpose Gate PASS: tambahan terbatas pada navigasi, jadwal, DP dan umpan balik operasional yang diperlukan; tanpa aset/dekorasi baru. Liveliness PASS: hierarki form/list/modal dan desain yang disetujui dipertahankan. Craftsmanship PASS: snapshot visual diperiksa, tes yang gagal ditelusuri hingga penyebabnya, fixture dibersihkan dan server dimatikan.
 
 Yang belum termasuk: booking publik pelanggan, gateway/refund otomatis, cicilan/top-up atau refund DP sebagian, laporan arus kas DP, validasi slot terhadap jam buka, penggabungan meja, bahan baku/resep, dan salon. Hal-hal ini tidak diklaim sudah tersedia oleh halaman baru.
+
+## Penanda pilihan dan filter tanggal
+
+Branch `fix/reservation-selection-filter`: meja terpilih memakai latar turquoise transparan, outline dan centang, selain `aria-pressed`; memilih meja lain memindahkan penanda. Ukuran kotak dan palet tetap mengikuti komponen restoran.
+
+Memilih tanggal daftar yang valid langsung memuat reservasi pada tanggal tersebut, mengatur halaman kembali ke 0 dan memperbarui URL. Tombol Tampilkan reservasi dihapus. Saat memuat, status ditampilkan dan interaksi daftar lama dinonaktifkan. Tanggal dari URL disinkronkan kembali ke field setelah navigasi/reload. Filter tetap per tanggal; bukan memuat seluruh riwayat lintas tanggal. Kontrol tanggal kemudian diganti kalender custom sebagaimana dicatat di bagian berikutnya. Tidak ada migrasi atau perubahan aturan reservasi/DP.
+
+QA: typecheck dan build produksi webpack lulus. Tes browser aktual lulus untuk perpindahan outline/centang dan `aria-pressed`, filter otomatis ke tanggal kosong lalu kembali, page reset, serta reload. Suite yang sama tetap meluluskan DP/retry/pelunasan/refund, role/tenant, sesi baru, dan modal pada 320/390/768/1440 px. Screenshot penanda terpilih diperiksa. Data uji dibersihkan, hash data lama sama, pageErrors kosong dan server QA dimatikan. Tidak ada commit/push/merge oleh agen. Delivery Gate: perubahan hanya penanda pilihan dan filter yang diminta, tanpa aset, palet atau aturan finansial baru.
+
+## Kalender custom pada branch yang sama
+
+Pengguna kemudian meminta contoh kalender custom di `fix/reservation-selection-filter`. `components/ui/date-picker.tsx` memakai Popover dari dependency Base UI yang sudah terpasang, tanpa menambah package. Panel navy, nama hari/bulan Indonesia, awal pekan Senin, pilihan bulan/tahun, tombol Hari ini, tanggal terpilih biru dan penanda hari ini turquoise mengikuti desain Usahaku. Kalender tidak menambahkan animasi/aset baru.
+
+Filter memilih tanggal dan langsung memperbarui daftar. Pada Kedatangan (WIB), kalender juga menyediakan field jam; tombol Pilih tanggal dan jam menerapkan keduanya. Escape membatalkan pilihan sementara dan mengembalikan fokus tanpa menutup modal reservasi. Popup ditempatkan di dalam dialog native bila diperlukan, dengan collision positioning dan batas lebar/tinggi viewport. Keyboard mendukung panah, Home/End, PageUp/PageDown (Shift untuk tahun), Enter/Space dan Escape.
+
+Tanggal kalender memakai nilai `YYYY-MM-DD`, aritmetika UTC dan hari ini dalam WIB; rentang 2000–2099 sesuai kontrak tanggal reservasi. Tidak mengganti pemeriksaan jadwal mendatang di server, batas durasi, role, ketersediaan meja, DP, atau schema. Pemilihan tanggal di kalender tidak menjamin meja tersedia; pemeriksaan meja tetap wajib.
+
+Verifikasi: typecheck, build webpack dan 80 tes unit/database lulus. Dua tes kalender meliputi batas hari WIB, tanggal tidak valid, tahun kabisat, perpindahan akhir bulan, dan grid Senin. Suite browser reservasi/DP lulus dengan kontrol baru: pilih bulan/tahun/tanggal/jam, filter otomatis, highlight meja, keyboard/fokus/Escape bertingkat, empat viewport, sesi baru, role/tenant, pembayaran/refund dan retry. Preview desktop/HP di `.cache/reservation-datepicker/browser/calendar-filter-1440.png` dan `calendar-320.png` diperiksa. Fixture dibersihkan, hash data lama sama, pageErrors kosong, dan server QA dihentikan. Tidak ada commit/push/merge.
