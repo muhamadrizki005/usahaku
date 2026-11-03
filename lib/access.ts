@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getSupabaseConfig } from '@/lib/supabase/config'
 import { homeForRole } from '@/lib/auth/permissions'
-import { resolveMemberPermissions, hasPermission } from '@/lib/auth/rbac'
+import { findBusinessRole, hasPermission, resolveMemberPermissions, roleValue } from '@/lib/auth/rbac'
 import { readBusinessRoles } from '@/lib/roles-server'
 import type { Business, Member } from '@/lib/validation'
 
@@ -17,59 +17,46 @@ export async function requireAccount() {
   return { supabase, user, member: data as Member | null }
 }
 
-export async function requireBusiness(roles?: string[], allowDraft = false, requiredPermission?: string) {
+export async function resolveAccessMember(supabase: Awaited<ReturnType<typeof createClient>>, member: Member): Promise<Member> {
+  if (member.role === 'owner') return { ...member, permissions: resolveMemberPermissions('owner') }
+  const roles = await readBusinessRoles(supabase, member.business_id)
+  const configured = findBusinessRole(member.role, roles)
+  return { ...member, role: configured ? roleValue(configured) : member.role, role_name: configured?.name, permissions: resolveMemberPermissions(member.role, roles) }
+}
+
+export async function requireBusiness(roles?: string[], allowDraft = false, requiredPermission?: string | string[]) {
   const context = await requireAccount()
   const { member: rawMember, user, supabase } = context
   if (!rawMember) redirect(user.app_metadata.account_type === 'staff' ? '/account' : '/onboarding')
   if (!rawMember.active) redirect('/account')
   if (rawMember.must_change_password) redirect('/account/password')
-
-  // Resolve member permissions from business_roles
-  let permissions: string[] = []
-  try {
-    const businessRoles = await readBusinessRoles(supabase, rawMember.business_id)
-    permissions = resolveMemberPermissions(rawMember.role, businessRoles)
-  } catch (err) {
-    console.error('Error loading roles in requireBusiness:', err)
-    permissions = resolveMemberPermissions(rawMember.role, [])
-  }
-  const member: Member = { ...rawMember, permissions }
-
-  // 1. If explicit permission is required, check permission
-  if (requiredPermission && !hasPermission(member.role, permissions, requiredPermission)) {
-    redirect(homeForRole(member.role, permissions))
-  }
-
-  // 2. If legacy roles array is provided:
-  // Owner always passes.
-  // Otherwise, if role is directly in roles, pass.
-  // If role is custom, check if the member has appropriate module permission for that path
-  if (roles && member.role !== 'owner') {
-    const isDirectMatch = roles.includes(member.role)
-    if (!isDirectMatch) {
-      redirect(homeForRole(member.role, permissions))
-    }
-  }
-
+  const member = await resolveAccessMember(supabase, rawMember)
+  const home = homeForRole(member.role, member.permissions)
   const { data, error } = await supabase.from('businesses').select('*').eq('id', member.business_id).single()
   if (error || !data) throw new Error('Profil usaha belum dapat dibaca. Coba muat ulang halaman.')
-  if (!data.onboarding_completed_at && (!allowDraft || member.role !== 'owner')) redirect(member.role === 'owner' ? '/onboarding/summary' : '/account?notice=setup')
-  return { ...context, member, business: data as Business }
+  const business = data as Business
+  if (!business.onboarding_completed_at && (!allowDraft || member.role !== 'owner')) redirect(member.role === 'owner' ? '/onboarding/summary' : '/account?notice=setup')
+  if (business.category !== 'store' && !['owner', 'admin', 'cashier'].includes(member.role)) redirect('/account?notice=permissions')
+  const needed = requiredPermission ? (Array.isArray(requiredPermission) ? requiredPermission : [requiredPermission]) : []
+  if (needed.some(permission => !hasPermission(member.role, member.permissions, permission))) redirect(home)
+  if (roles && !roles.includes(member.role)) redirect(home)
+  return { ...context, member, business }
 }
 
-export async function requirePermission(permission: string, allowDraft = false) {
+export async function requirePermission(permission: string | string[], allowDraft = false) {
   return requireBusiness(undefined, allowDraft, permission)
 }
 
 export async function redirectAfterLogin(): Promise<never> {
-  const { member, user, supabase } = await requireAccount()
-  if (!member) redirect(user.app_metadata.account_type === 'staff' ? '/account' : '/onboarding')
-  if (!member.active) redirect('/account')
-  if (member.must_change_password) redirect('/account/password')
+  const { member: rawMember, user, supabase } = await requireAccount()
+  if (!rawMember) redirect(user.app_metadata.account_type === 'staff' ? '/account' : '/onboarding')
+  if (!rawMember.active) redirect('/account')
+  if (rawMember.must_change_password) redirect('/account/password')
+  const member = await resolveAccessMember(supabase, rawMember)
   const { data: business, error } = await supabase.from('businesses').select('onboarding_completed_at').eq('id', member.business_id).single()
   if (error || !business) throw new Error('Status pengaturan usaha belum dapat dibaca.')
   if (!business.onboarding_completed_at) redirect(member.role === 'owner' ? '/onboarding/summary' : '/account?notice=setup')
-  redirect(homeForRole(member.role))
+  redirect(homeForRole(member.role, member.permissions))
 }
 
 export async function requireOnboardingDraft() {

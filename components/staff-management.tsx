@@ -1,7 +1,9 @@
 'use client'
 
-import React, { useState, useTransition } from 'react'
+import React, { useEffect, useId, useState, useTransition } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { ModalFrame } from '@/components/ui/modal-frame'
 import {
   ArrowLeft,
   Check,
@@ -26,6 +28,10 @@ import {
 import { StaffForm, StaffActions } from '@/components/account-forms'
 import {
   MODULE_DEFINITIONS,
+  findBusinessRole,
+  roleValue,
+  rolePermissionLimit,
+  toggleRolePermission,
   type BusinessRole,
   normalizeRoleKey,
   getRoleDisplayName,
@@ -52,12 +58,16 @@ interface StaffManagementProps {
   roleCounts?: Record<string, number>
 }
 
+const emptyRoleCounts: Record<string, number> = {}
+
 export function StaffManagement({
   members,
   business,
   initialRoles = [],
-  roleCounts = {},
+  roleCounts = emptyRoleCounts,
 }: StaffManagementProps) {
+  const router = useRouter()
+  const roleNameId = useId(), roleDescriptionId = useId()
   const [roles, setRoles] = useState<BusinessRole[]>(initialRoles)
   const [counts, setCounts] = useState<Record<string, number>>(roleCounts)
   const [staffForm, setStaffForm] = useState(false)
@@ -87,6 +97,9 @@ export function StaffManagement({
   const [newSelectedRole, setNewSelectedRole] = useState('')
   const [changeRoleError, setChangeRoleError] = useState('')
   const [isChangeRolePending, startChangeRoleTransition] = useTransition()
+
+  useEffect(() => setRoles(initialRoles), [initialRoles])
+  useEffect(() => setCounts(roleCounts), [roleCounts])
 
   const copyStoreCode = () => {
     if (!business?.code) return
@@ -139,15 +152,7 @@ export function StaffManagement({
 
   // Toggle single permission
   const handleTogglePermission = (permKey: string) => {
-    setSelectedPerms(prev => {
-      const next = new Set(prev)
-      if (next.has(permKey)) {
-        next.delete(permKey)
-      } else {
-        next.add(permKey)
-      }
-      return next
-    })
+    setSelectedPerms(prev => toggleRolePermission(prev, permKey))
   }
 
   // Toggle Select All for a module
@@ -239,7 +244,7 @@ export function StaffManagement({
   // Change staff role
   const handleOpenChangeRole = (member: Member) => {
     setChangeRoleMember(member)
-    setNewSelectedRole(member.role)
+    setNewSelectedRole(findBusinessRole(member.role, roles) ? roleValue(findBusinessRole(member.role, roles)!) : member.role)
     setChangeRoleError('')
   }
 
@@ -254,16 +259,16 @@ export function StaffManagement({
           setChangeRoleError(res.error)
         } else {
           showToast('success', res.success || 'Role staf berhasil diubah.')
-          changeRoleMember.role = newSelectedRole
           setChangeRoleMember(null)
           // update counts
           const newCounts: Record<string, number> = {}
           staffMembers.forEach(m => {
             const r = m.id === changeRoleMember.id ? newSelectedRole : m.role
-            const k = normalizeRoleKey(r)
+            const k = findBusinessRole(r, roles) ? roleValue(findBusinessRole(r, roles)!) : r
             newCounts[k] = (newCounts[k] || 0) + 1
           })
           setCounts(newCounts)
+          router.refresh()
         }
       } catch (err: any) {
         setChangeRoleError(err?.message || 'Gagal mengubah role staf.')
@@ -401,12 +406,7 @@ export function StaffManagement({
         {/* Roles Card Grid */}
         <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {roles.map(role => {
-            const memberCount =
-              counts[normalizeRoleKey(role.name)] ||
-              counts[normalizeRoleKey(role.id)] ||
-              staffMembers.filter(
-                m => m.role === role.id || normalizeRoleKey(m.role) === normalizeRoleKey(role.name)
-              ).length
+            const memberCount = counts[roleValue(role)] ?? 0
 
             return (
               <div
@@ -648,7 +648,7 @@ export function StaffManagement({
 
       {/* MODAL: Tambah Staf Baru */}
       {staffForm && (
-        <div
+        <ModalFrame onDismiss={() => setStaffForm(false)} busy={false}
           role="dialog"
           aria-modal="true"
           aria-labelledby="staff-modal-title"
@@ -680,12 +680,12 @@ export function StaffManagement({
               availableRoles={roles}
             />
           </div>
-        </div>
+        </ModalFrame>
       )}
 
       {/* MODAL: Tambah & Edit Role (RBAC) */}
       {roleModalOpen && (
-        <div
+        <ModalFrame onDismiss={() => setRoleModalOpen(false)} busy={isRolePending}
           role="dialog"
           aria-modal="true"
           aria-labelledby="role-modal-title"
@@ -723,10 +723,11 @@ export function StaffManagement({
               {/* Role Name & Description */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-medium text-[#c5cbd5]">
+                  <label htmlFor={roleNameId} className="block text-xs font-medium text-[#c5cbd5]">
                     Nama Role <span className="text-rose-400">*</span>
                   </label>
                   <input
+                    id={roleNameId}
                     required
                     maxLength={60}
                     disabled={editingRole?.is_default}
@@ -743,10 +744,11 @@ export function StaffManagement({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#c5cbd5]">
+                  <label htmlFor={roleDescriptionId} className="block text-xs font-medium text-[#c5cbd5]">
                     Deskripsi Ringkas
                   </label>
                   <input
+                    id={roleDescriptionId}
                     maxLength={255}
                     value={roleDesc}
                     onChange={e => setRoleDesc(e.target.value)}
@@ -768,8 +770,8 @@ export function StaffManagement({
                 </div>
 
                 {MODULE_DEFINITIONS.map(mod => {
-                  const modPermKeys = mod.permissions.map(p => p.key)
-                  const isAllSelected = modPermKeys.every(k => selectedPerms.has(k))
+                  const modPermKeys = mod.permissions.map(p => p.key).filter(key => rolePermissionLimit(editingRole ? roleValue(editingRole) : '').includes(key))
+                  const isAllSelected = modPermKeys.length > 0 && modPermKeys.every(k => selectedPerms.has(k))
 
                   return (
                     <div
@@ -786,6 +788,7 @@ export function StaffManagement({
 
                         <button
                           type="button"
+                          disabled={!modPermKeys.length}
                           onClick={() => handleToggleModuleAll(modPermKeys)}
                           className="inline-flex items-center gap-1.5 rounded-lg border border-[#454d5b] bg-[#273242] px-2.5 py-1 text-[11px] text-[#24cbc5] hover:bg-[#303640] transition cursor-pointer"
                         >
@@ -818,6 +821,7 @@ export function StaffManagement({
                               <input
                                 type="checkbox"
                                 checked={checked}
+                                disabled={!rolePermissionLimit(editingRole ? roleValue(editingRole) : '').includes(perm.key)}
                                 onChange={() => handleTogglePermission(perm.key)}
                                 className="mt-0.5"
                               />
@@ -863,12 +867,12 @@ export function StaffManagement({
               </div>
             </form>
           </div>
-        </div>
+        </ModalFrame>
       )}
 
       {/* MODAL: Konfirmasi Hapus Role */}
       {deleteRoleTarget && (
-        <div
+        <ModalFrame onDismiss={() => setDeleteRoleTarget(null)} busy={isDeletePending}
           role="dialog"
           aria-modal="true"
           aria-labelledby="delete-role-modal-title"
@@ -899,14 +903,7 @@ export function StaffManagement({
             )}
 
             {(() => {
-              const assignedCount =
-                counts[normalizeRoleKey(deleteRoleTarget.name)] ||
-                counts[normalizeRoleKey(deleteRoleTarget.id)] ||
-                staffMembers.filter(
-                  m =>
-                    m.role === deleteRoleTarget.id ||
-                    normalizeRoleKey(m.role) === normalizeRoleKey(deleteRoleTarget.name)
-                ).length
+              const assignedCount = counts[roleValue(deleteRoleTarget)] ?? 0
 
               if (assignedCount > 0) {
                 return (
@@ -960,12 +957,12 @@ export function StaffManagement({
               )
             })()}
           </div>
-        </div>
+        </ModalFrame>
       )}
 
       {/* MODAL: Ubah Role Staf */}
       {changeRoleMember && (
-        <div
+        <ModalFrame onDismiss={() => setChangeRoleMember(null)} busy={isChangeRolePending}
           role="dialog"
           aria-modal="true"
           aria-labelledby="change-role-modal-title"
@@ -1005,7 +1002,7 @@ export function StaffManagement({
                 <CustomSelect
                   ariaLabel="Pilih role baru"
                   value={newSelectedRole}
-                  options={roles.map(r => ({ value: r.name, label: r.name }))}
+                  options={roles.map(r => ({ value: roleValue(r), label: r.name }))}
                   onChange={val => setNewSelectedRole(val)}
                   className="mt-1.5 w-full"
                 />
@@ -1031,7 +1028,7 @@ export function StaffManagement({
               </div>
             </div>
           </div>
-        </div>
+        </ModalFrame>
       )}
 
       {/* Toast Notification */}

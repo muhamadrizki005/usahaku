@@ -2,6 +2,7 @@
 import './mobile-record-table.css'
 import { moveCatalogStock } from '@/app/catalog-actions'
 import { adjustedStock, formatQuantity, quantity, type CatalogProduct, type StockRow } from '@/lib/catalog'
+import { hasPermission } from '@/lib/auth/rbac'
 import type { Role } from '@/lib/auth/permissions'
 import type { Business } from '@/lib/validation'
 
@@ -14,7 +15,8 @@ type Category = 'toko' | 'restoran' | 'barbershop'
 type Product = CatalogProduct
 type Movement = { id: string; product: string; type: 'Masuk' | 'Keluar' | 'Hitung fisik'; reason: string; date: string; quantity: number; unit: string; before: number; after: number }
 
-export default function InventoryManagement({ role, initialCategory = 'toko', business, initialProducts, initialMovements, memberName }: { role: Role; initialCategory?: Category; business: Business; initialProducts: Product[]; initialMovements: StockRow[]; memberName: string }) {
+export default function InventoryManagement({ role, permissions = [], initialCategory = 'toko', business, initialProducts, initialMovements, memberName }: { role: Role; permissions?: string[]; initialCategory?: Category; business: Business; initialProducts: Product[]; initialMovements: StockRow[]; memberName: string }) {
+  const canMove = hasPermission(role, permissions, 'inventory:create') || hasPermission(role, permissions, 'inventory:edit');
   const router = useRouter(); const [products, setProducts] = useState(initialProducts); const [query, setQuery] = useState(''); const [condition, setCondition] = useState('Semua kondisi'); const [category, setCategory] = useState('Semua kategori'); const [selectedId, setSelectedId] = useState(initialProducts[0]?.id||''); const [adjustment, setAdjustment] = useState(''); const [direction, setDirection] = useState<'in'|'out'>('in'); const [reason, setReason] = useState(''); const [movements, setMovements] = useState<Movement[]>([]); const [movementFilter, setMovementFilter] = useState('Semua'); const [notice, setNotice] = useState('')
   const [pending,setPending]=useState(false),[showAll,setShowAll]=useState(false)
   const operation=useRef('')
@@ -23,7 +25,7 @@ export default function InventoryManagement({ role, initialCategory = 'toko', bu
   if(adjustment.trim()) { try { const amount=quantity(adjustment); delta=direction==='out'&&Number(amount)!==0?'-'+amount:amount } catch { amountError='Masukkan jumlah positif dengan maksimal 3 angka desimal.' } }
   const businessName = business.name; const selected = products.find(p => p.id === selectedId) || products[0]; const result = amountError ? NaN : selected ? adjustedStock(selected.stock,delta) : 0; const lowStock = products.filter(p => p.stock <= p.minStock); const categories = ['Semua kategori', ...Array.from(new Set(products.map(p => p.category)))]; const filtered = useMemo(() => products.filter(p => `${p.name} ${p.sku}`.toLowerCase().includes(query.toLowerCase()) && (category === 'Semua kategori' || p.category === category) && (condition === 'Semua kondisi' || (condition === 'Habis' ? p.stock === 0 : condition === 'Menipis' ? p.stock > 0 && p.stock <= p.minStock : p.stock > p.minStock))), [products, query, category, condition]); const filteredMovements = movementFilter === 'Semua' ? movements : movements.filter(m => m.type === movementFilter)
   const conditionLabel = (p: Product) => p.stock === 0 ? 'Habis' : p.stock <= p.minStock ? 'Menipis' : 'Cukup'
-  const saveAdjustment = async () => {if(pending||!selected||!reason.trim()||!Number.isFinite(result)||result<0||Number(delta)===0)return;setPending(true);operation.current ||= crypto.randomUUID();try{const form=new FormData();form.set('id',selected.id);form.set('revision',String(selected.stockRevision));form.set('request',operation.current);form.set('delta',delta);form.set('kind',direction);form.set('reason',reason);const response=await moveCatalogStock(form);setNotice(response.error||response.success||'');if(response.product){setProducts(items=>items.map(p=>p.id===selected.id?response.product!:p));setAdjustment('');setReason('');operation.current='';router.refresh()}}catch{setNotice('Status belum pasti. Muat ulang sebelum mencoba lagi.')}finally{setPending(false)}}
+  const saveAdjustment = async () => {if(pending||!selected||!reason.trim()||!Number.isFinite(result)||result<0||Number(delta)===0)return;setPending(true);operation.current ||= crypto.randomUUID();try{const form=new FormData();form.set('id',selected.id);form.set('revision',String(selected.stockRevision));form.set('request',operation.current);form.set('delta',delta);form.set('kind',hasPermission(role, permissions, 'inventory:create') ? direction : 'adjustment');form.set('reason',reason);const response=await moveCatalogStock(form);setNotice(response.error||response.success||'');if(response.product){setProducts(items=>items.map(p=>p.id===selected.id?response.product!:p));setAdjustment('');setReason('');operation.current='';router.refresh()}}catch{setNotice('Status belum pasti. Muat ulang sebelum mencoba lagi.')}finally{setPending(false)}}
   const openStockChange=()=>{if(pending)return;setDirection('in');setAdjustment('');setReason('');operation.current='';document.getElementById('adjustment')?.scrollIntoView({behavior:'smooth'})}
 
   return <div className="w-full">
@@ -37,9 +39,9 @@ export default function InventoryManagement({ role, initialCategory = 'toko', bu
                 <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl text-white">Manajemen stok</h1>
                 <p className="mt-1 text-xs sm:text-sm text-[#c5cbd5]">Pantau persediaan dan telusuri setiap perubahan jumlah barang.</p>
               </div>
-              <button className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#1835d9] px-4 text-xs sm:text-sm font-normal text-white hover:bg-[#132c9e] transition shadow-xs active:scale-95" disabled={pending} onClick={openStockChange}>
+              {canMove && (<button className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#1835d9] px-4 text-xs sm:text-sm font-normal text-white hover:bg-[#132c9e] transition shadow-xs active:scale-95" disabled={pending} onClick={openStockChange}>
                 ＋ Catat perubahan stok
-              </button>
+              </button>)}
             </div>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -106,9 +108,9 @@ export default function InventoryManagement({ role, initialCategory = 'toko', bu
                           </span>
                         </td>
                         <td data-label="Tindakan" data-actions="" className="px-3 py-3">
-                          <button className="font-normal text-[#24cbc5] hover:underline" onClick={() => { setSelectedId(p.id); document.getElementById('adjustment')?.scrollIntoView({ behavior: 'smooth' }) }}>
+                          {canMove && (<button className="font-normal text-[#24cbc5] hover:underline" onClick={() => { setSelectedId(p.id); document.getElementById('adjustment')?.scrollIntoView({ behavior: 'smooth' }) }}>
                             Sesuaikan →
-                          </button>
+                          </button>)}
                         </td>
                       </tr>
                     ))}
@@ -119,7 +121,7 @@ export default function InventoryManagement({ role, initialCategory = 'toko', bu
             </section>
 
             <div className="mt-6 grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-[.9fr_1.1fr]">
-              <section id="adjustment" className="min-w-0 rounded-2xl border border-[#454d5b] bg-[#273242] p-5 shadow-sm">
+              {canMove && (<section id="adjustment" className="min-w-0 rounded-2xl border border-[#454d5b] bg-[#273242] p-5 shadow-sm">
                 <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-3 py-1 text-xs font-normal text-amber-400">Validasi penyesuaian</span>
                 <h2 className="mt-4 text-lg font-normal text-white">Catat perubahan stok</h2>
                 <p className="mt-1 text-xs sm:text-sm text-[#a4a7ac]">Catat penambahan atau pengurangan barang beserta alasannya. Penjualan POS tercatat otomatis pada riwayat.</p>
@@ -166,7 +168,7 @@ export default function InventoryManagement({ role, initialCategory = 'toko', bu
                   <button disabled={pending || !selected || !Number.isFinite(result) || result < 0 || Number(delta) === 0 || !reason.trim()} className="h-10 rounded-xl bg-[#1835d9] px-4 text-xs sm:text-sm font-normal text-white hover:bg-[#132c9e] transition disabled:opacity-40" onClick={saveAdjustment}>Simpan perubahan stok</button>
                 </div>
                 {notice && <p className="mt-3 text-xs text-[#24cbc5]">{notice}</p>}
-              </section>
+              </section>)}
 
               <section className="min-w-0 rounded-2xl border border-[#454d5b] bg-[#273242] p-5 shadow-sm">
                 <div className="flex items-start justify-between">

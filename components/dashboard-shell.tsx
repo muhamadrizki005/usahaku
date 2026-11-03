@@ -29,6 +29,7 @@ import {
 } from './dashboard-chrome'
 import { dashboardNavigation } from './dashboard-navigation'
 import { signOut } from '@/app/actions'
+import { hasPermission } from '@/lib/auth/rbac'
 import { roleNames } from '@/lib/auth/permissions'
 import { saleCode, type Sale } from '@/lib/pos'
 import type { CatalogProduct } from '@/lib/catalog'
@@ -77,7 +78,7 @@ export function DashboardShell({
   const [optimisticPath, setOptimisticPath] = useState<string | null>(null)
   const [publishedActivity, setActivity] = useState<Activity | null>(null)
   const [assistantVisible, setAssistantVisible] = useState(false)
-  const assistantAllowed = business.category === 'store' && (member.role === 'owner' || member.role === 'admin')
+  const assistantAllowed = business.category === 'store' && (hasPermission(member.role, member.permissions, 'reports:view') && hasPermission(member.role, member.permissions, 'products:view'))
 
   const activity =
     publishedActivity?.businessId === business.id ? publishedActivity : null
@@ -149,7 +150,7 @@ export function DashboardShell({
             {/* 2. TENGAH: Menu navigasi horizontal berada di tengah secara horizontal */}
             <div className="hidden min-[1536px]:flex min-w-0 flex-1 items-center justify-center">
               <DashboardTopNav
-                role={member.role}
+                role={member.role} permissions={member.permissions}
                 category={business.category}
                 onNavigate={navigate}
                 activePath={activePath}
@@ -311,7 +312,7 @@ export function DashboardShell({
                       {ownerName}
                     </span>
                     <span className="block text-[10px] text-[#c5cbd5]">
-                      {roleNames[member.role]}
+                      {roleNames[member.role] || member.role_name || 'Staf'}
                     </span>
                   </span>
                   <ChevronDown
@@ -341,7 +342,7 @@ export function DashboardShell({
                           {businessName}
                         </p>
                         <span className="mt-1 inline-block rounded-md bg-[#1835d9]/25 border border-[#1835d9]/40 px-2 py-0.5 text-[10px] font-normal text-[#24cbc5]">
-                          {roleNames[member.role]}
+                          {roleNames[member.role] || member.role_name || 'Staf'}
                         </span>
                       </div>
                     </div>
@@ -377,7 +378,7 @@ export function DashboardShell({
 
               {/* Mobile Drawer Navigation Toggle */}
               <DashboardMobileMenu
-                role={member.role}
+                role={member.role} permissions={member.permissions}
                 category={business.category}
                 onNavigate={navigate}
                 businessName={businessName}
@@ -391,7 +392,7 @@ export function DashboardShell({
         <div className="flex-1 flex items-start w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 gap-5 pt-2 pb-10">
           {/* Vertical Capsule Sidebar (Pill Rail with Asisten Bisnis AI & Pengaturan) */}
           <DashboardSidebar
-            role={member.role}
+            role={member.role} permissions={member.permissions}
             category={business.category}
             onNavigate={navigate}
             activePath={activePath}

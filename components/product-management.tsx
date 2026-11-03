@@ -5,6 +5,7 @@ import { productSkuPrefix } from '@/lib/product-sku'
 import { discountedPrice } from '@/lib/product-pricing'
 import { saveCatalogProduct, bulkCatalogProducts } from '@/app/catalog-actions'
 import { productCategories, defaultProductUnits, productSchema, formatQuantity, type CatalogProduct, type CatalogResult } from '@/lib/catalog'
+import { hasPermission } from '@/lib/auth/rbac'
 import type { Role } from '@/lib/auth/permissions'
 import type { Business } from '@/lib/validation'
 
@@ -20,6 +21,7 @@ const money = (value: number) => `Rp${value.toLocaleString('id-ID')}`
 
 export default function ProductManagement({
   role,
+  permissions = [],
   initialCategory = 'toko',
   business,
   initialProducts,
@@ -28,6 +30,7 @@ export default function ProductManagement({
   renderedAt,
 }: {
   role: Role
+  permissions?: string[]
   initialCategory?: Category
   business: Business
   initialProducts: Product[]
@@ -35,6 +38,9 @@ export default function ProductManagement({
   initialCustomUnits?: string[]
   renderedAt: string
 }) {
+  const canCreate = hasPermission(role, permissions, 'products:create')
+  const canEdit = hasPermission(role, permissions, 'products:edit')
+  const canDelete = hasPermission(role, permissions, 'products:delete')
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
   const [products, setProducts] = useState<Product[]>(initialProducts)
@@ -206,13 +212,13 @@ export default function ProductManagement({
           >
             <Download className="size-4" /> Ekspor produk
           </button>
-          <button
+          {canCreate && (<button
             type="button"
             onClick={openNew}
             className="inline-flex items-center gap-2 rounded-xl bg-[#1835d9] px-4 py-2.5 text-xs font-normal text-white shadow-xs transition hover:bg-[#132c9e] active:scale-95 sm:text-sm"
           >
             <Plus className="size-4" /> Tambah produk
-          </button>
+          </button>)}
         </div>
       </div>
 
@@ -278,20 +284,20 @@ export default function ProductManagement({
         {selected.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 bg-[#24cbc5]/10 px-4 py-3 text-sm text-[#24cbc5]">
             <strong>{selected.length} dipilih</strong>
-            <button
+            {canEdit && (<button
               type="button"
               onClick={bulkCategory}
               className="rounded-lg border border-[#24cbc5]/30 bg-[#273242] px-3 py-1.5 font-normal text-white"
             >
               Ubah kategori
-            </button>
-            <button
+            </button>)}
+            {canDelete && (<button
               type="button"
               onClick={() => bulkStatus(false)}
               className="rounded-lg border border-[#24cbc5]/30 bg-[#273242] px-3 py-1.5 font-normal text-white"
             >
               Nonaktifkan produk
-            </button>
+            </button>)}
             <button
               type="button"
               onClick={() => setSelected([])}
@@ -309,6 +315,7 @@ export default function ProductManagement({
                 <th className="w-12 px-4 py-3">
                   <input
                     type="checkbox"
+                    disabled={!canEdit && !canDelete}
                     checked={selectedAll}
                     onChange={e => setSelected(e.target.checked ? filtered.map(p => p.id) : [])}
                     aria-label="Pilih semua produk"
@@ -329,6 +336,7 @@ export default function ProductManagement({
                   <td data-label="Pilih produk" className="px-4 py-3">
                     <input
                       type="checkbox"
+                    disabled={!canEdit && !canDelete}
                       checked={selected.includes(product.id)}
                       onChange={e =>
                         setSelected(e.target.checked ? [...selected, product.id] : selected.filter(id => id !== product.id))
@@ -381,13 +389,13 @@ export default function ProductManagement({
                     )}
                   </td>
                   <td data-label="Tindakan" data-actions="" className="px-4 py-3">
-                    <button
+                    {canEdit && (<button
                       type="button"
                       onClick={() => setEditor(product)}
                       className="font-normal text-[#24cbc5] hover:underline"
                     >
                       Ubah
-                    </button>
+                    </button>)}
                   </td>
                 </tr>
               ))}
@@ -426,6 +434,7 @@ export default function ProductManagement({
         <ProductEditor
           key={editor?.id}
           product={editor}
+          canDeactivate={canDelete}
           availableCategories={availableCategories}
           availableUnits={availableUnits}
           fileRef={fileRef}
@@ -485,6 +494,7 @@ export default function ProductManagement({
 
 function ProductEditor({
   product,
+  canDeactivate,
   availableCategories,
   availableUnits,
   fileRef,
@@ -492,6 +502,7 @@ function ProductEditor({
   onSave,
 }: {
   product: Product | null
+  canDeactivate: boolean
   availableCategories: string[]
   availableUnits: string[]
   fileRef: React.RefObject<HTMLInputElement | null>
@@ -921,7 +932,7 @@ function ProductEditor({
                 Status produk
                 <CustomSelect
                   value={draft.active ? 'Aktif' : 'Nonaktif'}
-                  options={['Aktif', 'Nonaktif']}
+                  options={[{ value: 'Aktif', label: 'Aktif' }, { value: 'Nonaktif', label: 'Nonaktif', disabled: !canDeactivate }]}
                   onChange={val => update('active', val === 'Aktif')}
                   ariaLabel="Status produk"
                   className="mt-1.5 w-full"

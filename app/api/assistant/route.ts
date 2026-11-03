@@ -7,6 +7,10 @@ import { assistantLimit, geminiConfig, readAssistantContext } from '@/lib/assist
 import { GeminiError } from '@/lib/assistant-gemini'
 import { ReportError } from '@/lib/reports-server'
 
+import { resolveAccessMember } from '@/lib/access'
+import { hasPermission } from '@/lib/auth/rbac'
+import type { Member } from '@/lib/validation'
+
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 const headers = { 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff', Vary: 'Cookie' }
@@ -20,7 +24,9 @@ export async function POST(request: Request) {
   if (authError || !user) return fail('Silakan login kembali.', 401)
   const { data: member, error: memberError } = await client.from('business_members').select('business_id,role,active,must_change_password').eq('user_id', user.id).maybeSingle()
   if (memberError) return fail('Akses belum dapat diperiksa.', 502)
-  if (!member?.active || member.must_change_password || !['owner', 'admin'].includes(member.role)) return fail('Asisten hanya tersedia untuk pemilik dan admin toko yang aktif.', 403)
+  if (!member?.active || member.must_change_password ) return fail('Asisten memerlukan akun toko aktif dengan izin yang sesuai.', 403)
+  let access; try { access = await resolveAccessMember(client, member as Member) } catch { return fail('Akses belum dapat diperiksa.', 502) }
+  if (!hasPermission(access.role,access.permissions,'reports:view') || !hasPermission(access.role,access.permissions,'products:view')) return fail('Akses Asisten ditolak.', 403)
   const { data: business, error: businessError } = await client.from('businesses').select('category,onboarding_completed_at').eq('id', member.business_id).single()
   if (businessError || !business) return fail('Usaha belum dapat diperiksa.', 502)
   if (business.category !== 'store' || !business.onboarding_completed_at) return fail('Selesaikan pengaturan toko sebelum memakai Asisten.', 403)

@@ -16,14 +16,14 @@ import {
 import { rolesForPath, type Role } from '@/lib/auth/permissions'
 import { useReducedMotionPreference } from '@/lib/use-reduced-motion'
 
-export const topItemsForRole = (role: Role, category = 'store') =>
-  (category === 'restaurant' ? restaurantTopNavigationItems : topNavigationItems).filter(([, , path]) => rolesForPath(path).includes(role))
+export const topItemsForRole = (role: Role, category = 'store', permissions: string[] = []) =>
+  (category === 'restaurant' ? restaurantTopNavigationItems : topNavigationItems).filter(([, , path]) => (category === 'restaurant' ? rolesForPath(path).includes(role) : canAccessPath(path, role, permissions)))
 
-export const sidebarItemsForRole = (role: Role, category = 'store') =>
-  (category === 'restaurant' ? restaurantSidebarNavigationItems : sidebarNavigationItems).filter(([, , path]) => rolesForPath(path).includes(role))
+export const sidebarItemsForRole = (role: Role, category = 'store', permissions: string[] = []) =>
+  (category === 'restaurant' ? restaurantSidebarNavigationItems : sidebarNavigationItems).filter(([, , path]) => (category === 'restaurant' ? rolesForPath(path).includes(role) : canAccessPath(path, role, permissions)))
 
-export const dashboardItemsForRole = (role: Role, category = 'store') =>
-  (category === 'restaurant' ? [...restaurantTopNavigationItems, ...restaurantSidebarNavigationItems] : dashboardNavigation).filter(([, , path], index, self) => rolesForPath(path).includes(role) && self.findIndex(([, , p]) => p === path) === index)
+export const dashboardItemsForRole = (role: Role, category = 'store', permissions: string[] = []) =>
+  (category === 'restaurant' ? [...restaurantTopNavigationItems, ...restaurantSidebarNavigationItems] : dashboardNavigation).filter(([, , path], index, self) => (category === 'restaurant' ? rolesForPath(path).includes(role) : canAccessPath(path, role, permissions)) && self.findIndex(([, , p]) => p === path) === index)
 
 export function DashboardBrand({ onHome }: { onHome: () => void }) {
   return (
@@ -48,11 +48,13 @@ export function DashboardBrand({ onHome }: { onHome: () => void }) {
 
 export function DashboardTopNav({
   role,
+  permissions = [],
   onNavigate,
   activePath,
   category = 'store',
 }: {
   role: Role
+  permissions?: string[]
   onNavigate: (path: string) => void
   activePath?: string
   category?: string
@@ -60,7 +62,7 @@ export function DashboardTopNav({
   const pathname = usePathname()
   const currentPath = activePath || pathname
   const reducedMotion = useReducedMotionPreference()
-  const items = topItemsForRole(role, category)
+  const items = topItemsForRole(role, category, permissions)
 
   return (
     <nav
@@ -101,12 +103,14 @@ export function DashboardTopNav({
 
 export function DashboardSidebar({
   role,
+  permissions = [],
   onNavigate,
   activePath,
   category = 'store',
   assistantVisible,
 }: {
   role: Role
+  permissions?: string[]
   onNavigate: (path: string) => void
   activePath?: string
   category?: string
@@ -114,7 +118,7 @@ export function DashboardSidebar({
 }) {
   const pathname = usePathname()
   const currentPath = activePath || pathname
-  const items = sidebarItemsForRole(role, category)
+  const items = sidebarItemsForRole(role, category, permissions)
 
   if (items.length === 0) return null
 
@@ -156,12 +160,14 @@ export function DashboardSidebar({
 
 function NavigationItems({
   role,
+  permissions = [],
   onNavigate,
   activePath,
   category = 'store',
   assistantVisible,
 }: {
   role: Role
+  permissions?: string[]
   onNavigate: (path: string) => void
   activePath?: string
   category?: string
@@ -169,7 +175,7 @@ function NavigationItems({
 }) {
   const pathname = usePathname()
   const currentPath = activePath || pathname
-  return dashboardItemsForRole(role, category).map(([label, Icon, path]) => {
+  return dashboardItemsForRole(role, category, permissions).map(([label, Icon, path]) => {
     const assistantToggle = path === '/dashboard/assistant' && assistantVisible !== undefined
     const active =
       assistantToggle ? assistantVisible : path === '/dashboard/settings' ? currentPath === '/dashboard/settings' || (currentPath.startsWith('/dashboard/settings?') && !currentPath.includes('/staff')) : currentPath === path || (path !== '/dashboard' && currentPath.startsWith(path + '/'))
@@ -194,12 +200,14 @@ function NavigationItems({
 
 export function DashboardMobileMenu({
   role,
+  permissions = [],
   onNavigate,
   businessName,
   category = 'store',
   assistantVisible,
 }: {
   role: Role
+  permissions?: string[]
   onNavigate: (path: string) => void
   businessName: string
   category?: string
@@ -291,7 +299,7 @@ export function DashboardMobileMenu({
               <p className="mb-4 truncate text-sm text-[#c5cbd5]">{businessName}</p>
               <nav aria-label="Navigasi dashboard mobile" className="flex flex-col gap-1 overflow-y-auto">
                 <NavigationItems
-                  role={role}
+                  role={role} permissions={permissions}
                   category={category}
                   assistantVisible={assistantVisible}
                   onNavigate={(path) => {

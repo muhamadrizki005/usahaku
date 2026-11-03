@@ -9,7 +9,7 @@ import DashboardSection from '@/components/dashboard-section'
 type ProductPageProps = { searchParams: Promise<{ category?: string }> }
 
 export default async function ProductsPage({ searchParams }: ProductPageProps) {
-  const { business, member, supabase } = await requireBusiness(rolesForPath('/dashboard/products'))
+  const { business, member, supabase } = await requireBusiness(undefined, false, 'products:view')
   if (business.category === 'restaurant') return <DashboardSection title="Menu"><RestaurantResources resource="menu" menu={await readRestaurantMenu(supabase, business.id)} /></DashboardSection>
 
   const { category } = await searchParams
@@ -23,6 +23,7 @@ export default async function ProductsPage({ searchParams }: ProductPageProps) {
   return (
     <ProductManagement
       role={member.role}
+      permissions={member.permissions}
       initialCategory={initialCategory}
       business={business}
       initialProducts={products}

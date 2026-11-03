@@ -1,4 +1,5 @@
 import type { Member } from '@/lib/validation'
+import { hasPermission } from './rbac'
 
 export type Role = Member['role']
 export const roleNames: Record<string, string> = {
@@ -9,8 +10,7 @@ export const roleNames: Record<string, string> = {
 
 export function homeForRole(role: string, permissions?: string[]): string {
   if (role === 'owner') return '/dashboard'
-  if (role === 'cashier') return '/dashboard/pos'
-  if (role === 'admin') return '/dashboard'
+  if (!permissions) return '/account?notice=permissions'
 
   if (permissions && Array.isArray(permissions)) {
     if (permissions.includes('overview:view')) return '/dashboard'
@@ -22,7 +22,7 @@ export function homeForRole(role: string, permissions?: string[]): string {
     if (permissions.includes('reports:view')) return '/dashboard/reports'
   }
 
-  return '/dashboard'
+  return '/account?notice=permissions'
 }
 
 export function rolesForPath(path: string): string[] {
@@ -32,6 +32,8 @@ export function rolesForPath(path: string): string[] {
 }
 
 // Reserved for the future transaction module: cashiers retain access to their own sales.
-export function transactionVisibility(role: string): 'business' | 'own' {
-  return role === 'cashier' ? 'own' : 'business'
+export function transactionVisibility(role: string, permissions: string[] = []): 'business' | 'own' {
+  if (role === 'owner' || role === 'admin') return 'business'
+  if (['overview:view','reports:view','customers:view'].some(permission => hasPermission(role, permissions, permission))) return 'business'
+  return hasPermission(role, permissions, 'transactions:cancel') && hasPermission(role, permissions, 'transactions:refund') ? 'business' : 'own'
 }

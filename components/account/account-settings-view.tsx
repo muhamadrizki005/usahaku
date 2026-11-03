@@ -120,7 +120,7 @@ export function AccountSettingsView({
 
   const displayName = name || 'Pengguna'
   const displayRole = member?.role
-    ? roleNames[member.role]
+    ? roleNames[member.role] || member.role_name || 'Staf'
     : user.app_metadata?.account_type === 'staff'
     ? 'Staf Usaha'
     : 'Pemilik Usaha'

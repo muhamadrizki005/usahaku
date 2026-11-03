@@ -6,6 +6,7 @@ import { CustomSelect, type CustomSelectOption } from '@/components/ui/custom-se
 import { saveCustomer, searchPosCustomers } from '@/app/customer-actions'
 import { customerSchema, normalizeCustomerPhone, type PosCustomer } from '@/lib/customers'
 import type { Member } from '@/lib/validation'
+import { hasPermission } from '@/lib/auth/rbac'
 
 interface PosCustomerPickerProps {
   value: PosCustomer | null
@@ -77,7 +78,7 @@ export default function PosCustomerPicker({ value, onChange, member }: PosCustom
         <label className="text-xs font-normal text-[#c5cbd5]" htmlFor="customer">
           Pelanggan
         </label>
-        {(member?.role === 'owner' || member?.role === 'admin') && <button
+        {member && hasPermission(member.role, member.permissions, 'customers:view') && hasPermission(member.role, member.permissions, 'customers:create') && <button
           type="button"
           onClick={() => setShowModal(true)}
           className="inline-flex items-center gap-1.5 rounded-full border border-[#1835d9] bg-[#1835d9]/10 px-2.5 py-1 text-xs font-normal text-[#24cbc5] hover:bg-[#1835d9]/25 hover:border-[#2b4af5] hover:text-white transition-all cursor-pointer shadow-xs"

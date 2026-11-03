@@ -7,10 +7,10 @@ import { redirect } from 'next/navigation'
 type InventoryPageProps = { searchParams: Promise<{ category?: string }> }
 
 export default async function InventoryPage({ searchParams }: InventoryPageProps) {
-  const { business, member, supabase } = await requireBusiness(rolesForPath('/dashboard/inventory'))
+  const { business, member, supabase } = await requireBusiness(undefined, false, 'inventory:view')
   if (business.category === 'restaurant') redirect('/dashboard/restaurant/tables')
 
   const { category } = await searchParams
   const initialCategory = 'toko' as const
-  return <InventoryManagement role={member.role} initialCategory={initialCategory} business={business} initialProducts={await readProducts(supabase,business.id)} initialMovements={await readStockHistory(supabase,business.id)} memberName={member.name} />
+  return <InventoryManagement role={member.role} permissions={member.permissions} initialCategory={initialCategory} business={business} initialProducts={await readProducts(supabase,business.id)} initialMovements={await readStockHistory(supabase,business.id)} memberName={member.name} />
 }

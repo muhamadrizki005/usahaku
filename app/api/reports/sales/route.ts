@@ -1,3 +1,6 @@
+import { resolveAccessMember } from '@/lib/access'
+import { hasPermission } from '@/lib/auth/rbac'
+import type { Member } from '@/lib/validation'
 import {createClient} from '@/lib/supabase/server'
 import {parseReportFilter,reportCsv} from '@/lib/reports'
 import {readReport,ReportError,urlReportParams} from '@/lib/reports-server'
@@ -9,7 +12,9 @@ export async function GET(request:Request){
   if(authError||!user)return Response.json({error:'Silakan login.'},{status:401,headers})
   const {data:member,error:memberError}=await client.from('business_members').select('*').eq('user_id',user.id).maybeSingle()
   if(memberError)return Response.json({error:'Akses belum dapat diperiksa.'},{status:502,headers})
-  if(!member||!member.active||member.must_change_password||!['owner','admin'].includes(member.role))return Response.json({error:'Akses laporan ditolak.'},{status:403,headers})
+  if(!member||!member.active||member.must_change_password)return Response.json({error:'Akses laporan ditolak.'},{status:403,headers})
+  let access;try { access = await resolveAccessMember(client, member as Member) } catch { return Response.json({error:'Akses belum dapat diperiksa.'},{status:502,headers}) }
+  if (!hasPermission(access.role,access.permissions,'reports:view') || !hasPermission(access.role,access.permissions,'reports:export')) return Response.json({error:'Akses ekspor ditolak.'},{status:403,headers})
   let filter;try{filter=parseReportFilter(urlReportParams(new URL(request.url).searchParams))}catch(e){return Response.json({error:(e as Error).message},{status:400,headers})}
   const {data:business,error:businessError}=await client.from('businesses').select('name,onboarding_completed_at').eq('id',member.business_id).single()
   if(businessError||!business)return Response.json({error:'Usaha belum dapat dibaca.'},{status:502,headers})
