@@ -54,7 +54,8 @@ export default function SaleReceipt({ sale, business, id }: { sale: Sale; busine
       </dl>
       <dl className="receipt-payment receipt-double-rule">
         <ReceiptRow label="TOTAL BAYAR">{rupiah(Number(sale.total))}</ReceiptRow>
-        <ReceiptRow label={paymentLabel[sale.payment].toUpperCase()}>{rupiah(Number(sale.received))}</ReceiptRow>
+        {Number(sale.deposit_amount)>0 && <><ReceiptRow label={`DP (${sale.deposit_payment ? paymentLabel[sale.deposit_payment] : 'Terkonfirmasi'})`}>{rupiah(Number(sale.deposit_amount))}</ReceiptRow><ReceiptRow label="SISA TAGIHAN">{rupiah(Number(sale.total)-Number(sale.deposit_amount))}</ReceiptRow></>}
+        <ReceiptRow label={paymentLabel[sale.payment].toUpperCase()}>{rupiah(Number(sale.balance_received ?? sale.received))}</ReceiptRow>
         <ReceiptRow label="KEMBALIAN">{rupiah(Number(sale.change))}</ReceiptRow>
       </dl>
       {sale.status === 'cancelled' && <div className="receipt-refund receipt-dashed-rule">

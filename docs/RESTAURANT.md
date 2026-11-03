@@ -1,5 +1,9 @@
 # Restoran / Cafe
 
+## Reservasi dan DP, 3 November 2026
+
+Reservasi internal, DP manual, penautan pesanan, pelunasan, pembatalan/refund dan tidak hadir ditambahkan pada branch `feat/restaurant-reservations`. Aturan, migrasi tambahan, batas laporan dan pengujian ada di [RESTAURANT-RESERVATIONS.md](RESTAURANT-RESERVATIONS.md). Catatan cakupan awal di bawah merupakan riwayat tahap operasional inti; pernyataan bahwa reservasi/DP belum dibangun telah digantikan oleh tahap ini. Bahan baku/resep tetap tidak termasuk.
+
 ## Perbaikan audit pembacaan riwayat dan pembayaran
 
 Audit 31 Oktober menemukan: lebih dari 5.000 pesanan membuat Ringkasan/Pesanan & kasir error, halaman kedua kosong setelah hasil menyusut menjadi satu halaman, dan nominal berisi huruf menghasilkan RpNaN. Ketiganya ditangani tanpa perubahan palet atau tata letak.

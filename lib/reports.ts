@@ -42,6 +42,11 @@ export function reportCsv(data:ReportData,filter:ReportFilter,businessName:strin
   for(const s of data.sales)row([saleCode(s),saleDate(s.created_at),s.actor_name,s.customer,paymentLabel[s.payment],s.status==='completed'?'Selesai':'Dibatalkan',s.subtotal,s.discount,s.tax_amount||0,s.total,s.status==='completed'?Number(s.total)-Number(s.tax_amount||0):0,s.cancelled_at?saleDate(s.cancelled_at):'',s.cancellation_reason||''])
   row([]);row(['REFUND']);row(['Referensi','Tanggal penjualan WIB','Tanggal pembatalan WIB','Petugas pembatalan','Pelanggan','Pembayaran','Refund manual rupiah','Alasan'])
   for(const s of data.refunds)row([saleCode(s),saleDate(s.created_at),saleDate(s.cancelled_at!),s.cancelled_by_name,s.customer,paymentLabel[s.payment],s.refund_amount,s.cancellation_reason])
+  if(data.sales.some(s=>Number(s.deposit_amount)>0)){
+    row([]);row(['DP PADA PENJUALAN']);row(['Referensi','DP rupiah','Metode DP','Metode pelunasan','Diterima saat pelunasan rupiah','Kembalian rupiah'])
+    for(const s of data.sales.filter(s=>Number(s.deposit_amount)>0))row([saleCode(s),s.deposit_amount,s.deposit_payment?paymentLabel[s.deposit_payment]:'',paymentLabel[s.payment],s.balance_received??s.received,s.change])
+    row(['CATATAN DP','DP sudah termasuk total transaksi, bukan tambahan omzet. Filter metode mengikuti pelunasan, bukan arus kas DP. Penerimaan/refund DP sebelum pelunasan dicatat di Reservasi.'])
+  }
   row([]);row(['PRODUK']);row(['Produk','SKU','Satuan','Jumlah terjual','Nilai sebelum diskon rupiah'])
   for(const p of rankProducts(data,'gross'))row([p.name,p.sku,p.unit,reportUnits(p.quantity),p.gross.toString()])
   row([]);row(['CATATAN','Omzet tidak termasuk pajak. Total transaksi termasuk pajak. Omzet mengecualikan pembatalan dari tanggal asal. Refund mengikuti tanggal pembatalan dan tidak dikurangi ulang. Harga modal/HPP belum tersedia; ini bukan laporan laba.'])

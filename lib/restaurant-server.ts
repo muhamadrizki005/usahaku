@@ -18,6 +18,17 @@ export const readRestaurantTables = (client: SupabaseClient, id: string) => rows
 export async function readRestaurantOrdersPage(client: SupabaseClient, id: string, filters: RestaurantOrderFilters = { status: 'open', query: '', page: 0 }): Promise<RestaurantOrderPage> {
   const { data, error } = await client.rpc('read_restaurant_orders_page', { target_id: id, order_status: filters.status, search_text: filters.query, requested_page: filters.page }).abortSignal(AbortSignal.timeout(15000)).retry(false)
   if (error || !data) throw Error('Daftar pesanan belum dapat dibaca. Periksa koneksi dan migrasi pembacaan restoran.')
+  const linked = data.orders.filter((order: { reservation_id?: string | null }) => order.reservation_id).map((order: { reservation_id: string }) => order.reservation_id)
+  if (linked.length) {
+    const reservations = await client.from('restaurant_reservations').select('id,deposit_amount,deposit_refunded').eq('business_id', id).in('id', linked)
+    if (reservations.error) throw Error('DP pesanan belum dapat dibaca. Muat ulang sebelum pembayaran.')
+    data.orders = data.orders.map((order: { reservation_id?: string | null }) => {
+      if (!order.reservation_id) return order
+      const r = reservations.data.find(r => r.id === order.reservation_id)
+      if (!r) throw Error('DP pesanan tidak tersedia. Muat ulang atau hubungi owner sebelum pembayaran.')
+      return { ...order, deposit_amount: Number(r.deposit_amount) - Number(r.deposit_refunded) }
+    })
+  }
   return data
 }
 export async function readRestaurantOverview(client: SupabaseClient, id: string): Promise<RestaurantOverviewData> {
@@ -25,8 +36,11 @@ export async function readRestaurantOverview(client: SupabaseClient, id: string)
   if (error || !data) throw Error('Ringkasan restoran belum dapat dibaca. Periksa koneksi dan migrasi pembacaan restoran.')
   return data
 }
-export async function readRestaurantUsage(client: SupabaseClient, id: string): Promise<{ id: string; occupied: boolean }[]> {
+export async function readRestaurantUsage(client: SupabaseClient, id: string): Promise<{ id: string; occupied: boolean; reserved?: boolean }[]> {
   const { data, error } = await client.rpc('restaurant_table_usage', { target_id: id }).abortSignal(AbortSignal.timeout(15000)).retry(false)
   if (error || !data) throw Error('Ketersediaan meja belum dapat dibaca. Muat ulang sebelum menerima pesanan.')
-  return data
+  const now = new Date(), end = new Date(now.getTime() + 90 * 60000)
+  const availability = await client.rpc('restaurant_reservation_availability', { target_id: id, from_ts: now.toISOString(), to_ts: end.toISOString(), guest_count: 1, exclude_id: null }).abortSignal(AbortSignal.timeout(15000)).retry(false)
+  if (availability.error) throw Error('Reservasi meja belum dapat diperiksa. Muat ulang sebelum menerima pesanan.')
+  return data.map((table: { id: string; occupied: boolean }) => ({ ...table, reserved: !table.occupied && availability.data.some((slot: { id: string; available: boolean }) => slot.id === table.id && !slot.available) }))
 }

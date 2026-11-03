@@ -59,11 +59,12 @@ interface StaffManagementProps {
 }
 
 const emptyRoleCounts: Record<string, number> = {}
+const emptyBusinessRoles: BusinessRole[] = []
 
 export function StaffManagement({
   members,
   business,
-  initialRoles = [],
+  initialRoles = emptyBusinessRoles,
   roleCounts = emptyRoleCounts,
 }: StaffManagementProps) {
   const router = useRouter()
