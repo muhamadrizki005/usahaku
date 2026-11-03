@@ -62,7 +62,7 @@ test('foundation accounts through browser, server actions, and hosted RLS', asyn
     await target.goto('/login?mode=staff')
     await target.getByLabel('Kode toko', { exact: true }).fill(code)
     await target.getByLabel('Username', { exact: true }).fill(username)
-    await target.getByLabel('Kata sandi / sementara', { exact: true }).fill(secret)
+    await target.getByLabel('Kata sandi', { exact: true }).fill(secret)
     await target.getByRole('button', { name: 'Masuk', exact: true }).click()
   }
   async function changePassword(target: Page, current: string, next: string) {
@@ -91,16 +91,17 @@ test('foundation accounts through browser, server actions, and hosted RLS', asyn
     await target.getByRole('button', { name: 'Buka dashboard' }).click()
     await expect(target).toHaveURL(/\/dashboard(?:\?category=toko)?$/)
     const business = checked(await admin.from('businesses').select('*').eq('owner_id', userId).single())!
-    expect(business.address).toBe('Jalan Uji 1, Bandung, Jawa Barat')
+    expect(business.address).toBe('Jalan Uji 1, Kota Bandung, Jawa Barat')
     businessIds.add(business.id)
     return business
   }
   async function createStaff(target: Page, username: string, role: 'cashier' | 'admin') {
     await target.goto('/dashboard/settings/staff')
-    await target.getByRole('button', { name: 'Tambah staf', exact: true }).click()
+    await target.getByRole('button', { name: 'Tambah staf', exact: true }).first().click()
     await target.getByLabel('Nama staf', { exact: true }).fill(`UI ${role}`)
     await target.getByLabel('Username', { exact: true }).fill(username)
-    await target.getByLabel('Peran', { exact: true }).selectOption(role)
+    await target.getByLabel('Peran staf', { exact: true }).click()
+    await target.getByRole('option', { name: role === 'admin' ? 'Admin Toko' : 'Petugas Kasir', exact: true }).click()
     await target.getByRole('button', { name: 'Buat akses staf', exact: true }).click()
     const field = target.getByTestId('temporary-password')
     await expect(field).toHaveCount(1)
@@ -166,7 +167,7 @@ test('foundation accounts through browser, server actions, and hosted RLS', asyn
     await expect(pageA.getByRole('heading', { name: 'Usaha apa yang Anda jalankan?' })).toBeVisible()
     await pageA.screenshot({ path: 'artifacts/qa-onboarding.png', fullPage: true })
     await compareZipView(browser, pageA, 'onboarding', '/onboarding')
-    await expect(pageA.getByRole('button', { name: /Restoran \/ Cafe/ })).toBeDisabled()
+    await expect(pageA.getByRole('button', { name: /Restoran \/ Cafe/ })).toBeEnabled()
     await pageA.getByRole('button', { name: 'Lanjutkan', exact: true }).click()
     await expect(pageA).toHaveURL(/\/onboarding\/identity\?category=toko$/)
     await pageA.screenshot({ path: 'artifacts/qa-onboarding-identity.png', fullPage: true })
@@ -180,7 +181,7 @@ test('foundation accounts through browser, server actions, and hosted RLS', asyn
     await compareZipView(browser, pageB, 'dashboard', '/dashboard', '[TEST UI] Warung B')
     await expect(pageB.locator('main')).not.toContainText('[TEST UI] Warung A')
     await pageA.goto('/onboarding/identity')
-    await expect(pageA.getByLabel('Nama usaha *', { exact: true })).toHaveValue('[TEST UI] Warung A')
+    await expect(pageA).toHaveURL(/\/dashboard$/)
     await pageA.goto('/dashboard')
     const countA = checked(await admin.from('businesses').select('id').eq('owner_id', a.userId))!
     expect(countA.length).toBe(1)
@@ -208,19 +209,16 @@ test('foundation accounts through browser, server actions, and hosted RLS', asyn
     await pageA.screenshot({ path: 'artifacts/qa-staff.png', fullPage: true })
     await compareZipView(browser, pageA, 'staff', '/onboarding/setup?category=toko')
     // Client-side options are not a security boundary: submit an injected owner role.
-    await pageA.getByRole('button', { name: 'Tambah staf', exact: true }).click()
+    await pageA.getByRole('button', { name: 'Tambah staf', exact: true }).first().click()
     await pageA.getByLabel('Nama staf', { exact: true }).fill('Forbidden Owner')
     await pageA.getByLabel('Username', { exact: true }).fill('forbidden_owner')
-    await pageA.getByLabel('Peran', { exact: true }).evaluate((select: HTMLSelectElement) => {
-      select.add(new Option('Owner', 'owner'))
-      select.value = 'owner'
-    })
+    await pageA.locator('input[type=hidden][name=role]').evaluate((input: HTMLInputElement) => { input.value = 'owner' })
     await pageA.getByRole('button', { name: 'Buat akses staf' }).click()
     await expect(pageA.locator('main [role="alert"]')).toBeVisible()
     const illicitMember = checked(await admin.from('business_members').select('id').eq('business_id', businessA.id).eq('username', 'forbidden_owner'))!
     expect(illicitMember.length).toBe(0)
     await pageA.goto('/dashboard/settings/staff')
-    await pageA.getByRole('button', { name: 'Tambah staf', exact: true }).click()
+    await pageA.getByRole('button', { name: 'Tambah staf', exact: true }).first().click()
     await pageA.getByLabel('Nama staf', { exact: true }).fill('Duplicate User')
     await pageA.getByLabel('Username', { exact: true }).fill('cashier_ui')
     await pageA.getByRole('button', { name: 'Buat akses staf' }).click()
@@ -301,7 +299,7 @@ test('foundation accounts through browser, server actions, and hosted RLS', asyn
     await expect(pageA.getByTestId('staff-cashier_ui').getByText('Nonaktif', { exact: true })).toBeVisible()
     await pageCashier.goto('/dashboard/pos')
     await expect(pageCashier).toHaveURL(/\/account$/)
-    await expect(pageCashier.getByRole('heading', { name: 'Akses dinonaktifkan' })).toBeVisible()
+    await expect(pageCashier.getByText('Akses Dinonaktifkan', { exact: true })).toBeVisible()
     const cashierSdk = newClient()
     checked(await cashierSdk.auth.signInWithPassword({ email: `${businessA.code.toLowerCase()}.cashier_ui@staff.usahaku.invalid`, password: cashierPassword }))
     expect(checked(await cashierSdk.from('businesses').select('id'))!.length).toBe(0)

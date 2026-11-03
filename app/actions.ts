@@ -1,6 +1,6 @@
 'use server'
 
-import { normalizeRoleKey } from '@/lib/auth/rbac'
+import { builtInRole, findBusinessRole, roleValue, normalizeRoleKey } from '@/lib/auth/rbac'
 import { randomBytes } from 'node:crypto'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
@@ -219,9 +219,13 @@ export async function saveBusinessHours(_: ActionState, form: FormData): Promise
 }
 
 export async function createStaff(_: ActionState, form: FormData): Promise<ActionState> {
-  const { business, user } = await requireBusiness(['owner'], true)
+  const { business, user, supabase } = await requireBusiness(['owner'], true)
   const parsed = staffSchema.safeParse(fields(form))
   if (!parsed.success) return invalid(parsed.error)
+  const { data: roles, error: roleError } = await supabase.from('business_roles').select('*').eq('business_id', business.id)
+  const assignedRole = findBusinessRole(parsed.data.role, roles || [])
+  if (roleError || !assignedRole || builtInRole(parsed.data.role) === 'owner') return { error: 'Role staf tidak tersedia pada usaha ini. Muat ulang daftar role.' }
+  parsed.data.role = roleValue(assignedRole)
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return { error: 'Pengelolaan staf belum dikonfigurasi pada server.' }
   const admin = createAdminClient()
   const temporaryPassword = randomBytes(18).toString('base64url')
@@ -453,19 +457,9 @@ export async function updateStaffRole(memberId: string, newRole: string): Promis
     return { error: 'Tidak dapat mengubah role staf menjadi Pemilik.' }
   }
 
-  const { data: bRoles } = await supabase
-    .from('business_roles')
-    .select('id, name')
-    .eq('business_id', business.id)
-
-  const isValidRole =
-    normRole === 'admin' ||
-    normRole === 'cashier' ||
-    bRoles?.some(r => r.id === newRole || normalizeRoleKey(r.name) === normRole)
-
-  if (!isValidRole && bRoles && bRoles.length > 0) {
-    return { error: 'Role yang dipilih tidak tersedia pada usaha ini.' }
-  }
+  const { data: roles, error: roleError } = await supabase.from('business_roles').select('*').eq('business_id', business.id)
+  const assigned = findBusinessRole(newRole, roles || [])
+  if (roleError || !assigned) return { error: 'Role yang dipilih tidak tersedia pada usaha ini.' }
 
   const admin = createAdminClient()
   const { data: target } = await admin
@@ -480,7 +474,7 @@ export async function updateStaffRole(memberId: string, newRole: string): Promis
 
   const { error } = await admin
     .from('business_members')
-    .update({ role: newRole, changed_by: user.id })
+    .update({ role: roleValue(assigned), changed_by: user.id })
     .eq('id', memberId)
     .eq('business_id', business.id)
 

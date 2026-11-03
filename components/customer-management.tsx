@@ -8,6 +8,7 @@ import { CustomSelect } from '@/components/ui/custom-select'
 import {saveCustomer} from '@/app/customer-actions'
 import {customerSchema,normalizeCustomerPhone,matchesCustomer,type Customer} from '@/lib/customers'
 import type {Business, Member} from '@/lib/validation'
+import { hasPermission } from '@/lib/auth/rbac'
 import DashboardSection from './dashboard-section'
 
 const card='rounded-2xl border border-[#454d5b] bg-[#273242] p-5 shadow-sm'
@@ -15,6 +16,7 @@ const input='mt-1 w-full rounded-lg border border-[#454d5b] bg-[#273242] px-3 py
 const button='rounded-xl border border-[#454d5b] px-4 py-2.5 text-sm font-normal disabled:opacity-40'
 export default function CustomerManagement({initialCustomers,member,business}:{initialCustomers:Customer[];member:Member;business?:Business}){
   const [customers,setCustomers]=useState(initialCustomers),[query,setQuery]=useState(''),[status,setStatus]=useState('all'),[page,setPage]=useState(0),[editor,setEditor]=useState<Customer|null|undefined>(undefined),[notice,setNotice]=useState('')
+  const canCreate = hasPermission(member.role, member.permissions, 'customers:create'), canEdit = hasPermission(member.role, member.permissions, 'customers:edit')
   const router=useRouter(),[locked,setLocked]=useState(false)
   useEffect(()=>setCustomers(initialCustomers),[initialCustomers])
   const visible=customers.filter(c=>(status==='all'||c.active===(status==='active'))&&matchesCustomer(c,query))
@@ -25,9 +27,9 @@ export default function CustomerManagement({initialCustomers,member,business}:{i
     businessName={business?.name}
     description="Kelola profil dan riwayat belanja pelanggan usaha ini."
     meta={`${customers.length} pelanggan terdaftar • ${todayWib} • WIB`}
-    action={<button disabled={locked} onClick={()=>{setEditor(null);setNotice('')}} className={button+' bg-[#1835d9] text-white hover:bg-[#132c9e]'}>Tambah pelanggan</button>}
+    action={canCreate ? (<button disabled={locked} onClick={()=>{setEditor(null);setNotice('')}} className={button+' bg-[#1835d9] text-white hover:bg-[#132c9e]'}>Tambah pelanggan</button>) : undefined}
     role={member.role}
-  >{notice&&<p role="status" className="mb-4 rounded-xl bg-[#24cbc5]/10 p-3 text-sm text-[#24cbc5]">{notice}</p>}{editor!==undefined&&<CustomerEditor key={editor?.id||'new'} customer={editor} onLock={setLocked} onClose={()=>{setEditor(undefined);router.refresh()}} onSaved={c=>{setCustomers(rows=>[...rows.filter(v=>v.id!==c.id),c].sort((a,b)=>a.name.localeCompare(b.name,'id')));setEditor(undefined);setNotice('Pelanggan berhasil disimpan.');router.refresh()}}/>}<div className={card+(editor!==undefined?' mt-5':'')}><div className="flex flex-wrap gap-3"><input aria-label="Cari pelanggan" placeholder="Cari nama atau nomor telepon" value={query} maxLength={100} onChange={e=>{setQuery(e.target.value);setPage(0)}} className={input+' min-w-0 flex-1 basis-full sm:basis-auto'} /><CustomSelect
+  >{notice&&<p role="status" className="mb-4 rounded-xl bg-[#24cbc5]/10 p-3 text-sm text-[#24cbc5]">{notice}</p>}{editor!==undefined&&<CustomerEditor canDeactivate={hasPermission(member.role,member.permissions,'customers:delete')} key={editor?.id||'new'} customer={editor} onLock={setLocked} onClose={()=>{setEditor(undefined);router.refresh()}} onSaved={c=>{setCustomers(rows=>[...rows.filter(v=>v.id!==c.id),c].sort((a,b)=>a.name.localeCompare(b.name,'id')));setEditor(undefined);setNotice('Pelanggan berhasil disimpan.');router.refresh()}}/>}<div className={card+(editor!==undefined?' mt-5':'')}><div className="flex flex-wrap gap-3"><input aria-label="Cari pelanggan" placeholder="Cari nama atau nomor telepon" value={query} maxLength={100} onChange={e=>{setQuery(e.target.value);setPage(0)}} className={input+' min-w-0 flex-1 basis-full sm:basis-auto'} /><CustomSelect
   ariaLabel="Filter status pelanggan"
   value={status}
   onChange={val => { setStatus(val); setPage(0) }}
@@ -38,9 +40,9 @@ export default function CustomerManagement({initialCustomers,member,business}:{i
   ]}
   align="right"
   className="w-full sm:w-auto min-w-[140px]"
-/></div><div className="mt-5 overflow-x-auto"><table className="mobile-record-table w-full text-left text-sm"><thead className="border-b border-[#454d5b] text-xs text-[#a4a7ac]"><tr>{['Nama','Telepon','Poin','Status','Tindakan'].map(v=><th key={v} className="p-3 font-medium">{v}</th>)}</tr></thead><tbody>{visible.slice(page*25,page*25+25).map(c=><tr key={c.id} className="border-b border-[#454d5b]"><td data-label="Nama" data-primary="" className="max-w-64 break-words p-3 font-medium">{c.name}</td><td data-label="Telepon" data-primary="" className="p-3">{c.phone||'—'}</td><td data-label="Poin" className="p-3"><span className="inline-flex items-center rounded-lg bg-[#24cbc5]/10 px-2.5 py-1 text-xs font-medium text-[#24cbc5]">{c.points ?? 0} poin</span></td><td data-label="Status" className="p-3"><span className="rounded-lg bg-[#1c222e] px-2 py-1 text-xs text-[#c5cbd5]">{c.active?'Aktif':'Nonaktif'}</span></td><td data-label="Tindakan" data-actions="" className="p-3"><div className="flex gap-3"><button disabled={locked} onClick={()=>{setEditor(c);setNotice('');window.scrollTo({top:0,behavior:'smooth'})}} className="font-normal text-[#24cbc5]">Ubah</button><Link href={'/dashboard/customers/'+c.id} className="whitespace-nowrap font-normal text-[#24cbc5]">Riwayat belanja</Link></div></td></tr>)}</tbody></table>{!visible.length&&<p className="p-8 text-center text-sm text-[#a4a7ac]">Belum ada pelanggan yang sesuai.</p>}</div><div className="mt-4 flex flex-col items-start justify-between gap-3 text-xs text-[#a4a7ac] sm:flex-row sm:items-center"><span>{visible.length} pelanggan</span><div className="flex flex-wrap gap-2"><button disabled={!page} onClick={()=>setPage(p=>p-1)} className={button}>Sebelumnya</button><button disabled={(page+1)*25>=visible.length} onClick={()=>setPage(p=>p+1)} className={button}>Berikutnya</button></div></div></div></DashboardSection>
+/></div><div className="mt-5 overflow-x-auto"><table className="mobile-record-table w-full text-left text-sm"><thead className="border-b border-[#454d5b] text-xs text-[#a4a7ac]"><tr>{['Nama','Telepon','Poin','Status','Tindakan'].map(v=><th key={v} className="p-3 font-medium">{v}</th>)}</tr></thead><tbody>{visible.slice(page*25,page*25+25).map(c=><tr key={c.id} className="border-b border-[#454d5b]"><td data-label="Nama" data-primary="" className="max-w-64 break-words p-3 font-medium">{c.name}</td><td data-label="Telepon" data-primary="" className="p-3">{c.phone||'—'}</td><td data-label="Poin" className="p-3"><span className="inline-flex items-center rounded-lg bg-[#24cbc5]/10 px-2.5 py-1 text-xs font-medium text-[#24cbc5]">{c.points ?? 0} poin</span></td><td data-label="Status" className="p-3"><span className="rounded-lg bg-[#1c222e] px-2 py-1 text-xs text-[#c5cbd5]">{c.active?'Aktif':'Nonaktif'}</span></td><td data-label="Tindakan" data-actions="" className="p-3"><div className="flex gap-3">{canEdit && (<button disabled={locked} onClick={()=>{setEditor(c);setNotice('');window.scrollTo({top:0,behavior:'smooth'})}} className="font-normal text-[#24cbc5]">Ubah</button>)}<Link href={'/dashboard/customers/'+c.id} className="whitespace-nowrap font-normal text-[#24cbc5]">Riwayat belanja</Link></div></td></tr>)}</tbody></table>{!visible.length&&<p className="p-8 text-center text-sm text-[#a4a7ac]">Belum ada pelanggan yang sesuai.</p>}</div><div className="mt-4 flex flex-col items-start justify-between gap-3 text-xs text-[#a4a7ac] sm:flex-row sm:items-center"><span>{visible.length} pelanggan</span><div className="flex flex-wrap gap-2"><button disabled={!page} onClick={()=>setPage(p=>p-1)} className={button}>Sebelumnya</button><button disabled={(page+1)*25>=visible.length} onClick={()=>setPage(p=>p+1)} className={button}>Berikutnya</button></div></div></div></DashboardSection>
 }
-function CustomerEditor({customer,onClose,onSaved,onLock}:{customer:Customer|null;onClose:()=>void;onSaved:(c:Customer)=>void;onLock:(v:boolean)=>void}){
+function CustomerEditor({customer,canDeactivate,onClose,onSaved,onLock}:{canDeactivate:boolean;customer:Customer|null;onClose:()=>void;onSaved:(c:Customer)=>void;onLock:(v:boolean)=>void}){
   const [draft,setDraft]=useState({name:customer?.name||'',phone:customer?.phone||'',notes:customer?.notes||'',active:customer?.active??true}),[error,setError]=useState(''),[pending,setPending]=useState(false),[uncertain,setUncertain]=useState(false)
   const busy=useRef(false),request=useRef<FormData|null>(null)
   const [id]=useState(()=>customer?.id||crypto.randomUUID())
@@ -60,7 +62,7 @@ function CustomerEditor({customer,onClose,onSaved,onLock}:{customer:Customer|nul
     onChange={val => setDraft({ ...draft, active: val === 'active' })}
     options={[
       { value: 'active', label: 'Aktif' },
-      { value: 'inactive', label: 'Nonaktif' },
+      { value: 'inactive', label: 'Nonaktif', disabled: !canDeactivate },
     ]}
     className="mt-1 w-full"
   />

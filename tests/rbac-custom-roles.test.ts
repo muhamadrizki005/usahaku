@@ -13,6 +13,7 @@ import {
   hasPermission,
   canAccessPath,
   getRoleDisplayName,
+  toggleRolePermission,
   type BusinessRole,
 } from '../lib/auth/rbac'
 import { staffSchema, roleSchema } from '../lib/validation'
@@ -66,7 +67,10 @@ test('RBAC: permission resolution and role display names', () => {
     updated_at: new Date().toISOString(),
   }
 
-  const businessRoles = [supervisorRole]
+  const businessRoles = [supervisorRole,
+    { ...supervisorRole, id: 'default-admin', name: 'Admin Toko', role_key: 'admin', is_default: true, permissions: DEFAULT_ADMIN_PERMISSIONS },
+    { ...supervisorRole, id: 'default-cashier', name: 'Petugas Kasir', role_key: 'cashier', is_default: true, permissions: DEFAULT_CASHIER_PERMISSIONS },
+  ]
 
   // 1. Owner always gets ALL permissions
   const ownerPerms = resolveMemberPermissions('owner', businessRoles)
@@ -104,6 +108,14 @@ test('RBAC: permission resolution and role display names', () => {
   assert.equal(hasPermission('Supervisor', supByName, 'pos:cancel'), false)
   assert.equal(hasPermission('Supervisor', supByName, 'reports:view'), false)
   assert.equal(hasPermission('Supervisor', supByName, 'settings:view'), false)
+  assert.deepEqual(resolveMemberPermissions('admin', []), [])
+  assert.deepEqual(resolveMemberPermissions('admin', businessRoles.map(role => role.role_key === 'admin' ? { ...role, permissions: ['products:view'] } : role)), ['products:view'])
+  assert.equal(hasPermission('cashier', ['products:create'], 'products:create'), false)
+
+  const selected = toggleRolePermission(new Set<string>(), 'transactions:refund')
+  assert.ok(selected.has('transactions:view') && selected.has('transactions:cancel'))
+  assert.equal(toggleRolePermission(selected, 'transactions:view').size, 0)
+  assert.ok(toggleRolePermission(new Set<string>(), 'customers:delete').has('customers:edit'))
 
   // Display names
   assert.equal(getRoleDisplayName('owner', businessRoles), 'Pemilik usaha')

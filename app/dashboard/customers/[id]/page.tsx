@@ -5,7 +5,7 @@ import {readCustomerSales} from '@/lib/customers-server'
 import type {Customer} from '@/lib/customers'
 import {TransactionHistory} from '@/components/transaction-management'
 export default async function CustomerPage({params}:{params:Promise<{id:string}>}){
-  const {supabase,business,member}=await requireBusiness(['owner','admin'])
+  const {supabase,business,member}=await requireBusiness(undefined, false, 'customers:view')
   const {id}=await params;if(!z.uuid().safeParse(id).success)notFound()
   const {data,error}=await supabase.from('customers').select('*').eq('business_id',business.id).eq('id',id).maybeSingle()
   if(error)throw Error('Pelanggan belum dapat dibaca. Coba muat ulang.')

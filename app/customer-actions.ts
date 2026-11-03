@@ -4,7 +4,7 @@ import {z} from 'zod'
 import {requireBusiness} from '@/lib/access'
 import {customerSchema,normalizeCustomerPhone,type CustomerResult,type PosCustomer} from '@/lib/customers'
 export async function saveCustomer(form:FormData):Promise<CustomerResult>{
-  const {supabase,business}=await requireBusiness(['owner','admin'])
+  const {supabase,business}=await requireBusiness(undefined, false, ['customers:view', form.get('revision') === '' ? 'customers:create' : 'customers:edit'])
   const ids=z.object({id:z.uuid(),request:z.uuid(),revision:z.number().int().nonnegative().nullable()}).safeParse({id:form.get('id'),request:form.get('request'),revision:form.get('revision')===''?null:Number(form.get('revision'))})
   if(!ids.success)return{error:'ID permintaan tidak valid. Muat ulang formulir.'}
   let details:unknown;try{details=JSON.parse(String(form.get('details')))}catch{return{error:'Data pelanggan tidak valid.'}}
@@ -15,7 +15,7 @@ export async function saveCustomer(form:FormData):Promise<CustomerResult>{
   revalidatePath('/dashboard','layout');return{customer:data}
 }
 export async function searchPosCustomers(term:string):Promise<{customers:PosCustomer[];error?:string}>{
-  const {supabase,business}=await requireBusiness(['owner','admin','cashier'])
+  const {supabase,business}=await requireBusiness(undefined, false, 'pos:view')
   if(typeof term!=='string'||term.trim().length<2||term.trim().length>100)return{customers:[]}
   const {data,error}=await supabase.rpc('search_pos_customers',{target_id:business.id,term:term.trim()}).abortSignal(AbortSignal.timeout(10000)).retry(false)
   if(error)return{customers:[],error:'Pencarian pelanggan belum dapat dilakukan. Coba lagi.'}

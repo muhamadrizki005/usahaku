@@ -51,6 +51,10 @@ export function CustomSelect({
   const id = explicitId || generatedId
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const openAt = useRef<'selected' | 'first' | 'last'>('selected')
+  const searchRef = useRef({ text: '', at: 0 })
 
   const normalizedOptions = useMemo(
     () =>
@@ -91,8 +95,10 @@ export function CustomSelect({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        e.preventDefault()
         e.stopPropagation()
         setOpen(false)
+        triggerRef.current?.focus()
       }
     }
 
@@ -104,6 +110,36 @@ export function CustomSelect({
     }
   }, [open])
 
+  useEffect(() => {
+    if (!open) return
+    const options = Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="option"]:not(:disabled)') || [])
+    const target = openAt.current === 'last' ? options.at(-1) : openAt.current === 'first' ? options[0] : options.find(option => option.getAttribute('aria-selected') === 'true') || options[0]
+    target?.focus()
+    openAt.current = 'selected'
+  }, [open])
+
+  const menuKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if ((event.target as HTMLElement).matches('input,textarea')) return
+    if (event.key === 'Escape') {
+      event.preventDefault(); event.stopPropagation(); setOpen(false); triggerRef.current?.focus(); return
+    }
+    if (event.key === 'Tab') { setOpen(false); triggerRef.current?.focus(); return }
+    const options = Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="option"]:not(:disabled)') || [])
+    if (!options.length) return
+    const current = options.indexOf(document.activeElement as HTMLButtonElement)
+    let next: HTMLButtonElement | undefined
+    if (event.key === 'ArrowDown') next = options[(current + 1) % options.length]
+    else if (event.key === 'ArrowUp') next = options[(current - 1 + options.length) % options.length]
+    else if (event.key === 'Home') next = options[0]
+    else if (event.key === 'End') next = options.at(-1)
+    else if (event.key.length === 1 && event.key !== ' ' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      const now = Date.now()
+      searchRef.current = { text: now - searchRef.current.at < 600 ? searchRef.current.text + event.key : event.key, at: now }
+      next = [...options.slice(current + 1), ...options.slice(0, current + 1)].find(option => option.textContent?.trim().toLocaleLowerCase('id-ID').startsWith(searchRef.current.text.toLocaleLowerCase('id-ID')))
+    }
+    if (next) { event.preventDefault(); event.stopPropagation(); next.focus() }
+  }
+
   const handleSelect = (val: string, isDisabled?: boolean) => {
     if (isDisabled) return
     if (!isControlled) {
@@ -111,6 +147,7 @@ export function CustomSelect({
     }
     onChange?.(val)
     setOpen(false)
+    triggerRef.current?.focus()
   }
 
   const sizeClasses = {
@@ -130,12 +167,19 @@ export function CustomSelect({
       <button
         type="button"
         id={id}
+        ref={triggerRef}
+        aria-controls={open ? id + '-listbox' : undefined}
+        onKeyDown={event => {
+          if (['ArrowDown','ArrowUp','Home','End'].includes(event.key)) {
+            event.preventDefault(); openAt.current = event.key === 'ArrowUp' || event.key === 'End' ? 'last' : event.key === 'Home' ? 'first' : 'selected'; setOpen(true)
+          }
+        }}
         aria-label={ariaLabel || displayLabel}
         aria-haspopup="listbox"
         aria-expanded={open}
         disabled={disabled}
         onClick={() => !disabled && setOpen(prev => !prev)}
-        className={`inline-flex w-full items-center justify-between gap-2.5 rounded-xl border bg-[#273242] text-white transition-all duration-200 outline-none select-none disabled:cursor-not-allowed disabled:opacity-50 ${sizeClasses} ${
+        className={`inline-flex w-full items-center justify-between gap-2.5 rounded-xl border bg-[#273242] text-white transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#24cbc5] select-none disabled:cursor-not-allowed disabled:opacity-50 ${sizeClasses} ${
           open
             ? 'border-[#24cbc5] ring-2 ring-[#24cbc5]/20'
             : 'border-border hover:border-[#24cbc5]/50 hover:bg-[#303640]'
@@ -152,6 +196,10 @@ export function CustomSelect({
       {open && (
         <div
           role="listbox"
+          id={id + '-listbox'}
+          aria-labelledby={id}
+          ref={menuRef}
+          onKeyDown={menuKeyDown}
           tabIndex={-1}
           className={`absolute ${
             align === 'right' ? 'right-0' : 'left-0'
@@ -175,10 +223,11 @@ export function CustomSelect({
                 <button
                   type="button"
                   role="option"
+                  tabIndex={-1}
                   aria-selected={isSelected}
                   disabled={opt.disabled}
                   onClick={() => handleSelect(opt.value, opt.disabled)}
-                  className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-sm transition-colors ${
+                  className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-[#24cbc5] focus-visible:outline-offset-[-2px] ${
                     opt.disabled
                       ? 'cursor-not-allowed opacity-40 text-[#a4a7ac]'
                       : isSelected

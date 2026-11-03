@@ -3,7 +3,7 @@ import BusinessAssistant from '@/components/business-assistant'
 import { geminiConfig } from '@/lib/assistant-server'
 
 export default async function AssistantPage() {
-  const { business } = await requireBusiness(['owner', 'admin'])
+  const { business } = await requireBusiness(undefined, false, ['reports:view', 'products:view'])
   if (business.category !== 'store') return <p>Asisten saat ini tersedia untuk kategori toko.</p>
   return <BusinessAssistant configured={Boolean(geminiConfig().key)} />
 }

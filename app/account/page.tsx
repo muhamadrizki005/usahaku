@@ -1,10 +1,11 @@
-import { requireAccount } from '@/lib/access'
+import { requireAccount, resolveAccessMember } from '@/lib/access'
 import { homeForRole } from '@/lib/auth/permissions'
 import { AccountSettingsView } from '@/components/account/account-settings-view'
 import type { Business } from '@/lib/validation'
 
 export default async function AccountPage() {
-  const { supabase, user, member } = await requireAccount()
+  const { supabase, user, member: rawMember } = await requireAccount()
+  const member = rawMember?.active && !rawMember.must_change_password ? await resolveAccessMember(supabase, rawMember) : rawMember
 
   let business: Business | null = null
   if (member?.business_id) {
@@ -27,13 +28,13 @@ export default async function AccountPage() {
   const backHref = member
     ? member.must_change_password
       ? '/account/password'
-      : homeForRole(member.role)
+      : homeForRole(member.role, member.permissions)
     : '/onboarding'
 
   const backLabel = member
     ? member.must_change_password
       ? 'Ganti sandi sementara'
-      : 'Kembali ke Dashboard'
+      : backHref.startsWith('/account') ? 'Akses fitur belum diberikan' : 'Kembali ke Dashboard'
     : 'Lanjut ke Onboarding'
 
   return (

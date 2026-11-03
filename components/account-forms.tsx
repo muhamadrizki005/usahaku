@@ -324,7 +324,7 @@ export function StaffForm({
     availableRoles && availableRoles.length > 0
       ? availableRoles.map((r) => {
           const norm = r.name.toLowerCase().trim();
-          let value = r.name;
+          let value = r.id;
           if (norm === 'admin toko' || norm === 'admin') value = 'admin';
           else if (norm === 'petugas kasir' || norm === 'kasir') value = 'cashier';
           return {

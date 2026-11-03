@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { requireBusiness } from '@/lib/access'
-import { normalizeRoleKey } from '@/lib/auth/rbac'
+import { builtInRole, DEFAULT_ADMIN_PERMISSIONS, permissionDependencies, rolePermissionLimit, roleValue, normalizeRoleKey } from '@/lib/auth/rbac'
 
 const roleFormSchema = z.object({
   id: z.string().uuid().optional(),
@@ -13,14 +13,16 @@ const roleFormSchema = z.object({
     .min(2, 'Nama role minimal 2 karakter.')
     .max(60, 'Nama role maksimal 60 karakter.'),
   description: z.string().trim().max(255).default(''),
-  permissions: z.string().transform(str => {
+  permissions: z.string().transform((str, context) => {
     try {
       const parsed = JSON.parse(str)
-      return Array.isArray(parsed) ? parsed : []
+      if (!Array.isArray(parsed)) throw new Error('Invalid permissions')
+      return parsed
     } catch {
-      return []
+      context.addIssue({ code: 'custom', message: 'Daftar izin tidak valid.' })
+      return z.NEVER
     }
-  }),
+  }).pipe(z.array(z.string().refine(value => DEFAULT_ADMIN_PERMISSIONS.includes(value), 'Izin ini hanya untuk owner atau tidak dikenal.')).max(50)).transform(values => [...new Set(values)]).refine(values => values.every(permission => permissionDependencies(permission).every(required => values.includes(required))), 'Sertakan izin melihat modul dan pasangan izin pembatalan/refund yang diperlukan.'),
 })
 
 export type RoleActionState = {
@@ -30,7 +32,7 @@ export type RoleActionState = {
 }
 
 const MISSING_TABLE_MSG =
-  'Tabel peran ("public.business_roles") belum ada di database Supabase. Jalankan file migrasi 202611010009_custom_roles_and_rbac.sql di Supabase SQL Editor.'
+  'Pengaturan role belum siap digunakan. Hubungi pengelola aplikasi.'
 
 export async function createBusinessRole(
   _prevState: RoleActionState,
@@ -57,7 +59,7 @@ export async function createBusinessRole(
   const normName = normalizeRoleKey(name)
 
   // Prevent creating role named 'owner' or 'pemilik'
-  if (normName === 'owner' || normName === 'pemilik') {
+  if (builtInRole(normName)) {
     return { error: 'Nama role tidak boleh menggunakan nama khusus Pemilik.' }
   }
 
@@ -142,6 +144,8 @@ export async function updateBusinessRole(
     return { error: 'Role tidak ditemukan pada usaha ini.' }
   }
 
+  if (permissions.some(permission => !rolePermissionLimit(roleValue(targetRole)).includes(permission))) return { error: 'Izin tersebut tidak tersedia untuk role ini. Kasir hanya dapat memakai kasir dan transaksi sendiri.' }
+
   // If default role, preserve its original name so system roles stay consistent
   const finalName = targetRole.is_default ? targetRole.name : name
 
@@ -225,7 +229,7 @@ export async function deleteBusinessRole(roleId: string): Promise<{ error?: stri
   }
 
   const assignedMembers = (members || []).filter(
-    m => m.role === targetRole.id || normalizeRoleKey(m.role) === norm
+    m => m.role === roleValue(targetRole) || m.role === targetRole.id || normalizeRoleKey(m.role) === norm
   )
 
   if (assignedMembers.length > 0) {

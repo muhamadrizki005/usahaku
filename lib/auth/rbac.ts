@@ -151,6 +151,7 @@ export interface BusinessRole {
   name: string
   description: string
   is_default: boolean
+  role_key?: string
   permissions: string[]
   created_at: string
   updated_at: string
@@ -158,6 +159,53 @@ export interface BusinessRole {
 
 export function normalizeRoleKey(role: string): string {
   return role.trim().toLowerCase()
+}
+
+export function builtInRole(role: string): 'owner' | 'admin' | 'cashier' | null {
+  const key = normalizeRoleKey(role)
+  if (key === 'owner' || key === 'pemilik') return 'owner'
+  if (key === 'admin' || key === 'admin toko') return 'admin'
+  if (['cashier', 'kasir', 'petugas kasir'].includes(key)) return 'cashier'
+  return null
+}
+
+export function roleValue(role: BusinessRole): string {
+  return role.role_key || (role.is_default ? builtInRole(role.name) : null) || role.id
+}
+
+export function findBusinessRole(value: string, roles: BusinessRole[]): BusinessRole | undefined {
+  const builtin = builtInRole(value)
+  return builtin ? roles.find(role => roleValue(role) === builtin && role.is_default)
+    : roles.find(role => roleValue(role) === value || role.id === value || normalizeRoleKey(role.name) === normalizeRoleKey(value))
+}
+
+export function rolePermissionLimit(value: string): string[] {
+  return builtInRole(value) === 'cashier' ? DEFAULT_CASHIER_PERMISSIONS : DEFAULT_ADMIN_PERMISSIONS
+}
+
+export function permissionDependencies(permission: string): string[] {
+  const module = permission.split(':')[0]
+  const dependencies = permission.endsWith(':view') ? [] : [module + ':view']
+  if (permission === 'customers:delete') dependencies.push('customers:edit')
+  if (permission === 'transactions:cancel') dependencies.push('transactions:refund')
+  if (permission === 'transactions:refund') dependencies.push('transactions:cancel')
+  return dependencies
+}
+
+export function toggleRolePermission(current: Set<string>, permission: string): Set<string> {
+  const next = new Set(current)
+  if (next.has(permission)) {
+    next.delete(permission)
+    let changed = true
+    while (changed) {
+      changed = false
+      for (const key of next) if (permissionDependencies(key).some(required => !next.has(required))) { next.delete(key); changed = true }
+    }
+  } else {
+    next.add(permission)
+    for (const required of permissionDependencies(permission)) next.add(required)
+  }
+  return next
 }
 
 /**
@@ -168,29 +216,11 @@ export function resolveMemberPermissions(
   role: string,
   roles: BusinessRole[] = []
 ): string[] {
-  const norm = normalizeRoleKey(role)
-  if (norm === 'owner') {
-    return ALL_PERMISSIONS
-  }
-
-  // Check if role matches an existing business_roles row by ID or name
-  const matched = roles.find(
-    r => r.id === role || normalizeRoleKey(r.name) === norm
-  )
-
-  if (matched && Array.isArray(matched.permissions)) {
-    return matched.permissions
-  }
-
-  // Fallback to built-in presets if no custom role record found
-  if (norm === 'admin' || norm === 'admin toko') {
-    return DEFAULT_ADMIN_PERMISSIONS
-  }
-  if (norm === 'cashier' || norm === 'kasir' || norm === 'petugas kasir') {
-    return DEFAULT_CASHIER_PERMISSIONS
-  }
-
-  return []
+  if (normalizeRoleKey(role) === 'owner') return ALL_PERMISSIONS
+  const matched = findBusinessRole(role, roles)
+  if (!matched || !Array.isArray(matched.permissions)) return []
+  const limit = rolePermissionLimit(roleValue(matched))
+  return [...new Set(matched.permissions.filter(permission => limit.includes(permission)))]
 }
 
 /**
@@ -203,6 +233,7 @@ export function hasPermission(
   required: string
 ): boolean {
   if (normalizeRoleKey(memberRole) === 'owner') return true
+  if (!rolePermissionLimit(memberRole).includes(required)) return false
   if (!memberPermissions || !Array.isArray(memberPermissions)) return false
   return memberPermissions.includes(required)
 }
@@ -210,6 +241,15 @@ export function hasPermission(
 /**
  * Determines whether a route path can be accessed given a member's role and permissions.
  */
+export function permissionForPath(path: string): string | null {
+  const clean = path.split('?')[0]
+  if (clean === '/dashboard') return 'overview:view'
+  if (clean === '/dashboard/settings' || clean.startsWith('/dashboard/settings/')) return clean.startsWith('/dashboard/settings/staff') ? 'staff:view' : 'settings:view'
+  if (clean === '/dashboard/assistant') return 'reports:view'
+  const module = ['products','inventory','pos','transactions','customers','reports'].find(value => clean === '/dashboard/' + value || clean.startsWith('/dashboard/' + value + '/'))
+  return module ? module + ':view' : null
+}
+
 export function canAccessPath(
   path: string,
   memberRole: string,
@@ -241,16 +281,16 @@ export function canAccessPath(
     return hasPermission(memberRole, memberPermissions, 'reports:view')
   }
   if (cleanPath === '/dashboard/settings/staff' || cleanPath.startsWith('/dashboard/settings/staff/')) {
-    return hasPermission(memberRole, memberPermissions, 'staff:view')
+    return false
   }
   if (cleanPath === '/dashboard/settings' || cleanPath.startsWith('/dashboard/settings/')) {
-    return hasPermission(memberRole, memberPermissions, 'settings:view')
+    return false
   }
   if (cleanPath === '/dashboard/assistant') {
-    return hasPermission(memberRole, memberPermissions, 'overview:view')
+    return hasPermission(memberRole, memberPermissions, 'reports:view') && hasPermission(memberRole, memberPermissions, 'products:view')
   }
 
-  return true
+  return false
 }
 
 export function getRoleDisplayName(role: string, roles: BusinessRole[] = []): string {
@@ -259,7 +299,7 @@ export function getRoleDisplayName(role: string, roles: BusinessRole[] = []): st
   if (norm === 'admin') return 'Admin Toko'
   if (norm === 'cashier') return 'Petugas Kasir'
 
-  const found = roles.find(r => r.id === role || normalizeRoleKey(r.name) === norm)
+  const found = findBusinessRole(role, roles)
   if (found) return found.name
 
   return role

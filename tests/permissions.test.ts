@@ -12,7 +12,10 @@ test('cashiers keep their own-transaction scope without receiving management pri
     assert.equal(rolesForPath(path).includes('cashier'), false)
   }
   assert.deepEqual(rolesForPath('/dashboard/settings/staff'), ['owner'])
-  assert.equal(homeForRole('cashier'), '/dashboard/pos')
+  assert.equal(homeForRole('cashier', ['pos:view']), '/dashboard/pos')
+  assert.equal(homeForRole('cashier', []), '/account?notice=permissions')
+  assert.equal(homeForRole('custom-role', ['products:view']), '/dashboard/products')
+  assert.equal(transactionVisibility('custom-role'), 'own')
 })
 
 test('owner registration rejects mismatched, too short, and excessive passwords', () => {
