@@ -35,7 +35,7 @@ test('restaurant table boxes show only names and open accessible persistent deta
     ok(await client.rpc('save_restaurant_order', { target_id: bid, item_id: randomUUID(), expected_revision: null, operation_id: randomUUID(), details: { kind: 'dine_in', tableId: ids[1], guests: 2, customer: 'Nama privat pesanan uji', notes: '', stage: 'new', lines: [{ id: menuId, quantity: 1 }] } }))
     await mkdir(dir, { recursive: true })
     await p.goto('/login'); await p.getByLabel('Email', { exact: true }).fill(email); await p.getByLabel('Kata sandi', { exact: true }).fill(password); await p.getByRole('button', { name: 'Masuk', exact: true }).click(); await expect(p).toHaveURL(url => url.pathname === '/dashboard')
-    await p.getByRole('navigation', { name: 'Navigasi utama dashboard', exact: true }).getByRole('button', { name: 'Meja', exact: true }).click()
+    await p.getByRole('button', { name: 'Buka navigasi', exact: true }).click(); await p.getByRole('navigation', { name: 'Navigasi dashboard mobile', exact: true }).getByRole('button', { name: 'Meja', exact: true }).click()
     const grid = p.getByRole('group', { name: 'Pilihan meja', exact: true })
     await expect(grid.getByRole('button')).toHaveCount(12)
     expect((await grid.getByRole('button').allTextContents()).slice(0, 3)).toEqual(['Meja 1', 'Meja 2', 'Meja 3'])

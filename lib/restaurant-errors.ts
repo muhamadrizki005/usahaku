@@ -36,6 +36,17 @@ function reasonMessage(error: RestaurantError): string | null {
 export function restaurantFailure(input: RestaurantError | string, operation: Operation = 'order'): RestaurantResult {
   const error = typeof input === 'string' ? { code: input } : input
   const code = error?.code || '', message = error?.message || ''
+  const reservationMessages = [
+    'Reservasi sudah diproses atau dibatalkan.',
+    'Buka pesanan mulai 15 menit sebelum kedatangan hingga sebelum akhir reservasi.',
+    'Meja, tamu, dan pelanggan harus sesuai reservasi.',
+    'Meja memiliki reservasi dalam 90 menit ke depan. Pilih meja lain.',
+    'Pesanan lama tidak dapat ditautkan ke reservasi.',
+    'DP melebihi tagihan. Sesuaikan pesanan/diskon atau batalkan reservasi dengan refund penuh dahulu.',
+    'Batalkan melalui Reservasi dan konfirmasikan refund DP terlebih dahulu.',
+    'Meja memiliki reservasi aktif. Pindahkan atau batalkan reservasi sebelum mengubah kapasitas/status meja.',
+  ]
+  if (code === 'P0001' && reservationMessages.includes(message)) return { error: message, uncertain: false }
   if (code === '42501') return { error: message === 'Discount access denied' ? 'Diskon hanya dapat diberikan oleh owner atau admin.' : 'Anda tidak memiliki izin untuk melakukan tindakan ini.', uncertain: false }
   const specific = reasonMessage(error)
   if (specific) return { error: specific, uncertain: false }
