@@ -65,7 +65,7 @@ export function BusinessHoursSettings({
     </section>
   )
 }
-export function HoursEditor({hours,setHours,save,error,cancel,pending}:{hours:Hours;setHours:(h:Hours)=>void;save:()=>void;error:string;cancel:()=>void;pending:boolean}) {
+export function HoursEditor({hours,setHours,save,error,cancel,pending,showActions=true,stackOnSmallScreens=false}:{hours:Hours;setHours:(h:Hours)=>void;save:()=>void;error:string;cancel:()=>void;pending:boolean;showActions?:boolean;stackOnSmallScreens?:boolean}) {
   const update=(day:string,key:string,value:string|boolean)=>setHours({...hours,[day]:{...hours[day],[key]:value}});
   const allActive = days.every(d => !hours[d]?.closed);
   const toggleAll = () => {
@@ -93,24 +93,26 @@ export function HoursEditor({hours,setHours,save,error,cancel,pending}:{hours:Ho
       </button>
       {days.map(d => (
         <div
-          className={`mb-2 grid grid-cols-[72px_minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2 rounded-lg border p-2 transition-colors ${
+          className={`mb-2 grid ${stackOnSmallScreens ? 'grid-cols-2 sm:grid-cols-[72px_minmax(0,1fr)_minmax(0,1fr)_auto]' : 'grid-cols-[72px_minmax(0,1fr)_minmax(0,1fr)_auto]'} items-center gap-2 rounded-lg border p-2 transition-colors ${
             hours[d].closed
               ? 'border-[#454d5b]/50 bg-[#1c222e] text-[#a4a7ac] [&_input]:opacity-40'
               : 'border-[#454d5b] bg-[#273242] text-[#ffffff]'
           }`}
           key={d}
         >
-          <b className="text-sm font-medium">{d}</b>
+          <b className={'text-sm font-medium ' + (stackOnSmallScreens ? 'order-1 sm:order-none' : '')}>{d}</b>
           <input
             type="time"
-            className={input}
+            aria-label={`Jam buka ${d}`}
+            className={input + (stackOnSmallScreens ? ' order-3 col-span-2 sm:order-none sm:col-span-1' : '')}
             disabled={hours[d].closed}
             value={hours[d].open}
             onChange={e => update(d, 'open', e.target.value)}
           />
           <input
             type="time"
-            className={input}
+            aria-label={`Jam tutup ${d}`}
+            className={input + (stackOnSmallScreens ? ' order-4 col-span-2 sm:order-none sm:col-span-1' : '')}
             disabled={hours[d].closed}
             value={hours[d].close}
             onChange={e => update(d, 'close', e.target.value)}
@@ -120,7 +122,7 @@ export function HoursEditor({hours,setHours,save,error,cancel,pending}:{hours:Ho
             aria-label={`${d} ${hours[d].closed ? 'dibuka' : 'ditutup'}`}
             aria-pressed={!hours[d].closed}
             onClick={() => update(d, 'closed', !hours[d].closed)}
-            className={`grid size-7 place-items-center rounded-full border-2 ${
+            className={`grid ${stackOnSmallScreens ? 'order-2 size-11 justify-self-end focus-visible:outline-2 focus-visible:outline-[#24cbc5] sm:order-none sm:size-7' : 'size-7'} place-items-center rounded-full border-2 ${
               hours[d].closed ? 'border-[#454d5b] bg-transparent' : 'border-[#1835d9] bg-[#273242]'
             }`}
           >
@@ -128,7 +130,7 @@ export function HoursEditor({hours,setHours,save,error,cancel,pending}:{hours:Ho
           </button>
         </div>
       ))}
-      <Footer cancel={pending ? () => {} : cancel} save={save} label={pending ? 'Menyimpan...' : 'Simpan jam operasional'} error={error} />
+      {showActions && <Footer cancel={pending ? () => {} : cancel} save={save} label={pending ? 'Menyimpan...' : 'Simpan jam operasional'} error={error} />}
     </div>
   );
 }

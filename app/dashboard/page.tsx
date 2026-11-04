@@ -5,8 +5,11 @@ import UsahakuDashboard from '@/components/usahaku-dashboard'
 import type { Member } from '@/lib/validation'
 import RestaurantOverview from '@/components/restaurant-overview'
 import { readRestaurantOverview } from '@/lib/restaurant-server'
+import SalonOverview from '@/components/salon-overview'
+import { readSalonFoundation } from '@/lib/salon-server'
 export default async function DashboardPage() {
   const { business, member, supabase } = await requireBusiness(undefined, false, 'overview:view')
+  if (business.category === 'barbershop') return <SalonOverview business={business} data={await readSalonFoundation(supabase,business.id)}/>
   if (business.category === 'restaurant') return <RestaurantOverview business={business} summary={await readRestaurantOverview(supabase,business.id)} />
   const { data, error } = await supabase.from('business_members').select('*').eq('business_id', business.id)
   if (error) throw new Error('Data akses belum dapat dimuat.')

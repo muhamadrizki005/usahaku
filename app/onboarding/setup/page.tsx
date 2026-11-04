@@ -7,12 +7,15 @@ import { readRestaurantMenu, readRestaurantTables } from '@/lib/restaurant-serve
 import { RestaurantSetup } from '@/components/restaurant-onboarding'
 import {readBusinessPayments} from '@/lib/business-payments-server'
 import { readBusinessRoles, readRoleMemberCounts } from '@/lib/roles-server'
+import { SalonSetup } from '@/components/salon-onboarding'
+import { readSalonFoundation } from '@/lib/salon-server'
 
 export default async function SetupPage() {
   const { business, member, supabase } = await requireOnboardingDraft()
   if (!business || !member) redirect('/onboarding/identity')
   const { data, error } = await supabase.from('business_members').select('*').eq('business_id', business.id).order('created_at')
   if (error) throw new Error('Data staf belum dapat dimuat.')
+  if (business.category === 'barbershop') return <SalonSetup business={business} ownerName={member.name} members={data as Member[]} data={await readSalonFoundation(supabase,business.id)} roles={await readBusinessRoles(supabase,business.id)} roleCounts={await readRoleMemberCounts(supabase,business.id)}/>
   if (business.category === 'restaurant') return <RestaurantSetup payments={await readBusinessPayments(supabase,business.id)} business={business} ownerName={member.name} members={data as Member[]} menu={await readRestaurantMenu(supabase, business.id)} tables={await readRestaurantTables(supabase, business.id)} roles={await readBusinessRoles(supabase,business.id)} roleCounts={await readRoleMemberCounts(supabase,business.id)} />
   return <OriginalSetup business={business} ownerName={member.name} members={data as Member[]} initialProducts={await readProducts(supabase, business.id)} initialPayments={await readBusinessPayments(supabase,business.id)} />
 }

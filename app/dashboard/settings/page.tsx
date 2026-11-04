@@ -6,7 +6,7 @@ import { readBusinessPayments } from '@/lib/business-payments-server'
 
 export default async function SettingsPage() {
   const { user, member, business, supabase } = await requireBusiness(['owner'])
-  const payments = await readBusinessPayments(supabase, business.id)
+  const payments = business.category === 'barbershop' ? undefined : await readBusinessPayments(supabase, business.id)
 
   return (
     <OriginalIdentity

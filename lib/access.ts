@@ -38,6 +38,7 @@ export async function requireBusiness(roles?: string[], allowDraft = false, requ
   if (!business.onboarding_completed_at && (!allowDraft || member.role !== 'owner')) redirect(member.role === 'owner' ? '/onboarding/summary' : '/account?notice=setup')
   if (business.category !== 'store' && !['owner', 'admin', 'cashier'].includes(member.role)) redirect('/account?notice=permissions')
   const needed = requiredPermission ? (Array.isArray(requiredPermission) ? requiredPermission : [requiredPermission]) : []
+  if (business.category === 'barbershop' && needed.some(p => /^(products|inventory|pos|transactions|customers|reports):/.test(p))) redirect('/dashboard/salon/services')
   if (needed.some(permission => !hasPermission(member.role, member.permissions, permission))) redirect(home)
   if (roles && !roles.includes(member.role)) redirect(home)
   return { ...context, member, business }

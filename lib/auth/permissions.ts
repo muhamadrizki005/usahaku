@@ -26,6 +26,7 @@ export function homeForRole(role: string, permissions?: string[]): string {
 }
 
 export function rolesForPath(path: string): string[] {
+  if (path.startsWith('/dashboard/salon/')) return ['owner','admin','cashier']
   if (path === '/dashboard/pos' || path === '/dashboard/transactions' || path === '/dashboard/restaurant/reservations') return ['owner', 'admin', 'cashier']
   if (path === '/dashboard/settings' || path.startsWith('/dashboard/settings/')) return ['owner']
   return ['owner', 'admin']

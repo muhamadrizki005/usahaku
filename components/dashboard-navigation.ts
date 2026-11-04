@@ -1,4 +1,4 @@
-import { BarChart3, CalendarDays, CreditCard, Database, Home, LayoutDashboard, Package, Settings2, ShoppingBag, Sparkles, Users, Utensils, Table2 } from 'lucide-react'
+import { BarChart3, CalendarDays, CreditCard, Database, Home, LayoutDashboard, Package, Settings2, ShoppingBag, Sparkles, Users, Utensils, Table2, Scissors } from 'lucide-react'
 
 export const topNavigationItems = [
   ['Ringkasan', LayoutDashboard, '/dashboard'],
@@ -28,6 +28,12 @@ export const restaurantTopNavigationItems = [
 export const restaurantSidebarNavigationItems = [
   ['Home', Home, '/dashboard'],
   ['Pengaturan', Settings2, '/dashboard/settings'],
+] as const
+
+export const salonTopNavigationItems = [
+  ['Ringkasan', LayoutDashboard, '/dashboard'],
+  ['Layanan', Scissors, '/dashboard/salon/services'],
+  ['Penata & terapis', Users, '/dashboard/salon/practitioners'],
 ] as const
 
 export const dashboardNavigation = [

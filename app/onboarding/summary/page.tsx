@@ -6,12 +6,15 @@ import { redirect } from 'next/navigation'
 import { readRestaurantMenu, readRestaurantTables } from '@/lib/restaurant-server'
 import { RestaurantSummary } from '@/components/restaurant-onboarding'
 import {readBusinessPayments} from '@/lib/business-payments-server'
+import { SalonSummary } from '@/components/salon-onboarding'
+import { readSalonFoundation } from '@/lib/salon-server'
 
 export default async function SummaryPage() {
   const { business, member, supabase, user } = await requireOnboardingDraft()
   if (!business || !member) redirect('/onboarding/identity')
   const { data, error } = await supabase.from('business_members').select('*').eq('business_id', business.id).order('created_at')
   if (error) throw new Error('Data staf belum dapat dimuat.')
+  if (business.category === 'barbershop') return <SalonSummary business={business} ownerName={member.name} members={data as Member[]} data={await readSalonFoundation(supabase,business.id)}/>
   if (business.category === 'restaurant') return <RestaurantSummary business={business} ownerName={member.name} members={data as Member[]} menu={await readRestaurantMenu(supabase, business.id)} tables={await readRestaurantTables(supabase, business.id)} />
   return <OriginalSummary business={business} ownerName={member.name} userId={user.id} members={data as Member[]} initialProducts={await readProducts(supabase, business.id)} initialPayments={await readBusinessPayments(supabase,business.id)} />
 }
