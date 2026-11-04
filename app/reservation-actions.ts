@@ -64,7 +64,7 @@ export async function loadReservationAvailability(input: unknown): Promise<{ ite
   if (!parsed.success) return { error: 'Isi jadwal dan jumlah tamu terlebih dahulu.' }
   const p = parsed.data
   const { data, error } = await supabase.rpc('restaurant_reservation_availability', { target_id: business.id, from_ts: p.startsAt, to_ts: p.endsAt, guest_count: p.guests, exclude_id: p.exclude }).abortSignal(AbortSignal.timeout(15000)).retry(false)
-  return error ? { error: 'Ketersediaan meja belum dapat diperiksa. Periksa jadwal lalu coba lagi.' } : { items: data }
+  return error ? { error: error.code==='P0001'?error.message:'Ketersediaan meja belum dapat diperiksa. Periksa jadwal lalu coba lagi.' } : { items: data }
 }
 export async function saveReservation(input: unknown, details: unknown): Promise<ReservationResult> {
   const { supabase, business } = await context(), parsed = ids.safeParse(input), values = reservationSchema.safeParse(details)
@@ -76,10 +76,10 @@ export async function saveReservation(input: unknown, details: unknown): Promise
 }
 export async function recordReservationDeposit(input: unknown, details: unknown): Promise<ReservationResult> {
   const { supabase, business } = await context(), parsed = ids.safeParse(input)
-  const values = z.object({ amount: z.string().regex(/^[1-9]\d{0,11}$/), payment: z.enum(['cash','qris','transfer']), confirmed: z.literal(true) }).strict().safeParse(details)
+  const values = z.object({ amount: z.string().regex(/^[1-9]\d{0,11}$/), payment: z.enum(['cash','qris','transfer','ewallet']), paymentRevision: z.number().int().nonnegative().default(0), confirmed: z.literal(true) }).strict().safeParse(details)
   if (!parsed.success || parsed.data.revision === null || !values.success) return { error: 'Isi nominal DP rupiah bulat dan konfirmasikan pembayaran yang telah diterima.' }
   const p = parsed.data, v = values.data
-  const { data, error } = await supabase.rpc('record_restaurant_deposit', { target_id: business.id, item_id: p.id, expected_revision: p.revision, operation_id: p.request, amount: v.amount, payment_method: v.payment, confirmed: v.confirmed }).abortSignal(AbortSignal.timeout(15000)).retry(false)
+  const { data, error } = await supabase.rpc('record_restaurant_deposit_checked', { target_id: business.id, item_id: p.id, expected_revision: p.revision, operation_id: p.request, amount: v.amount, payment_method: v.payment, confirmed: v.confirmed, payment_revision: v.paymentRevision }).abortSignal(AbortSignal.timeout(15000)).retry(false)
   if (error || !data) return failure(error)
   revalidatePath('/dashboard','layout'); return { value: data }
 }

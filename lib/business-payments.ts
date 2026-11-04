@@ -1,4 +1,6 @@
 import {z} from 'zod'
+import { paymentMethods } from './pos'
+export const enabledPaymentMethods = (settings: PaymentSettings) => paymentMethods.filter(method => settings[method])
 export const bankSchema=z.object({bank:z.string().trim().min(1).max(100),holder:z.string().trim().min(1).max(160),account:z.string().trim().min(1).max(100)}).strict()
 export const ewalletSchema=z.object({ewallet:z.string().trim().min(1).max(100),holder:z.string().trim().min(1).max(160),number:z.string().trim().min(1).max(100)}).strict()
 export const paymentSettingsSchema=z.object({

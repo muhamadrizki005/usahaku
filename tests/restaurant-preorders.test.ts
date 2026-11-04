@@ -2,6 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile, readdir } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
+import { restaurantTestHours } from './fixtures/restaurant-hours'
 import { PGlite } from '@electric-sql/pglite'
 
 test('preorder migration preserves existing seated orders, reservation status and all sale values', async () => {
@@ -15,7 +16,7 @@ test('preorder migration preserves existing seated orders, reservation status an
       create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text,name text,metadata jsonb);
       alter table storage.objects enable row level security;grant usage on schema storage to authenticated,service_role;
       grant select,insert,update,delete on storage.objects to authenticated;grant all on storage.objects,storage.buckets to service_role;`)
-    for (const file of (await readdir('supabase/migrations')).filter(f => f.endsWith('.sql') && f !== '202611030003_restaurant_preorders_table_locks.sql').sort()) await db.exec(await readFile('supabase/migrations/' + file,'utf8'))
+    for (const file of (await readdir('supabase/migrations')).filter(f => f.endsWith('.sql') && f < '202611030003').sort()) await db.exec(await readFile('supabase/migrations/' + file,'utf8'))
 
  const uid=randomUUID();await db.query('insert into auth.users(id) values($1)',[uid]);await db.query("select set_config('request.jwt.claim.sub',$1,false)",[uid]);await db.exec('set role authenticated')
  const rpc=async(name:string,args:unknown[])=> (await db.query<any>('select public.'+name+'('+args.map((_,i)=>'$'+(i+1)).join(',')+') value',args)).rows[0].value
@@ -64,6 +65,7 @@ test('preorders, arrival, exact table locks, buffered slots, owner settings and 
  const rpc=async(name:string,args:unknown[])=>{const placeholders=args.map((_,i)=>'$'+(i+1)).join(',');return (await db.query<any>('select public.'+name+'('+placeholders+') value',args)).rows[0].value}
  await as(owner)
  const bid=await rpc('create_business_profile_for_category',['restaurant','Preorder Test','Owner','081234567890','Jalan','Bandung','Jawa Barat',''])
+ await rpc('save_business_hours',[bid,0,restaurantTestHours()])
  await rpc('complete_business_onboarding',[bid])
  await db.exec('reset role')
  for(const [id,role] of [[admin,'admin'],[a,'cashier'],[b,'cashier']])await db.query("insert into public.business_members(business_id,user_id,name,username,role,must_change_password) values($1,$2,'Test',$3,$4,false)",[bid,id,id!.slice(0,8),role])

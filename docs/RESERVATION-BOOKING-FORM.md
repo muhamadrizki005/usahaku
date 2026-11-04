@@ -1,5 +1,7 @@
 # Reservasi sekaligus pesan makanan
 
+Pembaruan 4 November 2026: jadwal baru diperiksa terhadap jam operasional dan metode DP mengikuti konfigurasi pembayaran aktif, termasuk e-wallet. Batas DP pada subtotal makanan tetap berlaku. Lihat [RESTAURANT-COMPLETION.md](RESTAURANT-COMPLETION.md) untuk aturan dan status verifikasi terbaru.
+
 Melanjutkan branch `feat/restaurant-preorders-table-locks`. Perubahan sebelumnya belum di-commit, dipush, atau digabungkan oleh agen.
 
 ## Cara menggunakan

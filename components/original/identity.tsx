@@ -51,6 +51,7 @@ export default function OriginalIdentity({
   initialCategory = "toko",
   payments,
   paymentSettingsNode,
+  restaurantBillingNode,
 }: {
   ownerName: string;
   userId: string;
@@ -60,6 +61,7 @@ export default function OriginalIdentity({
   initialCategory?: "toko" | "restoran" | "barbershop";
   payments?: PaymentSettings;
   paymentSettingsNode?: React.ReactNode;
+  restaurantBillingNode?: React.ReactNode;
 }) {
   const [serverState, dispatchIdentity, pending] = useActionState(
     business ? saveBusinessProfile : createBusiness,
@@ -602,6 +604,7 @@ export default function OriginalIdentity({
               <BusinessHoursSettings business={business} onNotify={showToast} />
               {business.category === "restaurant" && <div className="mt-6"><RestaurantReservationSettings minutes={business.reservation_lock_minutes ?? 120} revision={business.reservation_settings_revision ?? 0}/></div>}
             </div>
+            {restaurantBillingNode && <div>{restaurantBillingNode}</div>}
             {(paymentSettingsNode || payments) && (
               <div>
                 {payments ? (

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { readFile, readdir } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
 import { PGlite } from '@electric-sql/pglite'
+import { restaurantTestHours } from './fixtures/restaurant-hours'
 import { reservationBalance, reservationIso, reservationLocalTime, reservationSchema } from '../lib/restaurant-reservations'
 
 test('reservation dates use WIB, reject invalid calendars and preserve exact deposit arithmetic', () => {
@@ -29,7 +30,7 @@ test('restaurant reservations enforce slot/capacity, own cashier scope, atomic D
     const [owner,a,b,other] = Array.from({length:4},()=>randomUUID())
     for(const id of [owner,a,b,other]) await db.query('insert into auth.users(id) values($1)',[id])
     const as = async(id:string)=>{await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id]);await db.exec('set role authenticated')}
-    const create = async(id:string)=>{await as(id);const bid=(await db.query<any>("select public.create_business_profile_for_category('restaurant','Resto','Owner','081234567890','Jalan','Bandung','Jawa Barat','') id")).rows[0].id;await db.query('select public.complete_business_onboarding($1)',[bid]);return bid}
+    const create = async(id:string)=>{await as(id);const bid=(await db.query<any>("select public.create_business_profile_for_category('restaurant','Resto','Owner','081234567890','Jalan','Bandung','Jawa Barat','') id")).rows[0].id;await db.query('select public.save_business_hours($1,0,$2)',[bid,restaurantTestHours()]);await db.query('select public.complete_business_onboarding($1)',[bid]);return bid}
     const bid=await create(owner),foreign=await create(other)
     await db.exec('reset role')
     for(const [uid,name] of [[a,'kasira'],[b,'kasirb']]) await db.query("insert into public.business_members(business_id,user_id,name,username,role,must_change_password) values($1,$2,$3,$3,'cashier',false)",[bid,uid,name])
