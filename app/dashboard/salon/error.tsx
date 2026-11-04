@@ -1,0 +1,2 @@
+'use client'
+export default function SalonError({reset}:{reset:()=>void}){return <section role="alert" className="rounded-2xl border border-[#454d5b] bg-[#273242] p-5 text-white"><h1 className="text-xl">Data salon belum dapat dimuat</h1><p className="mt-3 text-sm text-[#c5cbd5]">Periksa koneksi, lalu coba lagi. Jika tetap gagal, hubungi pengelola untuk memeriksa akses dan migrasi salon.</p><button onClick={reset} className="mt-5 min-h-11 rounded-lg bg-[#1835d9] px-4 py-2 focus-visible:outline-2 focus-visible:outline-[#24cbc5]">Coba lagi</button></section>}

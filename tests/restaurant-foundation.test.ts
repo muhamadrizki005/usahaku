@@ -8,10 +8,10 @@ import { businessCategorySchema, businessSlug, categoryFromSlug } from '../lib/b
 test('restaurant categories are explicit and do not silently turn unsupported categories into stores', () => {
   assert.equal(categoryFromSlug('restoran'), 'restaurant')
   assert.equal(categoryFromSlug('toko'), 'store')
-  assert.equal(categoryFromSlug('barbershop'), null)
+  assert.equal(categoryFromSlug('barbershop'), 'barbershop')
   assert.equal(categoryFromSlug(['restoran']), null)
   assert.equal(businessSlug('restaurant'), 'restoran')
-  assert.equal(businessCategorySchema.safeParse('barbershop').success, false)
+  assert.equal(businessCategorySchema.safeParse('barbershop').success, true)
   assert.throws(() => businessSlug('unknown'))
 })
 
