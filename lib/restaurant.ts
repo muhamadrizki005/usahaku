@@ -13,7 +13,7 @@ export const restaurantOrderSchema = z.object({
 export const restaurantPaymentSchema = z.object({ payment: z.enum(['cash', 'qris', 'transfer'], { error: 'Pilih tunai, QRIS, atau transfer.' }), received: money, discountKind: z.enum(['none', 'amount', 'percent'], { error: 'Pilih jenis diskon yang tersedia.' }), discountValue: z.string().regex(/^(0|[1-9]\d{0,11})(\.\d{1,2})?$/, 'Isi nilai diskon dengan angka, maksimal dua desimal menggunakan titik.'), confirmed: z.literal(true, { error: 'Konfirmasi bahwa pembayaran sudah diterima dan diperiksa.' }) }).strict()
 export type RestaurantMenu = { id: string; business_id: string; name: string; category: string; price: number; active: boolean; available: boolean; revision: number }
 export type RestaurantTable = { id: string; business_id: string; name: string; capacity: number; active: boolean; revision: number }
-export type RestaurantOrder = {
+export type RestaurantOrder = { occupies_table?: boolean;
   reservation_id?: string | null; deposit_amount?: number;
   id: string; business_id: string; actor_id: string | null; actor_name: string; kind: 'dine_in' | 'takeaway'; table_id: string | null; table_name: string | null;
   guests: number; customer: string; notes: string; lines: SaleLine[]; subtotal: number; status: 'open' | 'paid' | 'cancelled';
@@ -29,3 +29,4 @@ export type RestaurantOverviewData = { revenue: number; saleCount: number; openC
 export function restaurantCashAmount(value: string): number | null {
   return /^(0|[1-9]\d{0,11})$/.test(value) ? Number(value) : null
 }
+export type RestaurantTableUsage = { id: string; occupied: boolean; reserved?: boolean; locked?: boolean; conflict?: boolean; observed_at?: string; next_change_at?: string | null }

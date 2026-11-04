@@ -66,7 +66,9 @@ test('restaurant reservations enforce slot/capacity, own cashier scope, atomic D
     const opened=(await db.query<any>('select public.save_restaurant_order($1,$2,null,$3,$4) value',[bid,oid,orderReq,order])).rows[0].value;assert.equal(opened.reservation_id,rid)
     await assert.rejects(db.query('select public.cancel_restaurant_order($1,$2,0,$3)',[bid,oid,'Tamu batal']),/Reservasi/)
     const payReq=randomUUID(),payment={payment:'cash',received:'50000',discountKind:'none',discountValue:'0',confirmed:true}
-    const pay=()=>db.query<any>('select public.pay_restaurant_order($1,$2,0,$3,$4) value',[bid,oid,payReq,payment]).then(r=>r.rows[0].value)
+    const pay=()=>db.query<any>('select public.pay_restaurant_order($1,$2,1,$3,$4) value',[bid,oid,payReq,payment]).then(r=>r.rows[0].value)
+    await assert.rejects(pay(),/Tandai pelanggan datang/)
+    await db.query('select public.arrive_restaurant_reservation($1,$2,1,$3)',[bid,rid,randomUUID()])
     const paid=await pay();assert.equal(paid.sale.total,60000);assert.equal(paid.sale.received,70000);assert.equal(paid.sale.change,10000);assert.equal(paid.sale.balance_received,50000);assert.equal(paid.sale.deposit_payment,'transfer');assert.equal((await pay()).sale.id,paid.sale.id)
     assert.equal((await db.query<any>('select status from public.restaurant_reservations where id=$1',[rid])).rows[0].status,'completed')
     await as(b);assert.equal((await db.query('select id from public.pos_transactions')).rows.length,0)

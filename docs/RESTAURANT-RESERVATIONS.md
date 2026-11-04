@@ -14,7 +14,7 @@ Pengguna menyetujui durasi awal 90 menit, toleransi terlambat 15 menit, pelepasa
 2. Buat reservasi: kedatangan, durasi, jumlah tamu, nama, kontak, catatan opsional. Periksa meja; kotak hanya menampilkan nama/nomor meja, kapasitas pilihan tampil di bawahnya. Meja yang tidak tersedia tidak dapat dipilih. Mengubah jadwal/jumlah tamu mewajibkan pemeriksaan ulang.
 3. Simpan. Database mengunci usaha dan memeriksa ulang kapasitas, status meja, serta bentrok. Reschedule masih diperbolehkan sebelum pelanggan datang, dengan revisi dan audit; DP tidak dicatat ulang.
 4. Jika menerima DP, buka **Catat DP**, masukkan nominal dan metode tunai/QRIS/transfer, lalu konfirmasi penerimaan nyata. Satu DP per reservasi, tanpa cicilan/top-up. Nominal positif rupiah bulat, maksimal Rp999.999.999.999.
-5. Pelanggan datang: **Buka pesanan** mengisi meja, jumlah tamu, nama dan catatan dari reservasi. Pilih menu lalu simpan. Reservasi dan pesanan ditautkan atomik, satu reservasi hanya untuk satu pesanan.
+5. **Tambah / ubah pesanan** mengisi meja, jumlah tamu, nama dan catatan dari reservasi. Makanan bisa dicatat sejak reservasi dibuat, tanpa menandai meja terpakai. Staf kemudian memakai **Tandai pelanggan datang** ketika pelanggan tiba dan meja kosong. Satu reservasi hanya untuk satu pesanan; pelunasan tersedia setelah kedatangan dicatat.
 6. Pelunasan menunjukkan total, DP, sisa tagihan dan kembalian. Struk mempertahankan total tagihan asli serta memisahkan DP/metode DP, sisa tagihan dan uang yang diterima saat pelunasan. Pembayaran manual tetap harus diperiksa petugas.
 7. Batal/tidak hadir dicatat dengan alasan. Bila ada DP, owner/admin wajib mengonfirmasi refund penuh yang sudah dilakukan di luar aplikasi. Pesanan terbuka ikut dibatalkan dan meja dilepas atomik; riwayat tetap ada.
 
@@ -22,10 +22,10 @@ Pengguna menyetujui durasi awal 90 menit, toleransi terlambat 15 menit, pelepasa
 
 - Waktu disimpan sebagai `timestamptz`; formulir dan daftar menggunakan WIB, terlepas dari zona waktu perangkat.
 - Jadwal baru/perubahan dimulai di masa depan, maksimal 366 hari ke depan. Durasi dapat diubah staf menjadi 1–720 menit. Reservasi boleh melintasi tengah malam.
-- Rentang memakai batas `[mulai, selesai)`. Reservasi berikutnya boleh tepat pada jam selesai sebelumnya, tanpa buffer tambahan.
-- Meja yang sedang memiliki pesanan terbuka tidak bisa menerima reservasi yang dimulai dalam 90 menit ke depan. Reservasi lebih jauh tetap memerlukan pemeriksaan keadaan meja oleh staf saat kedatangan; sistem tidak mengetahui kapan tamu secara fisik meninggalkan meja.
-- Pesanan walk-in baru memakai asumsi penggunaan meja 90 menit dan ditolak bila beririsan dengan reservasi aktif. Pesanan yang sudah terbuka tetap dapat diperbarui. Tidak ada pemindahan paksa pesanan/tamu.
-- Check-in melalui pesanan diperbolehkan mulai 15 menit sebelum kedatangan sampai sebelum jam akhir reservasi. Meja tetap harus bebas dari pesanan terbuka lain.
+- Rentang alokasi memakai batas `[mulai - buffer, selesai)`. Buffer default 120 menit dan dapat diubah owner menjadi 0–720 menit melalui Pengaturan. Alokasi reservasi baru/yang dipindah tidak boleh tumpang tindih. Perubahan buffer mempertahankan reservasi lama dan melaporkan pasangan yang kini bertumpuk.
+- Meja yang sedang memiliki pelanggan aktif tidak bisa menerima reservasi baru bila awal alokasinya kurang dari 90 menit dari sekarang. Reservasi lebih jauh tetap memerlukan pemeriksaan keadaan meja oleh staf saat kedatangan; sistem tidak mengetahui kapan tamu secara fisik meninggalkan meja.
+- Pesanan walk-in baru ditolak sejak penguncian dimulai hingga akhir jadwal reservasi. Pesanan yang sudah terbuka tetap dapat diperbarui dan dibayar. Tidak ada pemindahan paksa pesanan/tamu.
+- Kedatangan dicatat secara terpisah dari pesanan, sejak awal penguncian hingga sebelum jam akhir reservasi. Meja harus bebas dari pesanan fisik atau pelanggan reservasi lain yang sudah datang. Makanan boleh dicatat lebih awal, pelunasan harus sesudah datang.
 - Tidak hadir hanya dapat ditandai sesudah jam kedatangan +15 menit. Tidak ada cron yang membatalkan status atau menghanguskan DP. Setelah rentang waktu selesai, reservasi yang belum ditutup tetap terlihat sebagai Dijadwalkan, tetapi tidak memblokir rentang waktu lain di luar slotnya.
 - Kapasitas/status meja tidak bisa diubah sehingga merusak reservasi aktif. Ubah/batalkan reservasinya terlebih dahulu. Nama meja pada reservasi adalah snapshot.
 - Pemeriksaan terhadap jam buka usaha belum diterapkan; staf bertanggung jawab memilih jadwal sesuai jam operasional yang disepakati restoran. Tidak ada penggabungan meja, waiting list, atau booking tanpa meja.
@@ -44,6 +44,10 @@ Pengguna menyetujui durasi awal 90 menit, toleransi terlambat 15 menit, pelepasa
 Migrasi tambahan: `supabase/migrations/202611030002_restaurant_reservations.sql`. Pengguna mengonfirmasi penerapan berhasil. Jangan menjalankan ulang migrasi lama. Tidak ada reset atau penghapusan data; transaksi lama mendapat nilai DP nol tanpa perubahan total. Fungsi order/payment lama disalin menjadi helper privat, tidak dapat dieksekusi akun aplikasi. Wrapper menambah validasi reservasi tanpa melewati pemeriksaan menu, meja, harga, role, atau retry yang sudah ada.
 
 Tabel reservasi read-only bagi akun aplikasi; mutasi hanya melalui RPC terautentikasi. Kasir membaca/mengubah reservasi sendiri dan tetap hanya membaca transaksi miliknya. Staf lain hanya memperoleh metadata ketersediaan meja, tanpa nama/kontak/DP. Owner/admin tetap dibatasi tenant. Pengaturan toko, role dan poin tetap owner-only. Akun nonaktif, sandi sementara dan usaha draf mengikuti guard lama.
+
+## Aturan terbaru
+
+Pesanan di muka dan penguncian meja yang dapat diatur owner menggantikan batas buka pesanan 15 menit serta penanda reservasi 90 menit pada implementasi awal. Lihat [RESTAURANT-PREORDERS.md](RESTAURANT-PREORDERS.md) untuk alur dan aturan yang berlaku. Catatan hasil di bawah merupakan riwayat tahap sebelumnya.
 
 ## Verifikasi
 
