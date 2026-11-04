@@ -3,6 +3,7 @@ import { requireBusiness } from '@/lib/access'
 import { readReservations } from '@/lib/restaurant-reservations-server'
 import { reservationIso } from '@/lib/restaurant-reservations'
 import RestaurantReservations from '@/components/restaurant-reservations'
+import { readRestaurantMenu } from '@/lib/restaurant-server'
 
 export default async function ReservationsPage({searchParams}:{searchParams:Promise<Record<string,string|string[]|undefined>>}) {
   const {business,supabase,member}=await requireBusiness(['owner','admin','cashier'])
@@ -11,5 +12,5 @@ export default async function ReservationsPage({searchParams}:{searchParams:Prom
   let day=typeof query.day==='string'?query.day:fallback
   try{reservationIso(day+'T00:00')}catch{day=fallback}
   const page=typeof query.page==='string'&&/^\d{1,6}$/.test(query.page)?Number(query.page):0
-  return <RestaurantReservations member={member} day={day} data={await readReservations(supabase,business.id,day,page)}/>
+  return <RestaurantReservations member={member} menu={await readRestaurantMenu(supabase,business.id)} lockMinutes={business.reservation_lock_minutes ?? 120} day={day} data={await readReservations(supabase,business.id,day,page)}/>
 }

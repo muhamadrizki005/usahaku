@@ -37,6 +37,10 @@ export function restaurantFailure(input: RestaurantError | string, operation: Op
   const error = typeof input === 'string' ? { code: input } : input
   const code = error?.code || '', message = error?.message || ''
   const reservationMessages = [
+    'Meja dikunci untuk reservasi. Pilih meja lain.',
+    'Meja masih dipakai pelanggan reservasi.',
+    'Tandai pelanggan datang sebelum memproses pesanan.',
+    'Tandai pelanggan datang sebelum melunasi pesanan.',
     'Reservasi sudah diproses atau dibatalkan.',
     'Buka pesanan mulai 15 menit sebelum kedatangan hingga sebelum akhir reservasi.',
     'Meja, tamu, dan pelanggan harus sesuai reservasi.',

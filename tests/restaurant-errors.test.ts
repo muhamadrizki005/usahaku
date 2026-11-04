@@ -5,6 +5,9 @@ import { restaurantTableSchema, restaurantOrderSchema } from '../lib/restaurant'
 
 const failure = (reason: Record<string, unknown>, code = 'PT409') => restaurantFailure({ code, details: JSON.stringify(reason) })
 test('restaurant errors explain exact capacity, availability and payment causes without exposing raw errors', () => {
+  for (const message of ['Meja dikunci untuk reservasi. Pilih meja lain.', 'Meja masih dipakai pelanggan reservasi.', 'Tandai pelanggan datang sebelum memproses pesanan.', 'Tandai pelanggan datang sebelum melunasi pesanan.']) {
+    assert.deepEqual(restaurantFailure({ code: 'P0001', message }), { error: message, uncertain: false })
+  }
   assert.match(failure({ reason: 'table_capacity', capacity: 4, guests: 6 }).error!, /hanya muat 4 orang.*jumlah tamu 6 orang/)
   assert.match(failure({ reason: 'table_busy_capacity', capacity: 1, guests: 2 }).error!, /dipakai oleh 2 tamu.*menjadi 1 orang/)
   assert.match(failure({ reason: 'table_busy_deactivate' }).error!, /belum bisa dinonaktifkan/)

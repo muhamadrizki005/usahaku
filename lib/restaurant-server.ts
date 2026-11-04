@@ -36,11 +36,8 @@ export async function readRestaurantOverview(client: SupabaseClient, id: string)
   if (error || !data) throw Error('Ringkasan restoran belum dapat dibaca. Periksa koneksi dan migrasi pembacaan restoran.')
   return data
 }
-export async function readRestaurantUsage(client: SupabaseClient, id: string): Promise<{ id: string; occupied: boolean; reserved?: boolean }[]> {
-  const { data, error } = await client.rpc('restaurant_table_usage', { target_id: id }).abortSignal(AbortSignal.timeout(15000)).retry(false)
-  if (error || !data) throw Error('Ketersediaan meja belum dapat dibaca. Muat ulang sebelum menerima pesanan.')
-  const now = new Date(), end = new Date(now.getTime() + 90 * 60000)
-  const availability = await client.rpc('restaurant_reservation_availability', { target_id: id, from_ts: now.toISOString(), to_ts: end.toISOString(), guest_count: 1, exclude_id: null }).abortSignal(AbortSignal.timeout(15000)).retry(false)
-  if (availability.error) throw Error('Reservasi meja belum dapat diperiksa. Muat ulang sebelum menerima pesanan.')
-  return data.map((table: { id: string; occupied: boolean }) => ({ ...table, reserved: !table.occupied && availability.data.some((slot: { id: string; available: boolean }) => slot.id === table.id && !slot.available) }))
+export async function readRestaurantUsage(client: SupabaseClient, id: string): Promise<import('./restaurant').RestaurantTableUsage[]> {
+  const { data, error } = await client.rpc('read_restaurant_table_state', { target_id: id }).abortSignal(AbortSignal.timeout(15000)).retry(false)
+  if (error || !data) throw Error('Ketersediaan meja belum dapat dibaca. Periksa migrasi penguncian meja dan muat ulang.')
+  return data
 }

@@ -18,6 +18,7 @@ import {
 } from "react";
 import type { Business } from "@/lib/validation";
 import { createBusiness, saveBusinessProfile, saveLoyaltySettings } from "@/app/actions";
+import RestaurantReservationSettings from "@/components/restaurant-reservation-settings";
 import BusinessPaymentSettings from "@/components/business-payment-settings";
 import type { PaymentSettings } from "@/lib/business-payments";
 import React from "react";
@@ -599,6 +600,7 @@ export default function OriginalIdentity({
           <div className="mt-8 grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
             <div>
               <BusinessHoursSettings business={business} onNotify={showToast} />
+              {business.category === "restaurant" && <div className="mt-6"><RestaurantReservationSettings minutes={business.reservation_lock_minutes ?? 120} revision={business.reservation_settings_revision ?? 0}/></div>}
             </div>
             {(paymentSettingsNode || payments) && (
               <div>

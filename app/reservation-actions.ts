@@ -4,9 +4,43 @@ import { revalidatePath } from 'next/cache'
 import { requireBusiness } from '@/lib/access'
 import { reservationSchema, type Reservation, type ReservationAvailability, type ReservationPage } from '@/lib/restaurant-reservations'
 import { readReservations } from '@/lib/restaurant-reservations-server'
+import { reservationBookingExtras } from '@/lib/reservation-booking'
+import { restaurantFailure } from '@/lib/restaurant-errors'
 
 const ids = z.object({ id: z.uuid(), revision: z.number().int().nonnegative().nullable(), request: z.uuid() }).strict()
 export type ReservationResult = { value?: Reservation; error?: string; uncertain?: boolean }
+export async function createReservationBooking(input: unknown, details: unknown, extras: unknown): Promise<ReservationResult> {
+  const { supabase, business } = await context(), parsed = ids.safeParse(input), values = reservationSchema.safeParse(details), options = reservationBookingExtras.safeParse(extras)
+  if (!parsed.success || parsed.data.revision !== null) return { error: 'Permintaan reservasi baru tidak valid.' }
+  if (!values.success) return { error: values.error.issues[0].message }
+  if (!options.success) return { error: options.error.issues[0].message }
+  const p = parsed.data
+  const { data, error } = await supabase.rpc('create_restaurant_reservation_bundle', { target_id: business.id, item_id: p.id, operation_id: p.request, details: values.data, meal: options.data.meal, deposit: options.data.deposit }).abortSignal(AbortSignal.timeout(15000)).retry(false)
+  if (error || !data) {
+    if (error?.details && error.code === 'PT409') { const result = restaurantFailure(error, 'order'); return { error: result.error, uncertain: result.uncertain } }
+    if (error?.code === 'PGRST202') return { error: 'Reservasi belum dapat disimpan. Hubungi pengelola untuk memeriksa layanan.' }
+    return failure(error)
+  }
+  revalidatePath('/dashboard', 'layout'); return { value: data }
+}
+export async function arriveReservation(input: unknown): Promise<ReservationResult> {
+  const { supabase, business } = await context(), parsed = ids.safeParse(input)
+  if (!parsed.success || parsed.data.revision === null) return { error: 'Permintaan kedatangan tidak valid.' }
+  const p = parsed.data
+  const { data, error } = await supabase.rpc('arrive_restaurant_reservation', { target_id: business.id, item_id: p.id, expected_revision: p.revision, operation_id: p.request }).abortSignal(AbortSignal.timeout(15000)).retry(false)
+  if (error || !data) return failure(error)
+  revalidatePath('/dashboard', 'layout'); return { value: data }
+}
+export async function saveReservationLockSettings(input: unknown): Promise<{ value?: { minutes: number; revision: number; conflicts: number }; error?: string; uncertain?: boolean }> {
+  const { supabase, business } = await requireBusiness(['owner'])
+  if (business.category !== 'restaurant') return { error: 'Pengaturan hanya tersedia untuk restoran.' }
+  const parsed = z.object({ revision: z.number().int().nonnegative(), request: z.uuid(), minutes: z.number().int().min(0).max(720) }).strict().safeParse(input)
+  if (!parsed.success) return { error: 'Isi waktu penguncian 0–720 menit.' }
+  const p = parsed.data
+  const { data, error } = await supabase.rpc('save_restaurant_lock_settings', { target_id: business.id, expected_revision: p.revision, operation_id: p.request, minutes: p.minutes }).abortSignal(AbortSignal.timeout(15000)).retry(false)
+  if (error || !data) { const result = failure(error); return { error: result.error, uncertain: result.uncertain } }
+  revalidatePath('/dashboard', 'layout'); return { value: data }
+}
 function failure(error: { code?: string; message?: string } | null): ReservationResult {
   if (error?.code === 'P0001') return { error: error.message }
   if (error?.code === '42501') return { error: 'Akses reservasi ditolak. Periksa izin staf atau usaha yang digunakan.' }

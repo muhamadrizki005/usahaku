@@ -3,6 +3,7 @@ import { cloneElement, isValidElement, useEffect, useId, useRef, useState, type 
 import { useRouter } from 'next/navigation'
 import { saveRestaurantResource } from '@/app/restaurant-actions'
 import type { RestaurantMenu, RestaurantTable } from '@/lib/restaurant'
+import RestaurantTableRefresh from './restaurant-table-refresh'
 import { rupiah } from '@/lib/pos'
 
 export const restaurantPanel = 'rounded-2xl border border-[#454d5b]/50 bg-[#273242] p-5 sm:p-6'
@@ -34,7 +35,7 @@ export function RestaurantDialog({ title, busy, close, children, wide = false }:
   </dialog>
 }
 
-export function RestaurantResources({ resource, menu = [], tables = [], usage = [] }: { resource: 'menu' | 'table'; menu?: RestaurantMenu[]; tables?: RestaurantTable[]; usage?: { id: string; occupied: boolean; reserved?: boolean }[] }) {
+export function RestaurantResources({ resource, menu = [], tables = [], usage = [] }: { resource: 'menu' | 'table'; menu?: RestaurantMenu[]; tables?: RestaurantTable[]; usage?: import('@/lib/restaurant').RestaurantTableUsage[] }) {
   const router = useRouter()
   const [query, setQuery] = useState(''), [page, setPage] = useState(0), [editing, setEditing] = useState<RestaurantMenu | RestaurantTable | 'new' | null>(null), [notice, setNotice] = useState('')
   const [viewing, setViewing] = useState<string | null>(null)
@@ -45,7 +46,7 @@ export function RestaurantResources({ resource, menu = [], tables = [], usage = 
   const title = resource === 'menu' ? 'menu' : 'meja'
   const items = resource === 'menu' ? menu : [...tables].sort((a, b) => a.name.localeCompare(b.name, 'id-ID', { numeric: true, sensitivity: 'base' }))
   const visible = items.filter(item => item.name.toLowerCase().includes(query.toLowerCase()))
-  return <section className={restaurantPanel}>
+  return <section className={restaurantPanel}><RestaurantTableRefresh usage={usage}/>
     <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg font-normal">{resource === 'menu' ? 'Daftar menu' : 'Daftar meja'}</h2><button type="button" onClick={() => { setNotice(''); setEditing('new') }} className={restaurantPrimary}>Tambah {title}</button></div>
     <p className="mt-2 text-sm leading-6 text-[#c5cbd5]">{resource === 'menu' ? 'Atur harga dan ketersediaan menu. Stok bahan baku dan resep belum dihitung.' : 'Kapasitas diperiksa saat pesanan dibuat. Satu meja menampung satu pesanan terbuka.'}</p>
     {notice && <p role="status" className="mt-3 text-sm text-[#24cbc5]">{notice}</p>}
@@ -57,13 +58,13 @@ export function RestaurantResources({ resource, menu = [], tables = [], usage = 
           return <button key={item.id} type="button" aria-label={item.name} aria-describedby={taken ? occupiedHint : undefined} aria-haspopup="dialog" title={taken ? `${item.name}: terpakai atau reservasi, tidak tersedia untuk pesanan baru` : item.name} onClick={() => setViewing(item.id)} className={'flex aspect-square min-w-0 items-center justify-center rounded-xl border border-[#454d5b] bg-[#1c222e] p-3 text-center text-sm text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5] ' + (taken ? 'opacity-60' : 'hover:border-[#24cbc5] hover:bg-[#303640]')}><span className="line-clamp-3 [overflow-wrap:anywhere]">{item.name}</span></button>
         })}
       </div>
-      <p id={occupiedHint} className="mt-3 text-xs leading-5 text-[#c5cbd5]">Meja pudar sedang terpakai atau memiliki reservasi dalam 90 menit ke depan dan tidak dapat dipilih untuk pesanan baru. Tekan meja untuk melihat detail.</p>
+      <p id={occupiedHint} className="mt-3 text-xs leading-5 text-[#c5cbd5]">Meja pudar sedang terpakai atau dikunci untuk reservasi dan tidak dapat dipilih untuk pesanan baru. Tekan meja untuk melihat detail.</p>
       {!visible.length && <p className="py-8 text-sm text-[#c5cbd5]">Belum ada meja yang sesuai.</p>}
     </div> : <div className="mt-4 overflow-x-auto"><table className="w-full text-left text-sm"><thead className="border-b border-[#454d5b] text-[#c5cbd5]"><tr><th className="p-3 font-normal">Nama</th><th className="p-3 font-normal">Kategori / harga</th><th className="p-3 font-normal">Status</th><th className="p-3 font-normal">Tindakan</th></tr></thead><tbody>{visible.slice(page * 25, page * 25 + 25).map(item => <tr key={item.id} className="border-b border-[#454d5b]/50"><td className="max-w-64 break-words p-3">{item.name}</td><td className="p-3">{'price' in item && <>{item.category}<br />{rupiah(Number(item.price))}</>}</td><td className="p-3">{!item.active ? 'Nonaktif' : 'available' in item && (item.available ? 'Tersedia' : 'Habis')}</td><td className="p-3"><button type="button" onClick={() => setEditing(item)} className={restaurantButton} aria-label={`Ubah ${item.name}`}>Ubah</button></td></tr>)}</tbody></table>{!visible.length && <p className="py-8 text-sm text-[#c5cbd5]">Belum ada menu yang sesuai.</p>}</div>}
     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-[#c5cbd5]"><span>{visible.length} {title}</span><div className="flex gap-2"><button disabled={!page} onClick={() => setPage(v => v - 1)} className={restaurantButton}>Sebelumnya</button><button disabled={(page + 1) * 25 >= visible.length} onClick={() => setPage(v => v + 1)} className={restaurantButton}>Berikutnya</button></div></div>
     {resource === 'table' && selectedTable && <RestaurantDialog title={`Detail ${selectedTable.name}`} busy={false} close={() => setViewing(null)}>
-      <dl className="space-y-4 text-sm"><div><dt className="text-[#c5cbd5]">Nama / nomor meja</dt><dd className="mt-1 break-words text-white [overflow-wrap:anywhere]">{selectedTable.name}</dd></div><div><dt className="text-[#c5cbd5]">Kapasitas</dt><dd className="mt-1 text-white">{selectedTable.capacity} orang</dd></div><div><dt className="text-[#c5cbd5]">Status</dt><dd className="mt-1 text-white">{!selectedTable.active ? 'Nonaktif' : occupied ? 'Terpakai' : reserved ? 'Reservasi dalam 90 menit' : 'Tersedia'}</dd></div></dl>
-      <p className="mt-5 text-sm leading-6 text-[#c5cbd5]">{!selectedTable.active ? 'Meja nonaktif tidak dapat dipilih untuk pesanan baru.' : occupied ? 'Meja ini memiliki pesanan yang belum dibayar.' : reserved ? 'Meja ini dialokasikan untuk reservasi dalam 90 menit ke depan. Periksa halaman Reservasi sebelum menerima tamu.' : 'Belum ada pesanan terbuka pada meja ini.'}</p>
+      <dl className="space-y-4 text-sm"><div><dt className="text-[#c5cbd5]">Nama / nomor meja</dt><dd className="mt-1 break-words text-white [overflow-wrap:anywhere]">{selectedTable.name}</dd></div><div><dt className="text-[#c5cbd5]">Kapasitas</dt><dd className="mt-1 text-white">{selectedTable.capacity} orang</dd></div><div><dt className="text-[#c5cbd5]">Status</dt><dd className="mt-1 text-white">{!selectedTable.active ? 'Nonaktif' : occupied && reserved ? 'Masih terpakai menjelang reservasi' : occupied ? 'Terpakai' : reserved ? 'Dikunci untuk reservasi' : 'Tersedia'}</dd></div></dl>
+      <p className="mt-5 text-sm leading-6 text-[#c5cbd5]">{!selectedTable.active ? 'Meja nonaktif tidak dapat dipilih untuk pesanan baru.' : occupied ? 'Meja ini memiliki pesanan yang belum dibayar.' : reserved ? 'Meja ini dikunci sesuai waktu penguncian yang diatur owner. Periksa halaman Reservasi sebelum menerima tamu.' : 'Belum ada pesanan terbuka pada meja ini.'}</p>
       <div className="mt-5 flex justify-end"><button type="button" onClick={() => { setViewing(null); setEditing(selectedTable) }} className={restaurantPrimary}>Ubah meja</button></div>
     </RestaurantDialog>}
     {editing && <ResourceEditor resource={resource} initial={editing === 'new' ? null : editing} close={() => setEditing(null)} saved={() => { setEditing(null); setNotice(`${resource === 'menu' ? 'Menu' : 'Meja'} tersimpan.`); router.refresh() }} />}
