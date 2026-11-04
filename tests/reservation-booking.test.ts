@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { readFile, readdir } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
 import { PGlite } from '@electric-sql/pglite'
+import { restaurantTestHours } from './fixtures/restaurant-hours'
 import { reservationBookingExtras } from '../lib/reservation-booking'
 
 test('reservation booking accepts optional food and DP and rejects forged totals, partial portions and unconfirmed money',()=>{
@@ -29,7 +30,7 @@ test('reservation booking atomically saves meals and DP, rolls back failures, re
  for(const uid of people)await db.query('insert into auth.users(id) values($1)',[uid])
  const as=async(uid:string)=>{await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[uid]);await db.exec('set role authenticated')}
  const rpc=async(name:string,args:unknown[])=> (await db.query<any>('select public.'+name+'('+args.map((_,i)=>'$'+(i+1)).join(',')+') value',args)).rows[0].value
- const create=async(uid:string)=>{await as(uid);const id=await rpc('create_business_profile_for_category',['restaurant','Booking Test','Owner','081234567890','Jalan','Bandung','Jawa Barat','']);await rpc('complete_business_onboarding',[id]);return id}
+ const create=async(uid:string)=>{await as(uid);const id=await rpc('create_business_profile_for_category',['restaurant','Booking Test','Owner','081234567890','Jalan','Bandung','Jawa Barat','']);await rpc('save_business_hours',[id,0,restaurantTestHours()]);await rpc('complete_business_onboarding',[id]);return id}
  const bid=await create(owner),foreign=await create(other)
  await db.exec('reset role')
  for(const [uid,role] of [[a,'cashier'],[b,'cashier'],[manager,'admin']])await db.query("insert into public.business_members(business_id,user_id,name,username,role,must_change_password) values($1,$2,'Staff',$3,$4,false)",[bid,uid,uid!.slice(0,8),role])

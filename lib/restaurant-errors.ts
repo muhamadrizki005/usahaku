@@ -29,7 +29,7 @@ function reasonMessage(error: RestaurantError): string | null {
   if (detail.reason === 'table_busy_capacity' && validCount(detail.capacity) && validCount(detail.guests) && detail.guests > detail.capacity) return `Meja sedang dipakai oleh ${detail.guests} tamu. Kapasitas tidak bisa diubah menjadi ${detail.capacity} orang sebelum pesanan selesai atau dibatalkan.`
   if (detail.reason === 'menu_out' && typeof detail.name === 'string' && detail.name.trim().length >= 1 && detail.name.length <= 100) return `Menu "${detail.name}" sedang habis. Hapus menu tersebut dari tambahan pesanan atau pilih menu lain.`
   if (detail.reason === 'payment_short' && validMoney(detail.received) && validMoney(detail.total) && detail.received < detail.total) return `Uang diterima ${money(detail.received)}, sedangkan total ${money(detail.total)}. Pembayaran masih kurang ${money(detail.total - detail.received)}.`
-  if (detail.reason === 'payment_exact' && validMoney(detail.total)) return `Pembayaran QRIS/transfer harus sesuai total ${money(detail.total)}. Periksa nominal yang diterima sebelum mengonfirmasi.`
+  if (detail.reason === 'payment_exact' && validMoney(detail.total)) return `Pembayaran nontunai harus sesuai total ${money(detail.total)}. Periksa nominal yang diterima sebelum mengonfirmasi.`
   return null
 }
 
@@ -37,6 +37,9 @@ export function restaurantFailure(input: RestaurantError | string, operation: Op
   const error = typeof input === 'string' ? { code: input } : input
   const code = error?.code || '', message = error?.message || ''
   const reservationMessages = [
+    'Metode pembayaran berubah. Muat ulang sebelum menerima pembayaran.',
+    'Metode pembayaran ini tidak aktif. Pilih metode yang diaktifkan owner.',
+    'Pengaturan pajak atau biaya layanan berubah. Muat ulang sebelum pembayaran.',
     'Meja dikunci untuk reservasi. Pilih meja lain.',
     'Meja masih dipakai pelanggan reservasi.',
     'Tandai pelanggan datang sebelum memproses pesanan.',

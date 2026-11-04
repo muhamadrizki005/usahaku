@@ -1,5 +1,7 @@
 # Restoran / Cafe
 
+Tahap 4 November 2026 menambahkan validasi jam reservasi, pembayaran terkonfigurasi, pajak/layanan dan laporan DP. Lihat [RESTAURANT-COMPLETION.md](RESTAURANT-COMPLETION.md) untuk aturan serta status verifikasi terbaru. Catatan pengujian berikut merupakan riwayat tahap sebelumnya.
+
 ## Reservasi dan DP, 3 November 2026
 
 Reservasi internal, DP manual, penautan pesanan, pelunasan, pembatalan/refund dan tidak hadir ditambahkan pada branch `feat/restaurant-reservations`. Aturan, migrasi tambahan, batas laporan dan pengujian ada di [RESTAURANT-RESERVATIONS.md](RESTAURANT-RESERVATIONS.md). Catatan cakupan awal di bawah merupakan riwayat tahap operasional inti; pernyataan bahwa reservasi/DP belum dibangun telah digantikan oleh tahap ini. Bahan baku/resep tetap tidak termasuk.

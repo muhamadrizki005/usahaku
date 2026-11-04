@@ -6,8 +6,11 @@ import { loadRestaurantOrders, saveRestaurantOrder, payRestaurantOrder, cancelRe
 import { restaurantCashAmount, restaurantStages, restaurantOrderCode, type RestaurantMenu, type RestaurantTable, type RestaurantOrder, type RestaurantOrderPage, type RestaurantResult } from '@/lib/restaurant'
 import { reservationBalance, type Reservation } from '@/lib/restaurant-reservations'
 import type { Member } from '@/lib/validation'
-import { quote, rupiah, saleDate, type Sale } from '@/lib/pos'
+import { rupiah, saleDate, type Sale } from '@/lib/pos'
 import RestaurantTableRefresh from './restaurant-table-refresh'
+import RestaurantPaymentFields from './restaurant-payment-fields'
+import { enabledPaymentMethods, type PaymentSettings } from '@/lib/business-payments'
+import { restaurantQuote, type RestaurantBilling } from '@/lib/restaurant-billing'
 import DashboardSection from './dashboard-section'
 import { RestaurantDialog, RestaurantField, restaurantPanel, restaurantInput, restaurantButton, restaurantPrimary } from './restaurant-forms'
 
@@ -25,7 +28,7 @@ function useRestaurantRequest() {
   return { pending, error, locked, run }
 }
 const statusLabel = { open: 'Belum dibayar', paid: 'Dibayar', cancelled: 'Dibatalkan' }
-export default function RestaurantOrders({ menu, tables, initialPage, usage, member, reservation = null, linkedOrder = null, reservationError }: { menu: RestaurantMenu[]; tables: RestaurantTable[]; initialPage: RestaurantOrderPage; usage: import('@/lib/restaurant').RestaurantTableUsage[]; member: Member; reservation?: Reservation | null; linkedOrder?: RestaurantOrder | null; reservationError?: string }) {
+export default function RestaurantOrders({ menu, tables, initialPage, usage, member, payments, billing, reservation = null, linkedOrder = null, reservationError }: { payments: PaymentSettings; billing: RestaurantBilling; menu: RestaurantMenu[]; tables: RestaurantTable[]; initialPage: RestaurantOrderPage; usage: import('@/lib/restaurant').RestaurantTableUsage[]; member: Member; reservation?: Reservation | null; linkedOrder?: RestaurantOrder | null; reservationError?: string }) {
   const router = useRouter()
   const [refreshing, refresh] = useTransition()
   const [editor, setEditor] = useState<RestaurantOrder | 'new' | null>(linkedOrder || (reservation ? 'new' : null)), [payment, setPayment] = useState<RestaurantOrder | null>(null), [cancellation, setCancellation] = useState<RestaurantOrder | null>(null)
@@ -60,7 +63,7 @@ export default function RestaurantOrders({ menu, tables, initialPage, usage, mem
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-[#c5cbd5]"><span>{list.total} pesanan</span><div className="flex gap-2"><button disabled={!list.page} onClick={() => setPage(list.page - 1)} className={restaurantButton}>Sebelumnya</button><button disabled={(list.page + 1) * list.pageSize >= list.total} onClick={() => setPage(list.page + 1)} className={restaurantButton}>Berikutnya</button></div></div>
     </fieldset></fieldset></section>
     {editor && <OrderEditor reservation={editor === 'new' || editor.reservation_id === reservation?.id ? reservation : null} initial={editor === 'new' ? null : editor} menu={menu} tables={tables} usage={usage} close={() => setEditor(null)} saved={saved} />}
-    {payment && <Payment order={payment} member={member} close={() => setPayment(null)} paid={sale => { saved(); router.push(`/dashboard/transactions/${sale.id}`) }} />}
+    {payment && <Payment payments={payments} billing={billing} order={payment} member={member} close={() => setPayment(null)} paid={sale => { saved(); router.push(`/dashboard/transactions/${sale.id}`) }} />}
     {cancellation && <CancelOrder order={cancellation} close={() => setCancellation(null)} saved={saved} />}
   </DashboardSection>
 }
@@ -88,25 +91,26 @@ function OrderEditor({ initial, menu, tables, usage, close, saved, reservation }
   </fieldset>{request.error && <p role="alert" className="mt-4 text-sm text-[#ffb4ae]">{request.error}</p>}<div className="mt-5 flex justify-end gap-3"><button type="button" disabled={request.pending} onClick={close} className={restaurantButton}>Batal</button><button disabled={request.pending || !lines.length} className={restaurantPrimary}>{request.pending ? 'Menyimpan...' : request.locked ? 'Ulangi permintaan yang sama' : 'Simpan pesanan'}</button></div></form></RestaurantDialog>
 }
 
-function Payment({ order, member, close, paid }: { order: RestaurantOrder; member: Member; close: () => void; paid: (sale: Sale) => void }) {
+function Payment({ order, member, close, paid, payments, billing }: { payments: PaymentSettings; billing: RestaurantBilling; order: RestaurantOrder; member: Member; close: () => void; paid: (sale: Sale) => void }) {
   const request = useRestaurantRequest()
-  const [method, setMethod] = useState<'cash' | 'qris' | 'transfer'>('cash'), [received, setReceived] = useState(''), [confirmed, setConfirmed] = useState(false), [kind, setKind] = useState('none'), [value, setValue] = useState('0')
-  let total = Number(order.subtotal), discount = 0, error = ''
-  try { const result = quote(order.lines.map(l => ({ product: { price: Number(l.price) }, quantity: Number(l.quantity) })), kind, value); total = result.total; discount = result.discount } catch (e) { error = (e as Error).message }
+  const [method, setMethod] = useState<Sale['payment']>(enabledPaymentMethods(payments)[0] || 'cash'), [received, setReceived] = useState(''), [confirmed, setConfirmed] = useState(false), [kind, setKind] = useState('none'), [value, setValue] = useState('0')
+  useEffect(() => { if (!request.locked && !enabledPaymentMethods(payments).includes(method)) setMethod(enabledPaymentMethods(payments)[0] || 'cash') }, [payments, method, request.locked])
+  let total = Number(order.subtotal), discount = 0, error = '', service = 0, serviceRate = 0, tax = 0
+  try { const result = restaurantQuote(Number(order.subtotal), kind, value, order.kind, billing); total = result.total; discount = result.discount; service = result.service; serviceRate = result.serviceRate; tax = result.tax } catch (e) { error = (e as Error).message }
   const deposit = Number(order.deposit_amount || 0)
   let balance = total
   try { balance = reservationBalance(total, deposit) } catch (e) { error = (e as Error).message }
   const cashAmount = restaurantCashAmount(received)
   const cashError = method === 'cash' && received !== '' && cashAmount === null ? 'Masukkan nominal rupiah yang valid, tanpa pemisah ribuan.' : ''
-  function submit(e: FormEvent) { e.preventDefault(); if (error || (method === 'cash' && cashAmount === null)) return; const input = { id: order.id, revision: order.revision, request: crypto.randomUUID() }; const details = { payment: method, received: method === 'cash' ? received : String(balance), discountKind: kind, discountValue: value, confirmed }; void request.run(() => payRestaurantOrder(input, details), v => paid((v as { sale: Sale }).sale)) }
+  function submit(e: FormEvent) { e.preventDefault(); if (!request.locked && (error || (method === 'cash' && cashAmount === null))) return; const input = { id: order.id, revision: order.revision, request: crypto.randomUUID() }; const details = { payment: method, received: method === 'cash' ? received : String(balance), discountKind: kind, discountValue: value, paymentRevision: payments.revision, billingRevision: billing.revision, confirmed }; void request.run(() => payRestaurantOrder(input, details), v => paid((v as { sale: Sale }).sale)) }
   return <RestaurantDialog title={`Bayar ${restaurantOrderCode(order.id)}`} busy={request.pending} close={close}><form onSubmit={submit}><fieldset disabled={request.pending || request.locked} className="space-y-4">
     <ul className="divide-y divide-[#454d5b] text-sm">{order.lines.map(l => <li key={l.id} className="flex justify-between gap-3 py-2"><span>{l.name} / {l.quantity} porsi</span><span>{rupiah(Number(l.total))}</span></li>)}</ul>
     {member.role !== 'cashier' && <div className="grid gap-3 sm:grid-cols-2"><RestaurantField label="Jenis diskon"><select value={kind} onChange={e => { setKind(e.target.value); setValue('0') }} className={restaurantInput}><option value="none">Tanpa diskon</option><option value="amount">Nominal rupiah</option><option value="percent">Persen</option></select></RestaurantField>{kind !== 'none' && <RestaurantField label="Nilai diskon"><input inputMode="decimal" value={value} onChange={e => setValue(e.target.value)} className={restaurantInput} /></RestaurantField>}</div>}
-    <p className="text-sm">Diskon: {rupiah(discount)}</p><p className="text-lg">Total: {rupiah(total)}</p>
-    {deposit > 0 && <><p className="text-sm">DP terkonfirmasi: {rupiah(deposit)}</p><p className="text-lg">Sisa pembayaran: {rupiah(balance)}</p></>}<RestaurantField label="Metode pembayaran"><select value={method} onChange={e => setMethod(e.target.value as typeof method)} className={restaurantInput}><option value="cash">Tunai</option><option value="qris">QRIS manual</option><option value="transfer">Transfer manual</option></select></RestaurantField>
+    <p className="text-sm">Diskon: {rupiah(discount)}</p>{serviceRate>0&&<p className="text-sm">Biaya layanan ({serviceRate}%): {rupiah(service)}</p>}{Number(billing.tax_rate)>0&&<><p className="text-sm">Pajak ({Number(billing.tax_rate)}%): {rupiah(tax)}</p><p className="text-xs text-[#c5cbd5]">Dasar pajak: {billing.tax_base==='net_service'?'subtotal setelah diskon + biaya layanan':'subtotal setelah diskon'}.</p></>}<p className="text-lg">Total: {rupiah(total)}</p>
+    {deposit > 0 && <><p className="text-sm">DP terkonfirmasi: {rupiah(deposit)}</p><p className="text-lg">Sisa pembayaran: {rupiah(balance)}</p></>}<RestaurantPaymentFields settings={payments} method={method} onChange={setMethod}/>
     {method === 'cash' ? <><RestaurantField label="Uang diterima"><input required inputMode="numeric" maxLength={32} aria-invalid={Boolean(cashError)} value={received} onChange={e => setReceived(e.target.value)} className={restaurantInput} /></RestaurantField><p className="text-sm">Kembalian pratinjau: {cashAmount === null ? (received === '' ? rupiah(0) : '-') : rupiah(Math.max(0, cashAmount - balance))}</p></> : <p className="text-sm leading-6 text-[#c5cbd5]">Periksa pembayaran pada rekening/aplikasi usaha. Usahaku tidak memverifikasi QRIS atau transfer secara otomatis.</p>}
     <label className="flex min-h-11 items-center gap-3 text-sm"><input required type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} />{deposit > 0 ? 'Sisa pembayaran sudah diterima dan diperiksa.' : 'Pembayaran sebesar total sudah diterima dan diperiksa.'}</label>
-  </fieldset>{(cashError || request.error || error) && <p role="alert" className="mt-4 text-sm text-[#ffb4ae]">{cashError || request.error || error}</p>}<div className="mt-5 flex justify-end gap-3"><button type="button" disabled={request.pending} onClick={close} className={restaurantButton}>Batal</button><button disabled={request.pending || !confirmed || Boolean(error) || (method === 'cash' && cashAmount === null)} className={restaurantPrimary}>{request.pending ? 'Mencatat...' : request.locked ? 'Ulangi permintaan yang sama' : 'Catat pembayaran'}</button></div></form></RestaurantDialog>
+  </fieldset>{(cashError || request.error || error) && <p role="alert" className="mt-4 text-sm text-[#ffb4ae]">{cashError || request.error || error}</p>}<div className="mt-5 flex justify-end gap-3"><button type="button" disabled={request.pending} onClick={close} className={restaurantButton}>Batal</button><button disabled={request.pending || (!request.locked && (!enabledPaymentMethods(payments).includes(method) || !confirmed || Boolean(error) || (method === 'cash' && cashAmount === null)))} className={restaurantPrimary}>{request.pending ? 'Mencatat...' : request.locked ? 'Ulangi permintaan yang sama' : 'Catat pembayaran'}</button></div></form></RestaurantDialog>
 }
 
 function CancelOrder({ order, close, saved }: { order: RestaurantOrder; close: () => void; saved: () => void }) {

@@ -38,8 +38,8 @@ export function reportCsv(data:ReportData,filter:ReportFilter,businessName:strin
   row(['Laporan penjualan',businessName]);row(['Tanggal awal WIB',filter.from,'Tanggal akhir WIB',filter.to]);row(['Pembayaran',reportPayment(filter),'Diambil',saleDate(data.generatedAt)])
   row([]);row(['RINGKASAN']);row(['Metrik','Nilai'])
   for(const [label,value] of [['Subtotal selesai',summary.gross.toString()],['Diskon selesai',summary.discount.toString()],['Omzet selesai',summary.net.toString()],['Transaksi selesai',String(summary.count)],['Rata-rata transaksi selesai',summary.average.toString()],['Produk terjual (gabungan satuan)',reportUnits(summary.units)],['Dibatalkan dari penjualan periode ini',String(summary.cancelled)],['Refund manual menurut tanggal pembatalan',summary.refund.toString()]])row([label,value])
-  row([]);row(['PENJUALAN']);row(['Referensi','Tanggal penjualan WIB','Kasir','Pelanggan','Pembayaran','Status','Subtotal rupiah','Diskon rupiah','Pajak rupiah','Total transaksi asli rupiah','Omzet diakui rupiah','Tanggal pembatalan WIB','Alasan pembatalan'])
-  for(const s of data.sales)row([saleCode(s),saleDate(s.created_at),s.actor_name,s.customer,paymentLabel[s.payment],s.status==='completed'?'Selesai':'Dibatalkan',s.subtotal,s.discount,s.tax_amount||0,s.total,s.status==='completed'?Number(s.total)-Number(s.tax_amount||0):0,s.cancelled_at?saleDate(s.cancelled_at):'',s.cancellation_reason||''])
+  row([]);row(['PENJUALAN']);row(['Referensi','Tanggal penjualan WIB','Kasir','Pelanggan','Pembayaran','Status','Subtotal rupiah','Diskon rupiah','Biaya layanan rupiah','Pajak rupiah','Total transaksi asli rupiah','Omzet diakui rupiah','Tanggal pembatalan WIB','Alasan pembatalan'])
+  for(const s of data.sales)row([saleCode(s),saleDate(s.created_at),s.actor_name,s.customer,paymentLabel[s.payment],s.status==='completed'?'Selesai':'Dibatalkan',s.subtotal,s.discount,s.service_amount||0,s.tax_amount||0,s.total,s.status==='completed'?Number(s.total)-Number(s.tax_amount||0):0,s.cancelled_at?saleDate(s.cancelled_at):'',s.cancellation_reason||''])
   row([]);row(['REFUND']);row(['Referensi','Tanggal penjualan WIB','Tanggal pembatalan WIB','Petugas pembatalan','Pelanggan','Pembayaran','Refund manual rupiah','Alasan'])
   for(const s of data.refunds)row([saleCode(s),saleDate(s.created_at),saleDate(s.cancelled_at!),s.cancelled_by_name,s.customer,paymentLabel[s.payment],s.refund_amount,s.cancellation_reason])
   if(data.sales.some(s=>Number(s.deposit_amount)>0)){
@@ -49,6 +49,6 @@ export function reportCsv(data:ReportData,filter:ReportFilter,businessName:strin
   }
   row([]);row(['PRODUK']);row(['Produk','SKU','Satuan','Jumlah terjual','Nilai sebelum diskon rupiah'])
   for(const p of rankProducts(data,'gross'))row([p.name,p.sku,p.unit,reportUnits(p.quantity),p.gross.toString()])
-  row([]);row(['CATATAN','Omzet tidak termasuk pajak. Total transaksi termasuk pajak. Omzet mengecualikan pembatalan dari tanggal asal. Refund mengikuti tanggal pembatalan dan tidak dikurangi ulang. Harga modal/HPP belum tersedia; ini bukan laporan laba.'])
+  row([]);row(['CATATAN','Omzet termasuk biaya layanan bila ada dan tidak termasuk pajak. Total transaksi termasuk pajak. Omzet mengecualikan pembatalan dari tanggal asal. Refund mengikuti tanggal pembatalan dan tidak dikurangi ulang. Harga modal/HPP belum tersedia; ini bukan laporan laba.'])
   return '\uFEFF'+lines.join('\r\n')+'\r\n'
 }

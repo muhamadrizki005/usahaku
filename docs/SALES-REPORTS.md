@@ -1,5 +1,7 @@
 # Laporan dan ekspor toko
 
+Pembaruan restoran 4 November 2026: omzet memasukkan biaya layanan dan mengecualikan pajak. Laporan DP tersedia terpisah dari laporan penjualan; bagian DP dalam refund penjualan tidak boleh dijumlahkan lagi sebagai refund tambahan. Aturan serta status verifikasi ada di [RESTAURANT-COMPLETION.md](RESTAURANT-COMPLETION.md).
+
 Pengguna menyetujui tahap laporan toko pada 23 Oktober 2026: tanggal WIB, metode pembayaran, omzet/diskon/transaksi/unit, pembatalan/refund manual, produk terlaris, CSV dan PDF. Tidak termasuk laba, HPP, pajak baru, gateway pembayaran atau operasional restoran/salon.
 
 ## Implementasi

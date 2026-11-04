@@ -20,7 +20,7 @@ test('restaurant errors explain exact capacity, availability and payment causes 
   assert.match(failure({ reason: 'order_cancelled' }).error!, /sudah dibatalkan/)
   assert.match(failure({ reason: 'order_revision' }).error!, /petugas atau tab lain/)
   assert.match(failure({ reason: 'payment_short', received: 10000, total: 30000 }, '22023').error!, /kurang Rp20.000/)
-  assert.match(failure({ reason: 'payment_exact', total: 30000 }, '22023').error!, /sesuai total Rp30.000/)
+  assert.match(failure({ reason: 'payment_exact', total: 30000 }, '22023').error!, /Pembayaran nontunai harus sesuai total Rp30.000/)
   assert.match(restaurantFailure({ code: '23505', message: 'duplicate key value violates unique constraint "restaurant_table_name"', details: 'secret database row' }, 'table').error!, /Nama\/nomor meja sudah dipakai/)
   assert.match(restaurantFailure({ code: 'PT409', message: 'Menu changed; reload' }, 'menu').error!, /Menu telah diperbarui/)
   assert.match(restaurantFailure({ code: 'PT409', message: 'Table changed; reload' }, 'table').error!, /Data meja telah diperbarui/)

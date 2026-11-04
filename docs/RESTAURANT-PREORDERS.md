@@ -1,5 +1,7 @@
 # Pesanan di muka dan penguncian meja
 
+Pembaruan 4 November 2026: validasi reservasi terhadap jam buka, pembayaran terkonfigurasi, pajak/layanan dan laporan DP dijelaskan di [RESTAURANT-COMPLETION.md](RESTAURANT-COMPLETION.md). Catatan batas dan hasil tes di bawah menggambarkan tahap sebelumnya.
+
 Branch: `feat/restaurant-preorders-table-locks`.
 
 ## Alur operasional
