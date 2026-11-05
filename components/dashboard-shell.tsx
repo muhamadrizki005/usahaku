@@ -409,7 +409,13 @@ export function DashboardShell({
           </div>
         </div>
       </main>
-      {assistantAllowed && <FloatingBusinessAssistant visible={assistantVisible} configured={assistantConfigured} />}
+      {assistantAllowed && (
+        <FloatingBusinessAssistant
+          visible={assistantVisible}
+          configured={assistantConfigured}
+          onClose={() => setAssistantVisible(false)}
+        />
+      )}
     </ActivityPublisher.Provider>
   )
 }

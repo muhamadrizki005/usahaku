@@ -26,13 +26,17 @@ export default function BusinessPaymentSettings({
   }
 
   async function save() {
-    const ok = await state.save()
-    if (ok) {
-      notify('success', 'Metode pembayaran berhasil disimpan.')
-      setOpen(false)
-      router.refresh()
-    } else {
-      notify('error', state.error || 'Gagal menyimpan metode pembayaran.')
+    try {
+      const ok = await state.save()
+      if (ok) {
+        notify('success', 'Metode pembayaran berhasil disimpan.')
+        setOpen(false)
+        try { router.refresh() } catch {}
+      } else {
+        notify('error', state.error || 'Gagal menyimpan metode pembayaran.')
+      }
+    } catch (err: any) {
+      notify('error', err?.message || 'Gagal menyimpan metode pembayaran.')
     }
   }
 

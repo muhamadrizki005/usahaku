@@ -100,8 +100,8 @@ export function PaymentsModal({ payments, setPayments, save, error, cancel }: { 
   const uploadQris = (file: File) => {
     const version = ++uploadVersion.current
     setUploadError('')
-    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size > 2 * 1024 * 1024) {
-      setUploadError('Gunakan gambar PNG, JPG, atau WebP maksimal 2 MB.')
+    if (!['image/png', 'image/jpeg', 'image/jpg', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024) {
+      setUploadError('Gunakan gambar PNG, JPG, atau WebP maksimal 5 MB.')
       return
     }
     const reader = new FileReader()
@@ -112,7 +112,32 @@ export function PaymentsModal({ payments, setPayments, save, error, cancel }: { 
       const image = new Image()
       image.onerror = fail
       image.onload = () => {
-        if (version === uploadVersion.current) setPayments(current => ({ ...current, qrisImage: source }))
+        if (version !== uploadVersion.current) return
+        try {
+          const maxDim = 600
+          let width = image.width
+          let height = image.height
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width)
+              width = maxDim
+            } else {
+              width = Math.round((width * maxDim) / height)
+              height = maxDim
+            }
+          }
+          const canvas = document.createElement('canvas')
+          canvas.width = width
+          canvas.height = height
+          const ctx = canvas.getContext('2d')
+          if (ctx) {
+            ctx.drawImage(image, 0, 0, width, height)
+            const compressed = canvas.toDataURL('image/png')
+            setPayments(current => ({ ...current, qrisImage: compressed }))
+            return
+          }
+        } catch {}
+        setPayments(current => ({ ...current, qrisImage: source }))
       }
       image.src = source
     }

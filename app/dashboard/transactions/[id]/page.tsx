@@ -10,5 +10,15 @@ export default async function SalePage({params}:{params:Promise<{id:string}>}){
   const {data,error}=await supabase.from('pos_transactions').select('*').eq('business_id',business.id).eq('id',id).maybeSingle()
   if(error)throw Error('Transaksi belum dapat dibaca. Coba muat ulang.')
   if(!data)notFound()
-  return <TransactionDetail initialSale={data as Sale} business={business} member={member} />
+  let customerPoints: number | undefined
+  if (data.customer_id) {
+    try {
+      const { data: cust } = await supabase.from('customers').select('points').eq('id', data.customer_id).maybeSingle()
+      if (cust && cust.points != null) {
+        customerPoints = Number(cust.points)
+      }
+    } catch {}
+  }
+  const sale = { ...data, customer_points: customerPoints } as Sale
+  return <TransactionDetail initialSale={sale} business={business} member={member} />
 }
