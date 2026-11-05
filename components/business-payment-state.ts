@@ -76,7 +76,12 @@ export function useBusinessPayments(initial: PaymentSettings, businessId: string
       setUncertain(!!result.uncertain)
       return false
     } catch (err: any) {
-      setError(err?.message || 'Gagal menyimpan metode pembayaran. Periksa koneksi dan coba lagi.')
+      const msg = err?.message || ''
+      if (msg.includes('441') || msg.includes('Minified React error')) {
+        setError('Gagal memproses data server saat menyimpan metode pembayaran. Periksa format gambar QRIS dan coba lagi.')
+      } else {
+        setError(msg || 'Gagal menyimpan metode pembayaran. Periksa koneksi dan coba lagi.')
+      }
       setUncertain(false)
       return false
     } finally {

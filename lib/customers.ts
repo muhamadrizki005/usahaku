@@ -1,6 +1,6 @@
 import {z} from 'zod'
 export type Customer={id:string;business_id:string;name:string;phone:string;notes:string;active:boolean;points?:number;revision:number;created_at:string;updated_at:string}
-export type PosCustomer=Pick<Customer,'id'|'name'|'phone'>
+export type PosCustomer=Pick<Customer,'id'|'name'|'phone'> & { points?: number }
 export function matchesCustomer(customer:PosCustomer,term:string){
   const query=term.trim().toLowerCase()
   let digits=query.replace(/[^0-9]/g,'');if(digits.startsWith('0'))digits='62'+digits.slice(1)

@@ -112,11 +112,17 @@ export default function PosCustomerPicker({ value, onChange, member }: PosCustom
                 </div>
                 <div className="min-w-0">
                   <p className="truncate font-medium text-white">{value.name}</p>
-                  {value.phone ? (
-                    <p className="truncate text-[11px] text-[#24cbc5]">{value.phone}</p>
-                  ) : (
-                    <p className="text-[11px] text-[#a4a7ac]">Tanpa nomor telepon</p>
-                  )}
+                  <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                    {value.phone ? (
+                      <span className="truncate text-[#24cbc5]">{value.phone}</span>
+                    ) : (
+                      <span className="text-[#a4a7ac]">Tanpa nomor telepon</span>
+                    )}
+                    <span className="text-[#454d5b]">·</span>
+                    <span className="inline-flex items-center rounded-sm bg-[#24cbc5]/15 px-1.5 py-0.5 text-[10px] font-medium text-[#24cbc5]">
+                      {Number(value.points || 0)} poin
+                    </span>
+                  </div>
                 </div>
               </div>
               <button
@@ -165,8 +171,16 @@ export default function PosCustomerPicker({ value, onChange, member }: PosCustom
                   className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs text-[#c5cbd5] hover:bg-[#273242] hover:text-white transition-colors"
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-medium">{c.name}</p>
-                    {c.phone && <p className="truncate text-[11px] text-[#24cbc5]">{c.phone}</p>}
+                    <p className="truncate font-medium text-white">{c.name}</p>
+                    <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                      {c.phone ? (
+                        <span className="truncate text-[#24cbc5]">{c.phone}</span>
+                      ) : (
+                        <span className="text-[#a4a7ac]">Tanpa nomor telepon</span>
+                      )}
+                      <span className="text-[#454d5b]">·</span>
+                      <span className="font-medium text-[#24cbc5]">{Number(c.points || 0)} poin</span>
+                    </div>
                   </div>
                   <span className="shrink-0 text-[11px] font-medium text-[#24cbc5]">Pilih</span>
                 </button>
@@ -291,6 +305,7 @@ function AddCustomerModal({
           id: result.customer.id,
           name: result.customer.name,
           phone: result.customer.phone,
+          points: result.customer.points ?? 0,
         })
       } else {
         setFormError('Pelanggan belum dapat disimpan. Coba lagi.')

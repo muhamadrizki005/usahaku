@@ -17,7 +17,18 @@ export async function saveCustomer(form:FormData):Promise<CustomerResult>{
 export async function searchPosCustomers(term:string):Promise<{customers:PosCustomer[];error?:string}>{
   const {supabase,business}=await requireBusiness(undefined, false, 'pos:view')
   if(typeof term!=='string'||term.trim().length<2||term.trim().length>100)return{customers:[]}
-  const {data,error}=await supabase.rpc('search_pos_customers',{target_id:business.id,term:term.trim()}).abortSignal(AbortSignal.timeout(10000)).retry(false)
+  const trimmed=term.trim()
+  const {data,error}=await supabase.rpc('search_pos_customers',{target_id:business.id,term:trimmed}).abortSignal(AbortSignal.timeout(10000)).retry(false)
   if(error)return{customers:[],error:'Pencarian pelanggan belum dapat dilakukan. Coba lagi.'}
-  return{customers:data as PosCustomer[]}
+  const list=(data||[]) as PosCustomer[]
+  if(list.length===0)return{customers:[]}
+  try{
+    const ids=list.map(c=>c.id)
+    const {data:pts}=await supabase.from('customers').select('id,points').in('id',ids)
+    if(pts&&pts.length>0){
+      const map=new Map(pts.map((p:any)=>[p.id,Number(p.points||0)]))
+      return{customers:list.map(c=>({...c,points:map.get(c.id)??0}))}
+    }
+  }catch{}
+  return{customers:list.map(c=>({...c,points:c.points??0}))}
 }

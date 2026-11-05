@@ -12,6 +12,17 @@ export default function SaleReceipt({ sale, business, id }: { sale: Sale; busine
     : business.address
   const date = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(sale.created_at)).replace(',', '').replace(/(\d{2})\.(\d{2})$/, '$1:$2') + ' WIB'
   const quantity = (value: number) => Number(value).toLocaleString('id-ID', { maximumFractionDigits: 3 })
+
+  const orderDiscountLabel = sale.discount_kind === 'percent' && Number(sale.discount_value) > 0
+    ? `Diskon keseluruhan (${Number(sale.discount_value)}%)`
+    : 'Diskon keseluruhan'
+
+  const fallbackDiscountLabel = sale.discount_kind === 'percent' && Number(sale.discount_value) > 0
+    ? `Diskon (${Number(sale.discount_value)}%)`
+    : 'Diskon'
+
+  const isMember = Boolean(sale.customer_id || (sale.customer && sale.customer !== 'Pelanggan umum' && sale.customer !== 'Umum'))
+
   return (
     <section id={id} className="sale-receipt" aria-label="Struk pembayaran">
       <header className="receipt-header receipt-double-rule">
@@ -25,6 +36,16 @@ export default function SaleReceipt({ sale, business, id }: { sale: Sale; busine
         <ReceiptRow label="Tanggal">{date}</ReceiptRow>
         <ReceiptRow label="Kasir">{sale.actor_name}</ReceiptRow>
         <ReceiptRow label="Pelanggan">{sale.customer || 'Umum'}</ReceiptRow>
+        {isMember && (
+          <>
+            {sale.customer_points !== undefined && sale.customer_points !== null && (
+              <ReceiptRow label="Poin Member">{Number(sale.customer_points).toLocaleString('id-ID')} poin</ReceiptRow>
+            )}
+            {Number(sale.points_earned) > 0 && (
+              <ReceiptRow label="Poin Diperoleh">+{Number(sale.points_earned).toLocaleString('id-ID')} poin</ReceiptRow>
+            )}
+          </>
+        )}
       </dl>
       <table className="receipt-items" aria-label="Rincian barang">
         <colgroup><col className="receipt-name-column" /><col className="receipt-quantity-column" /><col className="receipt-price-column" /><col className="receipt-price-column" /></colgroup>
@@ -48,8 +69,8 @@ export default function SaleReceipt({ sale, business, id }: { sale: Sale; busine
         <ReceiptRow label="Subtotal">{rupiah(Number(sale.subtotal))}</ReceiptRow>
         {sale.product_discount != null && sale.order_discount != null ? <>
           <ReceiptRow label="Diskon produk">{rupiah(Number(sale.product_discount))}</ReceiptRow>
-          <ReceiptRow label="Diskon keseluruhan">{rupiah(Number(sale.order_discount))}</ReceiptRow>
-        </> : <ReceiptRow label="Diskon">{rupiah(Number(sale.discount))}</ReceiptRow>}
+          <ReceiptRow label={orderDiscountLabel}>{rupiah(Number(sale.order_discount))}</ReceiptRow>
+        </> : <ReceiptRow label={fallbackDiscountLabel}>{rupiah(Number(sale.discount))}</ReceiptRow>}
         {Number(sale.service_amount)>0 && <ReceiptRow label={`Biaya layanan (${Number(sale.service_rate)}%)`}>{rupiah(Number(sale.service_amount))}</ReceiptRow>}
         {sale.tax_rate !== undefined && <ReceiptRow label={`Pajak (${Number(sale.tax_rate)}%)`}>{rupiah(Number(sale.tax_amount || 0))}</ReceiptRow>}
       </dl>

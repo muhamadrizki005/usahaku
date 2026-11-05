@@ -11,7 +11,16 @@ export async function checkoutPos(requestId:string,details:unknown):Promise<PosR
   if(!z.uuid().safeParse(requestId).success)return{error:'ID permintaan tidak valid.'}
   const {data,error}=await supabase.rpc('checkout_pos',{target_id:business.id,operation_id:requestId,details}).abortSignal(AbortSignal.timeout(15000)).retry(false)
   if(error||!data)return failure(error?.code)
-  revalidatePath('/dashboard','layout');return{sale:data as Sale}
+  const sale = data as Sale
+  if (sale.customer_id) {
+    try {
+      const { data: cust } = await supabase.from('customers').select('points').eq('id', sale.customer_id).maybeSingle()
+      if (cust && cust.points != null) {
+        sale.customer_points = Number(cust.points)
+      }
+    } catch {}
+  }
+  revalidatePath('/dashboard','layout');return{sale}
 }
 export async function cancelPos(id:string,reason:string,goods:boolean,refund:boolean):Promise<PosResult>{
   const {supabase,business}=await requireBusiness(undefined, false, ['transactions:view', 'transactions:cancel', 'transactions:refund'])

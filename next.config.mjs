@@ -2,7 +2,7 @@
 const nextConfig = {
   transpilePackages: ['gsap'],
   turbopack: { root: process.cwd() },
-  experimental: { serverActions: { bodySizeLimit: '3mb' } },
+  experimental: { serverActions: { bodySizeLimit: '10mb' } },
   images: {
     unoptimized: true,
   },

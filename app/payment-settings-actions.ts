@@ -26,13 +26,14 @@ export async function saveBusinessPayments(raw: unknown, revision: number, qrisI
     let assetId: string | null = parsed.data.qris ? row?.qris_asset || null : null
 
     if (parsed.data.qris && qrisImage.startsWith('data:')) {
-      if (qrisImage.length > 3 * 1024 * 1024) return { error: 'Gambar QRIS maksimal 2 MB.' }
-      const match = qrisImage.match(/^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/)
+      const match = qrisImage.match(/^data:(image\/(?:png|jpeg|jpg|webp));base64,([\s\S]+)$/)
       if (!match) return { error: 'Gunakan gambar PNG/JPG/WebP untuk QRIS.' }
+      const base64Data = match[2].replace(/\s+/g, '')
+      if (base64Data.length > 5 * 1024 * 1024) return { error: 'Gambar QRIS maksimal 2 MB.' }
 
       let content: Buffer
       try {
-        content = await prepareBusinessLogo(new File([Buffer.from(match[2], 'base64')], 'qris', { type: match[1] }))
+        content = await prepareBusinessLogo(new File([Buffer.from(base64Data, 'base64')], 'qris', { type: match[1] }))
       } catch {
         return { error: 'Gambar QRIS tidak valid. Gunakan PNG/JPG/WebP maksimal 2 MB.' }
       }
@@ -140,7 +141,7 @@ export async function saveBusinessPayments(raw: unknown, revision: number, qrisI
               updated_at: new Date().toISOString()
             })
             .select('*')
-            .single()
+            .maybeSingle()
 
           if (!directError && updated) {
             saved = updated as PaymentSettingsRow
@@ -184,7 +185,7 @@ export async function saveBusinessPayments(raw: unknown, revision: number, qrisI
               updated_at: new Date().toISOString()
             })
             .select('*')
-            .single()
+            .maybeSingle()
 
           if (updated) {
             saved = updated as PaymentSettingsRow
@@ -218,8 +219,15 @@ export async function saveBusinessPayments(raw: unknown, revision: number, qrisI
       warning = 'Pengaturan tersimpan. Pembersihan gambar lama akan dicoba kembali.'
     }
 
-    revalidatePath('/dashboard', 'layout')
-    revalidatePath('/onboarding', 'layout')
+    try {
+      if (business.onboarding_completed_at) {
+        revalidatePath('/dashboard/settings')
+        revalidatePath('/dashboard/pos')
+      } else {
+        revalidatePath('/onboarding/setup')
+        revalidatePath('/onboarding/summary')
+      }
+    } catch {}
     return { settings: paymentSettingsView(saved), warning }
   } catch (outerErr: any) {
     console.error('saveBusinessPayments unexpected error:', outerErr)
