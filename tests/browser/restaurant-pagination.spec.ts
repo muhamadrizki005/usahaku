@@ -1,3 +1,4 @@
+import { chooseSelect } from './helpers/select-option'
 import { test, expect } from '@playwright/test'
 import { createClient } from '@supabase/supabase-js'
 import { randomUUID, randomBytes, createHash } from 'node:crypto'
@@ -64,7 +65,7 @@ test('restaurant paged history survives 5000+ orders, releases last pages, valid
     await expect(p.locator('dl > div').filter({ has: p.locator('dt', { hasText: /^Pesanan terbuka$/ }) }).locator('dd')).toHaveText('25')
     await p.screenshot({ path: `${dir}/dashboard-5000-history.png`, fullPage: true })
     await p.goto('/dashboard/pos'); await expect(p.locator('tbody tr')).toHaveCount(25)
-    await p.getByLabel('Status pesanan', { exact: true }).selectOption('all'); await expect(p.getByText('5028 pesanan', { exact: true })).toBeVisible()
+    await chooseSelect(p.getByLabel('Status pesanan', { exact: true }),'all'); await expect(p.getByText('5028 pesanan', { exact: true })).toBeVisible()
     await p.getByLabel('Cari pesanan', { exact: true }).fill('%,()_'); await expect(p.getByText('1 pesanan', { exact: true })).toBeVisible(); await expect(p.locator('tbody tr')).toHaveCount(1)
     await p.getByLabel('Cari pesanan', { exact: true }).fill('hasil tidak ada'); await expect(p.getByText('Belum ada pesanan yang sesuai.', { exact: true })).toBeVisible()
     let blocked = false

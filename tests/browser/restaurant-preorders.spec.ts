@@ -1,3 +1,4 @@
+import { chooseSelect } from './helpers/select-option'
 import { test, expect, type BrowserContext } from '@playwright/test'
 import { createClient } from '@supabase/supabase-js'
 import { randomBytes, randomUUID, createHash } from 'node:crypto'
@@ -33,7 +34,7 @@ test('restaurant preorders: browser flow, live locks, owner settings, existing d
     await row.getByRole('link',{name:'Tambah / ubah pesanan',exact:true}).click()
     let dialog=page.getByRole('dialog',{name:'Buat pesanan',exact:true})
     await expect(dialog).toContainText('Pesanan di muka tidak menandai meja terpakai')
-    await dialog.getByLabel('Pilih menu',{exact:true}).selectOption(mid);await dialog.getByRole('button',{name:'Tambahkan menu',exact:true}).click();await dialog.getByRole('button',{name:'Simpan pesanan',exact:true}).click();await expect(dialog).toHaveCount(0)
+    await chooseSelect(dialog.getByLabel('Pilih menu',{exact:true}),mid);await dialog.getByRole('button',{name:'Tambahkan menu',exact:true}).click();await dialog.getByRole('button',{name:'Simpan pesanan',exact:true}).click();await expect(dialog).toHaveCount(0)
     const preorder=ok(await a.client.from('restaurant_orders').select('*').eq('reservation_id',rid).single())
     expect(preorder.occupies_table).toBe(false);await expect(page.getByRole('button',{name:/^Bayar PSN-/})).toHaveCount(0);await expect(page.getByText('Pesanan di muka / belum datang',{exact:true})).toBeVisible()
     expect((await a.client.rpc('pay_restaurant_order',{target_id:owner.bid,item_id:preorder.id,expected_revision:0,operation_id:randomUUID(),details:{payment:'cash',received:'30000',discountKind:'none',discountValue:'0',confirmed:true}})).error?.message).toContain('Tandai pelanggan datang')

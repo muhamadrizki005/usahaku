@@ -1,4 +1,5 @@
 'use client'
+import { NumericInput } from '@/components/ui/numeric-input'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { saveReservationLockSettings } from '@/app/reservation-actions'
@@ -26,7 +27,7 @@ export default function RestaurantReservationSettings({ minutes, revision }: { m
       } catch { retry.current = packet; setLocked(true); setError('Hasil belum pasti. Ulangi permintaan yang sama atau muat ulang untuk memeriksa.') }
       finally { busy.current = false; setPending(false) }
     }}>
-      <fieldset disabled={pending || locked}><RestaurantField label="Penguncian sebelum kedatangan (menit)"><input required type="number" min={0} max={720} step={1} value={value} onChange={e => setValue(e.target.value)} className={restaurantInput}/></RestaurantField></fieldset>
+      <fieldset disabled={pending || locked}><RestaurantField label="Penguncian sebelum kedatangan (menit)"><NumericInput required type="number" min={0} max={720} step={1} value={value} onChange={e => setValue(e.target.value)} className={restaurantInput}/></RestaurantField></fieldset>
       <p className="text-xs leading-5 text-[#c5cbd5]">0–720 menit. Contoh 120 menit: reservasi pukul 19.00 mengunci meja sejak 17.00. Mengubah pengaturan tidak membatalkan reservasi lama. Pelanggan tetap harus ditandai datang sebelum pelunasan.</p>
       {error && <p role="alert" className="text-sm text-[#ffb4ae]">{error}</p>}{notice && <p role="status" className="text-sm leading-6 text-[#24cbc5]">{notice}</p>}
       <button disabled={pending} className={restaurantPrimary}>{pending ? 'Menyimpan...' : locked ? 'Ulangi permintaan yang sama' : 'Simpan pengaturan reservasi'}</button>

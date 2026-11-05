@@ -2,6 +2,7 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import './palette.css'
+import { FormFeedback } from '@/components/ui/form-feedback'
 
 export const metadata: Metadata = {
   title: 'Usahaku — Operasional usaha lebih teratur',
@@ -34,7 +35,7 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased" suppressHydrationWarning>
-        {children}
+        <FormFeedback>{children}</FormFeedback>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

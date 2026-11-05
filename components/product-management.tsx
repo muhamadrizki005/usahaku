@@ -1,4 +1,5 @@
 'use client'
+import { NumericInput } from '@/components/ui/numeric-input'
 import './mobile-record-table.css'
 
 import { productSkuPrefix } from '@/lib/product-sku'
@@ -13,6 +14,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Download, Package, Plus, Search, X } from 'lucide-react'
 import { CustomSelect } from '@/components/ui/custom-select'
+import { useActionDialog } from '@/components/ui/action-dialog'
 
 type Category = 'toko' | 'restoran' | 'barbershop'
 type Product = CatalogProduct
@@ -39,6 +41,7 @@ export default function ProductManagement({
   renderedAt: string
 }) {
   const canCreate = hasPermission(role, permissions, 'products:create')
+  const actionDialog=useActionDialog()
   const canEdit = hasPermission(role, permissions, 'products:edit')
   const canDelete = hasPermission(role, permissions, 'products:delete')
   const router = useRouter()
@@ -171,8 +174,8 @@ export default function ProductManagement({
   }
 
   const bulkStatus = (active: boolean) => bulk(active, null)
-  const bulkCategory = () => {
-    const next = window.prompt('Masukkan kategori baru')
+  const bulkCategory = async () => {
+    const next = await actionDialog.prompt({title:'Ubah kategori produk',description:'Kategori produk yang dipilih akan diperbarui. Harga dan stok tetap mengikuti data masing-masing produk.',label:'Kategori baru',confirmLabel:'Ubah kategori'})
     if (next?.trim()) void bulk(null, next.trim())
   }
 
@@ -194,6 +197,7 @@ export default function ProductManagement({
 
   return (
     <div className="w-full">
+      {actionDialog.dialog}
       <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
         <div>
           <p className="flex items-center gap-1.5 text-xs text-[#a4a7ac]">
@@ -873,7 +877,7 @@ function ProductEditor({
 
               <label className="text-sm font-medium text-white">
                 Harga jual *
-                <input
+                <NumericInput
                   type="number"
                   min="0"
                   placeholder="Contoh: 15000"
@@ -893,7 +897,7 @@ function ProductEditor({
                     <CustomSelect ariaLabel="Jenis diskon produk" value={discountKind} options={[{label:'Persen (%)',value:'percent'},{label:'Rupiah (Rp)',value:'amount'}]} onChange={value=>{setDiscountKind(value as 'percent'|'amount');setDiscountText('')}} className="mt-1.5 w-full" />
                   </label>
                   <label className="block text-sm text-white">Nilai diskon {discountKind === 'percent' ? '(%)' : '(Rp)'}
-                    <input aria-label="Nilai diskon produk" type="number" min="0" max={discountKind === 'percent' ? 100 : Number(priceText) || 0} step={discountKind === 'percent' ? '0.01' : '1'} placeholder={discountKind === 'percent' ? 'Contoh: 10' : 'Contoh: 1000'} value={discountText} onChange={e=>setDiscountText(e.target.value)} className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]" />
+                    <NumericInput aria-label="Nilai diskon produk" type="number" min="0" max={discountKind === 'percent' ? 100 : Number(priceText) || 0} step={discountKind === 'percent' ? '0.01' : '1'} placeholder={discountKind === 'percent' ? 'Contoh: 10' : 'Contoh: 1000'} value={discountText} onChange={e=>setDiscountText(e.target.value)} className="mt-1.5 w-full rounded-xl border border-border bg-[#1c222e]/60 px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#24cbc5]" />
                   </label>
                   {discountPreview !== null && <p className="text-sm text-[#24cbc5]">Harga setelah diskon: {money(discountPreview)} / {draft.unit || 'unit'}</p>}
                   <p className="text-xs text-[#a4a7ac]">Potongan berlaku per unit; harga dibulatkan ke rupiah terdekat.</p>
@@ -902,7 +906,7 @@ function ProductEditor({
 
               <label className="text-sm font-medium text-white">
                 Stok fisik
-                <input
+                <NumericInput
                   type="number"
                   min="0"
                   step="0.001"
@@ -917,7 +921,7 @@ function ProductEditor({
 
               <label className="text-sm font-medium text-white">
                 Minimum stok *
-                <input
+                <NumericInput
                   type="number"
                   min="0"
                   step="0.001"

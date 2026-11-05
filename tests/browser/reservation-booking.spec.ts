@@ -1,3 +1,4 @@
+import { chooseSelect } from './helpers/select-option'
 import { test, expect, type BrowserContext } from '@playwright/test'
 import { createClient } from '@supabase/supabase-js'
 import { randomBytes, randomUUID, createHash } from 'node:crypto'
@@ -23,7 +24,7 @@ test('reservation booking: optional meals and DP, atomic retry, rollback, mobile
     for(const [resource,id,details] of [['table',tid,{name:'Meja A',capacity:4,active:true}],['table',tid2,{name:'Meja B',capacity:4,active:true}],['menu',mid,{name:'Kopi Paket',category:'Minuman',price:'30000',active:true,available:true}]] as const)ok(await owner.client.rpc('save_restaurant_resource',{target_id:owner.bid,resource,item_id:id,expected_revision:null,operation_id:randomUUID(),details}))
     const startsAt=new Date(Date.now()+10*60000).toISOString(),local=reservationLocalTime(startsAt),day=local.slice(0,10)
     const page=await login(a);await page.goto('/dashboard/restaurant/reservations?day='+day)
-    async function chooseDate(label:string,date:string,withTime?:string){await page.getByLabel(label,{exact:true}).click();const calendar=page.getByRole('dialog',{name:'Kalender '+label,exact:true});await calendar.getByLabel('Tahun kalender',{exact:true}).selectOption(date.slice(0,4));await calendar.getByLabel('Bulan kalender',{exact:true}).selectOption(String(Number(date.slice(5,7))-1));await calendar.getByRole('button',{name:calendarLabel(date),exact:true}).click();if(withTime){await calendar.getByLabel('Jam kedatangan (WIB)',{exact:true}).fill(withTime);await calendar.getByRole('button',{name:'Pilih tanggal dan jam',exact:true}).click()}await expect(calendar).toHaveCount(0)}
+    async function chooseDate(label:string,date:string,withTime?:string){await page.getByLabel(label,{exact:true}).click();const calendar=page.getByRole('dialog',{name:'Kalender '+label,exact:true});await chooseSelect(calendar.getByLabel('Tahun kalender',{exact:true}),date.slice(0,4));await chooseSelect(calendar.getByLabel('Bulan kalender',{exact:true}),String(Number(date.slice(5,7))-1));await calendar.getByRole('button',{name:calendarLabel(date),exact:true}).click();if(withTime){await calendar.getByLabel('Jam kedatangan (WIB)',{exact:true}).fill(withTime);await calendar.getByRole('button',{name:'Pilih tanggal dan jam',exact:true}).click()}await expect(calendar).toHaveCount(0)}
 
     async function openBooking(name:string,table:string){
       await page.getByRole('button',{name:'Buat reservasi',exact:true}).click();const dialog=page.getByRole('dialog',{name:'Buat reservasi',exact:true})
@@ -35,16 +36,16 @@ test('reservation booking: optional meals and DP, atomic retry, rollback, mobile
     let dialog=await openBooking('Tamu Paket','Meja A')
     await expect(dialog.getByLabel('Pesan makanan sekalian (opsional)',{exact:true})).not.toBeChecked()
     await dialog.getByLabel('Pesan makanan sekalian (opsional)',{exact:true}).check()
-    await dialog.getByLabel('Pilih menu reservasi',{exact:true}).selectOption(mid);await dialog.getByRole('button',{name:'Tambahkan menu',exact:true}).click()
+    await chooseSelect(dialog.getByLabel('Pilih menu reservasi',{exact:true}),mid);await dialog.getByRole('button',{name:'Tambahkan menu',exact:true}).click()
     await dialog.getByLabel('Jumlah Kopi Paket',{exact:true}).fill('');await expect(dialog.getByLabel('Jumlah Kopi Paket',{exact:true})).toHaveValue('');await dialog.getByLabel('Jumlah Kopi Paket',{exact:true}).fill('2')
-    await dialog.getByLabel('Pilih menu reservasi',{exact:true}).selectOption(mid);await dialog.getByRole('button',{name:'Tambahkan menu',exact:true}).click();await expect(dialog.getByLabel('Jumlah Kopi Paket',{exact:true})).toHaveValue('3')
+    await chooseSelect(dialog.getByLabel('Pilih menu reservasi',{exact:true}),mid);await dialog.getByRole('button',{name:'Tambahkan menu',exact:true}).click();await expect(dialog.getByLabel('Jumlah Kopi Paket',{exact:true})).toHaveValue('3')
     await dialog.getByRole('button',{name:'Hapus Kopi Paket',exact:true}).click();await expect(dialog.getByLabel('Jumlah Kopi Paket',{exact:true})).toHaveCount(0);await expect(dialog).toContainText('Tambahkan minimal satu menu')
-    await dialog.getByLabel('Pilih menu reservasi',{exact:true}).selectOption(mid);await dialog.getByRole('button',{name:'Tambahkan menu',exact:true}).click();await dialog.getByLabel('Jumlah Kopi Paket',{exact:true}).fill('2')
+    await chooseSelect(dialog.getByLabel('Pilih menu reservasi',{exact:true}),mid);await dialog.getByRole('button',{name:'Tambahkan menu',exact:true}).click();await dialog.getByLabel('Jumlah Kopi Paket',{exact:true}).fill('2')
     await dialog.getByLabel('Catatan makanan',{exact:true}).fill('Tanpa es')
     await expect(dialog).toContainText('Subtotal makanan: Rp60.000')
     await dialog.getByLabel('Catat DP sekarang (opsional)',{exact:true}).check()
     await dialog.getByLabel('Nominal DP reservasi (Rp)',{exact:true}).fill('60001')
-    await dialog.getByLabel('Metode DP reservasi',{exact:true}).selectOption('transfer')
+    await chooseSelect(dialog.getByLabel('Metode DP reservasi',{exact:true}),'transfer')
     await dialog.getByLabel('DP reservasi sudah diterima dan diperiksa.',{exact:true}).check()
     await dialog.getByRole('button',{name:'Simpan reservasi',exact:true}).click();await expect(dialog.getByRole('alert')).toContainText('DP tidak boleh melebihi subtotal')
     expect(ok(await a.client.from('restaurant_reservations').select('id').eq('business_id',owner.bid))).toHaveLength(0)
@@ -68,7 +69,7 @@ test('reservation booking: optional meals and DP, atomic retry, rollback, mobile
     await page.goto('/dashboard/pos');await page.getByRole('button',{name:/^Bayar PSN-/}).click();dialog=page.getByRole('dialog',{name:/^Bayar PSN-/});await expect(dialog).toContainText('Sisa pembayaran: Rp40.000');await dialog.getByLabel('Uang diterima',{exact:true}).fill('40000');await dialog.getByLabel('Sisa pembayaran sudah diterima dan diperiksa.',{exact:true}).check();await dialog.getByRole('button',{name:'Catat pembayaran',exact:true}).click();await expect(page).toHaveURL(/\/dashboard\/transactions\//)
     stage='rollback and optional food'
     await page.goto('/dashboard/restaurant/reservations?day='+day);dialog=await openBooking('Menu Berubah','Meja B')
-    await dialog.getByLabel('Pesan makanan sekalian (opsional)',{exact:true}).check();await dialog.getByLabel('Pilih menu reservasi',{exact:true}).selectOption(mid);await dialog.getByRole('button',{name:'Tambahkan menu',exact:true}).click()
+    await dialog.getByLabel('Pesan makanan sekalian (opsional)',{exact:true}).check();await chooseSelect(dialog.getByLabel('Pilih menu reservasi',{exact:true}),mid);await dialog.getByRole('button',{name:'Tambahkan menu',exact:true}).click()
     await dialog.getByLabel('Catat DP sekarang (opsional)',{exact:true}).check();await dialog.getByLabel('Nominal DP reservasi (Rp)',{exact:true}).fill('10000');await dialog.getByLabel('DP reservasi sudah diterima dan diperiksa.',{exact:true}).check()
     ok(await owner.client.rpc('save_restaurant_resource',{target_id:owner.bid,resource:'menu',item_id:mid,expected_revision:0,operation_id:randomUUID(),details:{name:'Kopi Paket',category:'Minuman',price:'30000',active:true,available:false}}))
     await dialog.getByRole('button',{name:'Simpan reservasi',exact:true}).click();await expect(dialog.getByRole('alert')).toContainText('sedang habis')

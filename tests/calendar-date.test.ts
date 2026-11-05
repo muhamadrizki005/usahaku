@@ -8,6 +8,8 @@ test('calendar dates retain WIB boundaries and reject invalid calendars without 
   assert.equal(calendarDate('2026-02-29'),null)
   assert.equal(calendarDate('2026-02-30'),null)
   assert.ok(calendarDate('2028-02-29'))
+  assert.ok(calendarDate('2100-12-31'))
+  assert.equal(calendarDate('2100-02-29'),null)
   assert.equal(calendarLabel('2026-11-03'),'3 November 2026')
   assert.equal(calendarAddDays('2026-12-31',1),'2027-01-01')
 })

@@ -1,3 +1,4 @@
+import { chooseSelect } from './helpers/select-option'
 import { test, expect, type Page } from '@playwright/test'
 import { createClient } from '@supabase/supabase-js'
 import { randomUUID, randomBytes, createHash } from 'node:crypto'
@@ -16,8 +17,8 @@ test('restaurant validation explains exact server failures and never reports fai
   async function prepare(page: Page, tableId?: string, guests = 2) {
     await page.goto('/dashboard/pos'); await page.getByRole('button', { name: 'Buat pesanan', exact: true }).click()
     const d = page.getByRole('dialog', { name: 'Buat pesanan', exact: true })
-    if (tableId) { await d.getByLabel('Jenis pesanan', { exact: true }).selectOption('dine_in'); await d.getByLabel('Meja', { exact: true }).selectOption(tableId); await d.getByLabel('Jumlah tamu', { exact: true }).fill(String(guests)) }
-    await d.getByLabel('Pilih menu', { exact: true }).selectOption({ label: 'Kopi Error Uji / Rp15.000' }); await d.getByRole('button', { name: 'Tambahkan menu', exact: true }).click(); return d
+    if (tableId) { await chooseSelect(d.getByLabel('Jenis pesanan', { exact: true }),'dine_in'); await chooseSelect(d.getByLabel('Meja', { exact: true }),tableId); await d.getByLabel('Jumlah tamu', { exact: true }).fill(String(guests)) }
+    await chooseSelect(d.getByLabel('Pilih menu', { exact: true }),{ label: 'Kopi Error Uji / Rp15.000' }); await d.getByRole('button', { name: 'Tambahkan menu', exact: true }).click(); return d
   }
   try {
     await mkdir(dir, { recursive: true })

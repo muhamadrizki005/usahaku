@@ -1,3 +1,4 @@
+import { chooseSelect } from './helpers/select-option'
 import { test, expect } from '@playwright/test'
 import { createClient } from '@supabase/supabase-js'
 import { randomUUID, randomBytes, createHash } from 'node:crypto'
@@ -67,7 +68,7 @@ test('restaurant table boxes show only names and open accessible persistent deta
     await grid.getByRole('button', { name: 'Meja 3', exact: true }).click(); await p.screenshot({ path: `${dir}/details-desktop.png`, fullPage: true }); await p.keyboard.press('Escape')
     await p.goto('/dashboard/pos'); await p.getByRole('button', { name: 'Buat pesanan', exact: true }).click()
     let orderDialog = p.getByRole('dialog', { name: 'Buat pesanan', exact: true })
-    await orderDialog.getByLabel('Jenis pesanan', { exact: true }).selectOption('dine_in')
+    await chooseSelect(orderDialog.getByLabel('Jenis pesanan', { exact: true }),'dine_in')
     await expect(orderDialog.getByLabel('Meja', { exact: true }).locator(`option[value="${ids[1]}"]`)).toBeDisabled()
     await orderDialog.getByRole('button', { name: 'Batal', exact: true }).click()
     const activeOrder = ok(await admin.from('restaurant_orders').select('*').eq('business_id', bid).single()), code = 'PSN-' + activeOrder.id.slice(0, 8).toUpperCase()
@@ -85,10 +86,10 @@ test('restaurant table boxes show only names and open accessible persistent deta
     await p.goto('/dashboard/restaurant/tables'); await expect(occupied).toHaveCSS('opacity', '1')
     await p.goto('/dashboard/pos'); await p.getByRole('button', { name: 'Buat pesanan', exact: true }).click()
     orderDialog = p.getByRole('dialog', { name: 'Buat pesanan', exact: true })
-    await orderDialog.getByLabel('Jenis pesanan', { exact: true }).selectOption('dine_in')
+    await chooseSelect(orderDialog.getByLabel('Jenis pesanan', { exact: true }),'dine_in')
     await expect(orderDialog.getByLabel('Meja', { exact: true }).locator(`option[value="${ids[1]}"]`)).toBeEnabled()
-    await orderDialog.getByLabel('Meja', { exact: true }).selectOption(ids[1])
-    await orderDialog.getByLabel('Pilih menu', { exact: true }).selectOption(menuId)
+    await chooseSelect(orderDialog.getByLabel('Meja', { exact: true }),ids[1])
+    await chooseSelect(orderDialog.getByLabel('Pilih menu', { exact: true }),menuId)
     await orderDialog.getByRole('button', { name: 'Tambahkan menu', exact: true }).click()
     await orderDialog.getByRole('button', { name: 'Simpan pesanan', exact: true }).click(); await expect(orderDialog).toHaveCount(0)
     await p.goto('/dashboard/restaurant/tables'); await expect(occupied).toHaveCSS('opacity', '0.6')

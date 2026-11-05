@@ -1,3 +1,4 @@
+import { chooseSelect,expectDisabledOption } from './helpers/select-option'
 import { test, expect, type BrowserContext, type Page } from '@playwright/test'
 import { createClient } from '@supabase/supabase-js'
 import { randomBytes, randomUUID, createHash } from 'node:crypto'
@@ -37,14 +38,14 @@ test('restaurant website: onboarding, menu, tables, orders, exactly-once payment
   async function addMenu(p: Page) {
     await p.getByRole('button', { name: 'Tambah menu', exact: true }).click()
     const dialog = p.getByRole('dialog', { name: 'Tambah menu', exact: true })
-    await dialog.getByLabel('Nama', { exact: true }).fill('Kopi Susu Uji'); await dialog.getByLabel('Kategori menu', { exact: true }).selectOption('Minuman'); await dialog.getByLabel('Harga menu', { exact: true }).fill('15000'); await dialog.getByRole('button', { name: 'Simpan', exact: true }).click(); await expect(dialog).toHaveCount(0)
+    await dialog.getByLabel('Nama', { exact: true }).fill('Kopi Susu Uji'); await chooseSelect(dialog.getByLabel('Kategori menu', { exact: true }),'Minuman'); await dialog.getByLabel('Harga menu', { exact: true }).fill('15000'); await dialog.getByRole('button', { name: 'Simpan', exact: true }).click(); await expect(dialog).toHaveCount(0)
     await expect(p.getByRole('row').filter({ hasText: 'Kopi Susu Uji' })).toContainText('Rp15.000')
   }
   async function createOrder(p: Page, dineIn: boolean, quantity = 2) {
     await p.getByRole('button', { name: 'Buat pesanan', exact: true }).click()
     const dialog = p.getByRole('dialog', { name: 'Buat pesanan', exact: true })
-    if (dineIn) { await dialog.getByLabel('Jenis pesanan', { exact: true }).selectOption('dine_in'); await dialog.getByLabel('Meja', { exact: true }).selectOption({ label: 'Meja 1 / 4 orang' }); await dialog.getByLabel('Jumlah tamu', { exact: true }).fill('2') }
-    await dialog.getByLabel('Pilih menu', { exact: true }).selectOption({ label: 'Kopi Susu Uji / Rp15.000' }); await dialog.getByRole('button', { name: 'Tambahkan menu', exact: true }).click(); await dialog.getByLabel('Jumlah Kopi Susu Uji', { exact: true }).fill(String(quantity)); await dialog.getByLabel('Catatan pesanan', { exact: true }).fill('Tanpa gula'); await dialog.getByRole('button', { name: 'Simpan pesanan', exact: true }).click(); await expect(dialog).toHaveCount(0)
+    if (dineIn) { await chooseSelect(dialog.getByLabel('Jenis pesanan', { exact: true }),'dine_in'); await chooseSelect(dialog.getByLabel('Meja', { exact: true }),{ label: 'Meja 1 / 4 orang' }); await dialog.getByLabel('Jumlah tamu', { exact: true }).fill('2') }
+    await chooseSelect(dialog.getByLabel('Pilih menu', { exact: true }),{ label: 'Kopi Susu Uji / Rp15.000' }); await dialog.getByRole('button', { name: 'Tambahkan menu', exact: true }).click(); await dialog.getByLabel('Jumlah Kopi Susu Uji', { exact: true }).fill(String(quantity)); await dialog.getByLabel('Catatan pesanan', { exact: true }).fill('Tanpa gula'); await dialog.getByRole('button', { name: 'Simpan pesanan', exact: true }).click(); await expect(dialog).toHaveCount(0)
   }
   try {
     await mkdir(dir, { recursive: true })
@@ -81,8 +82,8 @@ test('restaurant website: onboarding, menu, tables, orders, exactly-once payment
     await a.p.reload(); await expect(a.p.getByRole('row').filter({ hasText: code })).toContainText('Rp30.000')
     await a.p.screenshot({ path: `${dir}/orders-desktop.png`, fullPage: true })
     await a.p.setViewportSize({ width: 390, height: 844 }); expect(await a.p.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); await a.p.screenshot({ path: `${dir}/orders-mobile.png`, fullPage: true }); await a.p.setViewportSize({ width: 1366, height: 900 })
-    await a.p.getByRole('button', { name: `Ubah ${code}`, exact: true }).click(); const edit = a.p.getByRole('dialog', { name: 'Ubah pesanan', exact: true }); await edit.getByLabel('Proses pesanan', { exact: true }).selectOption('preparing'); await edit.getByRole('button', { name: 'Simpan pesanan', exact: true }).click(); await expect(edit).toHaveCount(0)
-    await b.p.reload(); await expect(b.p.getByRole('row').filter({ hasText: code })).toHaveCount(0); await b.p.getByRole('button', { name: 'Buat pesanan', exact: true }).click(); const blocked = b.p.getByRole('dialog', { name: 'Buat pesanan', exact: true }); await blocked.getByLabel('Jenis pesanan', { exact: true }).selectOption('dine_in'); await expect(blocked.getByRole('option', { name: 'Meja 1 / 4 orang / Terpakai', exact: true })).toBeDisabled(); await blocked.getByRole('button', { name: 'Batal', exact: true }).click()
+    await a.p.getByRole('button', { name: `Ubah ${code}`, exact: true }).click(); const edit = a.p.getByRole('dialog', { name: 'Ubah pesanan', exact: true }); await chooseSelect(edit.getByLabel('Proses pesanan', { exact: true }),'preparing'); await edit.getByRole('button', { name: 'Simpan pesanan', exact: true }).click(); await expect(edit).toHaveCount(0)
+    await b.p.reload(); await expect(b.p.getByRole('row').filter({ hasText: code })).toHaveCount(0); await b.p.getByRole('button', { name: 'Buat pesanan', exact: true }).click(); const blocked = b.p.getByRole('dialog', { name: 'Buat pesanan', exact: true }); await chooseSelect(blocked.getByLabel('Jenis pesanan', { exact: true }),'dine_in'); await expectDisabledOption(blocked.getByLabel('Meja',{exact:true}), 'Meja 1 / 4 orang / Terpakai'); await blocked.getByRole('button', { name: 'Batal', exact: true }).click()
     await a.p.goto('/dashboard/products'); await expect(a.p).toHaveURL(url => url.pathname === '/dashboard/pos')
     await manager.p.goto('/dashboard/products'); await expect(manager.p.getByRole('heading', { level: 1 })).toHaveText('Menu'); await manager.p.getByRole('button', { name: 'Ubah Kopi Susu Uji', exact: true }).click(); const menuEdit = manager.p.getByRole('dialog', { name: 'Ubah menu', exact: true }); await menuEdit.getByLabel('Menu tersedia', { exact: true }).uncheck(); await menuEdit.getByRole('button', { name: 'Simpan', exact: true }).click(); await expect(menuEdit).toHaveCount(0); await expect(manager.p.getByRole('row').filter({ hasText: 'Kopi Susu Uji' })).toContainText('Habis')
     await b.p.reload(); await b.p.getByRole('button', { name: 'Buat pesanan', exact: true }).click(); await expect(b.p.getByRole('dialog').getByLabel('Pilih menu', { exact: true }).locator('option')).toHaveCount(1); await b.p.getByRole('dialog').getByRole('button', { name: 'Batal', exact: true }).click()
