@@ -62,6 +62,8 @@ test('product numeric inputs start blank, allow deletion, validate and persist e
     await dialog.getByRole('button', { name: 'Simpan produk', exact: true }).click(); await expect(dialog).toHaveCount(0)
     const zero = ok(await admin.from('catalog_products').select('*').eq('business_id', bid).eq('name', 'Produk Nol Uji').single()); expect(Number(zero.price)).toBe(0); expect(Number(zero.stock)).toBe(0)
     results.push('All three fields begin blank and accept Backspace then 10; required blanks and four-decimal quantity rejected without a write; fractional values persist; edit preserves physical stock; explicit zero and optional blank stock save correctly')
+    await p.setViewportSize({width:1440,height:1000});await p.getByRole('checkbox',{name:'Pilih Produk Nol Uji',exact:true}).check();await p.getByRole('button',{name:'Ubah kategori',exact:true}).click();const categoryDialog=p.getByRole('dialog',{name:'Ubah kategori produk',exact:true});await categoryDialog.getByLabel('Kategori baru',{exact:true}).fill('Kategori Uji Baru');await categoryDialog.getByRole('button',{name:'Ubah kategori',exact:true}).click();await expect(categoryDialog).toHaveCount(0);await expect.poll(async()=>ok(await admin.from('catalog_products').select('category').eq('id',zero.id).single()).category).toBe('Kategori Uji Baru')
+    results.push('Bulk category uses the application modal and persists its value to the scoped product')
     expect(errors).toEqual([]); passed = true
   } finally {
     await context.close()

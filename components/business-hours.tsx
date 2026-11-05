@@ -1,4 +1,5 @@
 'use client'
+import { TimeInput } from '@/components/ui/time-input'
 import { useActionState, useEffect, useRef, useState, startTransition } from 'react'
 import { ToastNotification, useToast, type ToastType } from '@/components/ui/toast-notification'
 import { saveBusinessHours } from '@/app/actions'
@@ -101,7 +102,7 @@ export function HoursEditor({hours,setHours,save,error,cancel,pending,showAction
           key={d}
         >
           <b className={'text-sm font-medium ' + (stackOnSmallScreens ? 'order-1 sm:order-none' : '')}>{d}</b>
-          <input
+          <TimeInput
             type="time"
             aria-label={`Jam buka ${d}`}
             className={input + (stackOnSmallScreens ? ' order-3 col-span-2 sm:order-none sm:col-span-1' : '')}
@@ -109,7 +110,7 @@ export function HoursEditor({hours,setHours,save,error,cancel,pending,showAction
             value={hours[d].open}
             onChange={e => update(d, 'open', e.target.value)}
           />
-          <input
+          <TimeInput
             type="time"
             aria-label={`Jam tutup ${d}`}
             className={input + (stackOnSmallScreens ? ' order-4 col-span-2 sm:order-none sm:col-span-1' : '')}

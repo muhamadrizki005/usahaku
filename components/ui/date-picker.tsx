@@ -1,5 +1,7 @@
 'use client'
 
+import { SelectInput } from '@/components/ui/select-input'
+import { TimeInput } from '@/components/ui/time-input'
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 import { Popover } from '@base-ui/react/popover'
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -14,11 +16,13 @@ type Props = {
   id?: string
   'aria-labelledby'?: string
   className?: string
+  minDate?: string
+  maxDate?: string
 }
 const control = 'min-h-10 rounded-lg border border-[#454d5b] bg-[#273242] px-2 text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-[#24cbc5] disabled:opacity-40'
-const bounded = (value: string) => value < calendarMin ? calendarMin : value > calendarMax ? calendarMax : value
 
-export function DatePicker({ value, onChange, label, withTime = false, disabled, id, className = '', 'aria-labelledby': labelledBy }: Props) {
+export function DatePicker({ value, onChange, label, withTime = false, disabled, id, className = '', minDate=calendarMin, maxDate=calendarMax, 'aria-labelledby': labelledBy }: Props) {
+  const bounded=(v:string)=>v<minDate?minDate:v>maxDate?maxDate:v
   const generatedId = useId(), titleId = generatedId+'-month', timeId = generatedId+'-time'
   const trigger = useRef<HTMLButtonElement>(null), popup = useRef<HTMLDivElement>(null), requestedFocus = useRef(false)
   const [open,setOpen] = useState(false), [container,setContainer] = useState<HTMLElement | null>(null)
@@ -72,23 +76,23 @@ export function DatePicker({ value, onChange, label, withTime = false, disabled,
           className="w-[336px] max-w-[calc(100vw-48px)] overflow-y-auto rounded-xl border border-[#454d5b] bg-[#273242] p-3 text-white shadow-xl outline-none"
           style={{maxHeight:'var(--available-height)'}}>
           <div className="flex items-center justify-between gap-2">
-            <button type="button" aria-label="Bulan sebelumnya" disabled={month==='2000-01'} onClick={()=>showMonth(calendarMoveMonth(month+'-01',-1))} className={control+' grid size-10 shrink-0 place-items-center px-0'}><ChevronLeft aria-hidden="true" className="size-4"/></button>
+            <button type="button" aria-label="Bulan sebelumnya" disabled={month===minDate.slice(0,7)} onClick={()=>showMonth(calendarMoveMonth(month+'-01',-1))} className={control+' grid size-10 shrink-0 place-items-center px-0'}><ChevronLeft aria-hidden="true" className="size-4"/></button>
             <div className="flex min-w-0 items-center gap-1">
-              <select aria-label="Bulan kalender" value={monthNumber} onChange={e=>showMonth(`${year}-${String(Number(e.target.value)+1).padStart(2,'0')}-01`)} className="min-h-10 min-w-0 max-w-32 rounded-lg bg-[#273242] text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-[#24cbc5]">{calendarMonths.map((name,i)=><option key={name} value={i}>{name}</option>)}</select>
-              <select aria-label="Tahun kalender" value={year} onChange={e=>showMonth(`${e.target.value}-${String(monthNumber+1).padStart(2,'0')}-01`)} className="min-h-10 min-w-0 rounded-lg bg-[#273242] text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-[#24cbc5]">{Array.from({length:100},(_,i)=>2000+i).map(y=><option key={y} value={y}>{y}</option>)}</select>
+              <SelectInput aria-label="Bulan kalender" value={monthNumber} onChange={e=>showMonth(`${year}-${String(Number(e.target.value)+1).padStart(2,'0')}-01`)} className="min-h-10 min-w-0 max-w-32 rounded-lg bg-[#273242] text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-[#24cbc5]">{calendarMonths.map((name,i)=><option key={name} value={i}>{name}</option>)}</SelectInput>
+              <SelectInput aria-label="Tahun kalender" value={year} onChange={e=>showMonth(`${e.target.value}-${String(monthNumber+1).padStart(2,'0')}-01`)} className="min-h-10 min-w-0 rounded-lg bg-[#273242] text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-[#24cbc5]">{Array.from({length:Number(maxDate.slice(0,4))-Number(minDate.slice(0,4))+1},(_,i)=>Number(minDate.slice(0,4))+i).map(y=><option key={y} value={y}>{y}</option>)}</SelectInput>
             </div>
-            <button type="button" aria-label="Bulan berikutnya" disabled={month==='2099-12'} onClick={()=>showMonth(calendarMoveMonth(month+'-01',1))} className={control+' grid size-10 shrink-0 place-items-center px-0'}><ChevronRight aria-hidden="true" className="size-4"/></button>
+            <button type="button" aria-label="Bulan berikutnya" disabled={month===maxDate.slice(0,7)} onClick={()=>showMonth(calendarMoveMonth(month+'-01',1))} className={control+' grid size-10 shrink-0 place-items-center px-0'}><ChevronRight aria-hidden="true" className="size-4"/></button>
           </div>
           <span id={titleId} aria-live="polite" className="sr-only">{calendarMonths[monthNumber]} {year}</span>
           <table role="grid" aria-labelledby={titleId} className="mt-3 w-full table-fixed border-separate border-spacing-y-1 text-center text-sm">
             <thead><tr>{['Sen','Sel','Rab','Kam','Jum','Sab','Min'].map(d=><th key={d} scope="col" className="pb-1 text-xs font-normal text-[#c5cbd5]">{d}</th>)}</tr></thead>
             <tbody>{Array.from({length:6},(_,week)=><tr key={week}>{cells.slice(week*7,week*7+7).map(date=>{
-              const selected = date===draft, currentMonth = date.slice(0,7)===month, unavailable = date<calendarMin || date>calendarMax
+              const selected = date===draft, currentMonth = date.slice(0,7)===month, unavailable = date<minDate || date>maxDate
               return <td key={date} role="gridcell" aria-selected={selected} className="p-0.5"><button type="button" data-day={date} aria-label={calendarLabel(date)} aria-current={date===today?'date':undefined} disabled={unavailable} tabIndex={focused===date?0:-1} onFocus={()=>setFocused(date)} onKeyDown={e=>dayKey(e,date)} onClick={()=>choose(date)}
                 className={'grid min-h-10 w-full place-items-center rounded-lg text-sm outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-25 '+(selected?'bg-[#1835d9] font-semibold text-white':currentMonth?'text-white hover:bg-[#303640]':'text-[#a4a7ac] hover:bg-[#303640]')+(date===today?' ring-1 ring-inset ring-[#24cbc5]':'')}>{Number(date.slice(8))}</button></td>
             })}</tr>)}</tbody>
           </table>
-          {withTime&&<div className="mt-3 border-t border-[#454d5b] pt-3"><label htmlFor={timeId} className="block text-xs text-[#c5cbd5]">Jam kedatangan (WIB)</label><input id={timeId} type="time" required value={time} onChange={e=>setTime(e.target.value)} className={control+' mt-1 w-full px-3'}/></div>}
+          {withTime&&<div className="mt-3 border-t border-[#454d5b] pt-3"><label htmlFor={timeId} className="block text-xs text-[#c5cbd5]">Jam kedatangan (WIB)</label><TimeInput id={timeId} type="time" required value={time} onChange={e=>setTime(e.target.value)} className={control+' mt-1 w-full px-3'}/></div>}
           <div className="mt-3 flex items-center justify-between gap-2 border-t border-[#454d5b] pt-3">
             <button type="button" onClick={()=>choose(today)} className="min-h-10 rounded-lg px-2 text-sm text-[#24cbc5] outline-none focus-visible:ring-2 focus-visible:ring-[#24cbc5]">Hari ini</button>
             {withTime?<button type="button" disabled={!calendarDate(draft)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)} onClick={()=>{onChange(draft+'T'+time);setOpen(false)}} className="min-h-10 rounded-lg bg-[#1835d9] px-3 text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-[#24cbc5] disabled:opacity-40">Pilih tanggal dan jam</button>:<Popover.Close className={control+' px-3'}>Tutup</Popover.Close>}

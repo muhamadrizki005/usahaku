@@ -2,6 +2,7 @@
 
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
+import { Popover } from '@base-ui/react/popover'
 
 export type CustomSelectOption =
   | string
@@ -20,6 +21,7 @@ export interface CustomSelectProps {
   name?: string
   id?: string
   ariaLabel?: string
+  'aria-labelledby'?: string
   placeholder?: string
   disabled?: boolean
   className?: string
@@ -38,6 +40,7 @@ export function CustomSelect({
   name,
   id: explicitId,
   ariaLabel,
+  'aria-labelledby': labelledBy,
   placeholder,
   disabled = false,
   className = '',
@@ -50,6 +53,7 @@ export function CustomSelect({
   const generatedId = useId()
   const id = explicitId || generatedId
   const [open, setOpen] = useState(false)
+  const [portalContainer,setPortalContainer]=useState<HTMLElement|null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -82,16 +86,11 @@ export function CustomSelect({
   const currentValue = isControlled ? value : uncontrolledValue
 
   const selectedOption = normalizedOptions.find(opt => opt.value === currentValue)
+  const changeOpen=(next:boolean)=>{if(next)setPortalContainer(triggerRef.current?.closest('dialog')||null);setOpen(next)}
   const displayLabel = selectedOption?.label ?? (currentValue || placeholder || 'Pilih...')
 
   useEffect(() => {
     if (!open) return
-
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false)
-      }
-    }
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -102,10 +101,8 @@ export function CustomSelect({
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
     document.addEventListener('keydown', handleKeyDown)
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
       document.removeEventListener('keydown', handleKeyDown)
     }
   }, [open])
@@ -156,29 +153,25 @@ export function CustomSelect({
     lg: 'h-11 px-4 text-sm',
   }[size]
 
-  const isFullWidth = className.includes('w-full')
-  const defaultPopupWidth = isFullWidth
-    ? 'w-full min-w-full'
-    : 'min-w-full w-max max-w-xs sm:max-w-sm'
-
   return (
-    <div ref={containerRef} className={`relative inline-block ${className}`}>
+    <Popover.Root open={open} onOpenChange={changeOpen}><div ref={containerRef} className={`relative inline-block ${className}`}>
       {name && <input type="hidden" name={name} value={currentValue} />}
-      <button
+      <Popover.Trigger
         type="button"
         id={id}
         ref={triggerRef}
         aria-controls={open ? id + '-listbox' : undefined}
         onKeyDown={event => {
           if (['ArrowDown','ArrowUp','Home','End'].includes(event.key)) {
-            event.preventDefault(); openAt.current = event.key === 'ArrowUp' || event.key === 'End' ? 'last' : event.key === 'Home' ? 'first' : 'selected'; setOpen(true)
+            event.preventDefault(); openAt.current = event.key === 'ArrowUp' || event.key === 'End' ? 'last' : event.key === 'Home' ? 'first' : 'selected'; changeOpen(true)
           }
         }}
-        aria-label={ariaLabel || displayLabel}
+        aria-label={labelledBy?undefined:ariaLabel || displayLabel}
+        aria-labelledby={labelledBy}
         aria-haspopup="listbox"
         aria-expanded={open}
+        data-value={currentValue}
         disabled={disabled}
-        onClick={() => !disabled && setOpen(prev => !prev)}
         className={`inline-flex w-full items-center justify-between gap-2.5 rounded-xl border bg-[#273242] text-white transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#24cbc5] select-none disabled:cursor-not-allowed disabled:opacity-50 ${sizeClasses} ${
           open
             ? 'border-[#24cbc5] ring-2 ring-[#24cbc5]/20'
@@ -191,19 +184,20 @@ export function CustomSelect({
             open ? 'rotate-180 text-white' : ''
           }`}
         />
-      </button>
+      </Popover.Trigger>
 
       {open && (
-        <div
+        <Popover.Portal container={portalContainer||undefined}><Popover.Positioner side="bottom" align={align==='right'?'end':'start'} sideOffset={8} collisionPadding={12} positionMethod="fixed" className="z-[110] max-w-[calc(100vw-24px)]"><Popover.Popup
           role="listbox"
           id={id + '-listbox'}
           aria-labelledby={id}
           ref={menuRef}
+          finalFocus={triggerRef}
+          initialFocus={()=>{const enabled=Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="option"]:not(:disabled)')||[]);return openAt.current==='last'?enabled.at(-1):openAt.current==='first'?enabled[0]:enabled.find(el=>el.getAttribute('aria-selected')==='true')||enabled[0]}}
           onKeyDown={menuKeyDown}
           tabIndex={-1}
-          className={`absolute ${
-            align === 'right' ? 'right-0' : 'left-0'
-          } top-full z-50 mt-2 max-h-60 ${defaultPopupWidth} overflow-y-auto rounded-2xl border border-border bg-[#273242] p-1.5 shadow-2xl backdrop-blur-md animate-in fade-in-50 zoom-in-95 duration-150 ${dropdownClassName}`}
+          style={{minWidth:'var(--anchor-width)',maxHeight:'min(15rem,var(--available-height))'}}
+          className={`max-w-[calc(100vw-24px)] overflow-y-auto rounded-2xl border border-border bg-[#273242] p-1.5 shadow-2xl outline-none ${dropdownClassName}`}
         >
           {normalizedOptions.map((opt, idx) => {
             const isSelected = opt.value === currentValue
@@ -223,10 +217,12 @@ export function CustomSelect({
                 <button
                   type="button"
                   role="option"
+                  data-value={opt.value}
                   tabIndex={-1}
                   aria-selected={isSelected}
                   disabled={opt.disabled}
                   onClick={() => handleSelect(opt.value, opt.disabled)}
+                  onFocus={event=>event.currentTarget.scrollIntoView({block:'nearest'})}
                   className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-[#24cbc5] focus-visible:outline-offset-[-2px] ${
                     opt.disabled
                       ? 'cursor-not-allowed opacity-40 text-[#a4a7ac]'
@@ -235,7 +231,7 @@ export function CustomSelect({
                       : 'text-[#c5cbd5] hover:bg-[#303640] hover:text-white'
                   }`}
                 >
-                  <span className="truncate">{opt.label}</span>
+                  <span className="break-words [overflow-wrap:anywhere]">{opt.label}</span>
                   {isSelected && <span className="size-1.5 shrink-0 rounded-full bg-white" />}
                 </button>
               </React.Fragment>
@@ -248,8 +244,8 @@ export function CustomSelect({
                 : dropdownFooter}
             </div>
           )}
-        </div>
+        </Popover.Popup></Popover.Positioner></Popover.Portal>
       )}
-    </div>
+    </div></Popover.Root>
   )
 }

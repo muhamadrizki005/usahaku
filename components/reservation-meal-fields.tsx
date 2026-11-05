@@ -1,4 +1,6 @@
 'use client'
+import { SelectInput } from '@/components/ui/select-input'
+import { NumericInput } from '@/components/ui/numeric-input'
 import { useState } from 'react'
 import type { RestaurantMenu } from '@/lib/restaurant'
 import { rupiah } from '@/lib/pos'
@@ -15,13 +17,13 @@ export default function ReservationMealFields({ menu, lines, onChange, notes, on
     setChoice('')
   }
   return <div className="space-y-4">
-    <RestaurantField label="Pilih menu reservasi"><select value={choice} onChange={e => setChoice(e.target.value)} className={restaurantInput}><option value="">Pilih menu tersedia</option>{menu.filter(m => m.active && m.available).map(m => <option key={m.id} value={m.id}>{m.name} / {rupiah(Number(m.price))}</option>)}</select></RestaurantField>
+    <RestaurantField label="Pilih menu reservasi"><SelectInput value={choice} onChange={e => setChoice(e.target.value)} className={restaurantInput}><option value="">Pilih menu tersedia</option>{menu.filter(m => m.active && m.available).map(m => <option key={m.id} value={m.id}>{m.name} / {rupiah(Number(m.price))}</option>)}</SelectInput></RestaurantField>
     <button type="button" disabled={!choice || lines.length >= 100} onClick={add} className={restaurantButton}>Tambahkan menu</button>
     {!menu.some(m => m.active && m.available) && <p className="text-sm leading-6 text-[#c5cbd5]">Belum ada menu tersedia. Anda tetap bisa menyimpan reservasi meja tanpa makanan.</p>}
     {!lines.length && <p className="text-sm text-[#c5cbd5]">Tambahkan minimal satu menu atau nonaktifkan pesanan makanan untuk reservasi meja saja.</p>}
     <ul className="divide-y divide-[#454d5b]">{lines.map(line => {
       const item = menu.find(m => m.id === line.id)
-      return <li key={line.id} className="py-3"><p className="break-words text-sm">{item?.name || 'Menu tidak tersedia'} / {rupiah(Number(item?.price || 0))} per porsi</p><div className="mt-2 flex flex-wrap items-end gap-3"><RestaurantField label={'Jumlah ' + (item?.name || 'menu')}><input required type="number" min={1} max={9999} step={1} inputMode="numeric" value={line.quantity} onChange={e => onChange(lines.map(l => l.id === line.id ? { ...l, quantity: e.target.value } : l))} className={restaurantInput}/></RestaurantField><button type="button" onClick={() => onChange(lines.filter(l => l.id !== line.id))} aria-label={'Hapus ' + (item?.name || 'menu')} className={restaurantButton}>Hapus</button></div></li>
+      return <li key={line.id} className="py-3"><p className="break-words text-sm">{item?.name || 'Menu tidak tersedia'} / {rupiah(Number(item?.price || 0))} per porsi</p><div className="mt-2 flex flex-wrap items-end gap-3"><RestaurantField label={'Jumlah ' + (item?.name || 'menu')}><NumericInput required type="number" min={1} max={9999} step={1} inputMode="numeric" value={line.quantity} onChange={e => onChange(lines.map(l => l.id === line.id ? { ...l, quantity: e.target.value } : l))} className={restaurantInput}/></RestaurantField><button type="button" onClick={() => onChange(lines.filter(l => l.id !== line.id))} aria-label={'Hapus ' + (item?.name || 'menu')} className={restaurantButton}>Hapus</button></div></li>
     })}</ul>
     <RestaurantField label="Catatan makanan"><textarea maxLength={300} value={notes} onChange={e => onNotes(e.target.value)} className={restaurantInput}/></RestaurantField>
     <p className="text-sm">Subtotal makanan: {rupiah(subtotal)}</p>

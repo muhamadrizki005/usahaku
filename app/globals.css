@@ -347,4 +347,10 @@ html {
     opacity: 0.45;
     cursor: not-allowed;
   }
+
+  input[aria-invalid="true"],
+  textarea[aria-invalid="true"],
+  button[aria-haspopup="listbox"][aria-invalid="true"] {
+    border-color: #ffb4ae;
+  }
 }
