@@ -5,6 +5,7 @@ import './mobile-record-table.css'
 import { productSkuPrefix } from '@/lib/product-sku'
 import { discountedPrice } from '@/lib/product-pricing'
 import { saveCatalogProduct, bulkCatalogProducts } from '@/app/catalog-actions'
+import { emitAppNotification } from '@/lib/notifications'
 import { productCategories, defaultProductUnits, productSchema, formatQuantity, type CatalogProduct, type CatalogResult } from '@/lib/catalog'
 import { hasPermission } from '@/lib/auth/rbac'
 import type { Role } from '@/lib/auth/permissions'
@@ -469,6 +470,17 @@ export default function ProductManagement({
             const result = await saveCatalogProduct(data)
             if (!result.error && result.product) {
               const saved = result.product
+              const isEdit = Boolean(p.id)
+              emitAppNotification({
+                businessId: business.id,
+                title: isEdit ? 'Produk Diperbarui' : 'Produk Ditambahkan',
+                message: isEdit
+                  ? `Produk "${saved.name}" berhasil diperbarui.`
+                  : `Produk baru "${saved.name}" berhasil ditambahkan ke katalog.`,
+                category: 'product',
+                link: '/dashboard/products',
+                linkLabel: 'Lihat Produk'
+              })
               setProducts(items => [saved, ...items.filter(x => x.id !== p.id)])
               setCustomCategories(prev => {
                 const lower = saved.category.trim().toLowerCase()

@@ -1,6 +1,7 @@
 'use client'
 import './mobile-record-table.css'
 import { moveCatalogStock } from '@/app/catalog-actions'
+import { emitAppNotification } from '@/lib/notifications'
 import { adjustedStock, formatQuantity, quantity, type CatalogProduct, type StockRow } from '@/lib/catalog'
 import { hasPermission } from '@/lib/auth/rbac'
 import type { Role } from '@/lib/auth/permissions'
@@ -25,7 +26,23 @@ export default function InventoryManagement({ role, permissions = [], initialCat
   if(adjustment.trim()) { try { const amount=quantity(adjustment); delta=direction==='out'&&Number(amount)!==0?'-'+amount:amount } catch { amountError='Masukkan jumlah positif dengan maksimal 3 angka desimal.' } }
   const businessName = business.name; const selected = products.find(p => p.id === selectedId) || products[0]; const result = amountError ? NaN : selected ? adjustedStock(selected.stock,delta) : 0; const lowStock = products.filter(p => p.stock <= p.minStock); const categories = ['Semua kategori', ...Array.from(new Set(products.map(p => p.category)))]; const filtered = useMemo(() => products.filter(p => `${p.name} ${p.sku}`.toLowerCase().includes(query.toLowerCase()) && (category === 'Semua kategori' || p.category === category) && (condition === 'Semua kondisi' || (condition === 'Habis' ? p.stock === 0 : condition === 'Menipis' ? p.stock > 0 && p.stock <= p.minStock : p.stock > p.minStock))), [products, query, category, condition]); const filteredMovements = movementFilter === 'Semua' ? movements : movements.filter(m => m.type === movementFilter)
   const conditionLabel = (p: Product) => p.stock === 0 ? 'Habis' : p.stock <= p.minStock ? 'Menipis' : 'Cukup'
-  const saveAdjustment = async () => {if(pending||!selected||!reason.trim()||!Number.isFinite(result)||result<0||Number(delta)===0)return;setPending(true);operation.current ||= crypto.randomUUID();try{const form=new FormData();form.set('id',selected.id);form.set('revision',String(selected.stockRevision));form.set('request',operation.current);form.set('delta',delta);form.set('kind',hasPermission(role, permissions, 'inventory:create') ? direction : 'adjustment');form.set('reason',reason);const response=await moveCatalogStock(form);setNotice(response.error||response.success||'');if(response.product){setProducts(items=>items.map(p=>p.id===selected.id?response.product!:p));setAdjustment('');setReason('');operation.current='';router.refresh()}}catch{setNotice('Status belum pasti. Muat ulang sebelum mencoba lagi.')}finally{setPending(false)}}
+  const saveAdjustment = async () => {if(pending||!selected||!reason.trim()||!Number.isFinite(result)||result<0||Number(delta)===0)return;setPending(true);operation.current ||= crypto.randomUUID();try{const form=new FormData();form.set('id',selected.id);form.set('revision',String(selected.stockRevision));form.set('request',operation.current);form.set('delta',delta);form.set('kind',hasPermission(role, permissions, 'inventory:create') ? direction : 'adjustment');form.set('reason',reason);const response=await moveCatalogStock(form);setNotice(response.error||response.success||'');if(response.product){
+        setProducts(items=>items.map(p=>p.id===selected.id?response.product!:p))
+        const deltaNum = Number(delta)
+        const changeText = deltaNum > 0 ? ('+' + deltaNum) : String(deltaNum)
+        emitAppNotification({
+          businessId: business.id,
+          title: 'Perubahan Stok Dicatat',
+          message: 'Stok "' + selected.name + '" diubah (' + changeText + ' ' + (selected.unit || 'unit') + '). Alasan: ' + reason + '.',
+          category: 'inventory',
+          link: '/dashboard/inventory',
+          linkLabel: 'Lihat Inventori'
+        })
+        setAdjustment('')
+        setReason('')
+        operation.current=''
+        router.refresh()
+      }}catch{setNotice('Status belum pasti. Muat ulang sebelum mencoba lagi.')}finally{setPending(false)}}
   const openStockChange=()=>{if(pending)return;setDirection('in');setAdjustment('');setReason('');operation.current='';document.getElementById('adjustment')?.scrollIntoView({behavior:'smooth'})}
 
   return <div className="w-full">

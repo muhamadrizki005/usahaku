@@ -35,11 +35,23 @@
   --shadow-color: #000000;
 }
 
-input:not([type='checkbox']):not([type='radio']):not([type='file']), select, textarea {
+input:not([type='checkbox']):not([type='radio']):not([type='file']):not([data-bare='true']):not(.assistant-textarea),
+select:not([data-bare='true']),
+textarea:not([data-bare='true']):not(.assistant-textarea) {
   color-scheme: dark;
   background-color: #273242;
   color: #ffffff;
   border-color: var(--border);
+}
+.assistant-textarea,
+textarea[data-bare='true'] {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-width: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 input::placeholder, textarea::placeholder { color: #a4a7ac; opacity: 1; }
 select option { background-color: #273242; color: #ffffff; }
