@@ -16,11 +16,19 @@ import {
   CheckCircle2,
   ChevronDown,
   LogOut,
+  Package,
   Store,
   User,
   Users,
   X,
 } from 'lucide-react'
+import {
+  type AppNotification,
+  loadAppNotifications,
+  markAllAppNotificationsAsRead,
+  saveAppNotifications,
+} from '@/lib/notifications'
+import { ToastNotification, useToast } from '@/components/ui/toast-notification'
 import {
   DashboardBrand,
   DashboardTopNav,
@@ -78,6 +86,57 @@ export function DashboardShell({
   const [optimisticPath, setOptimisticPath] = useState<string | null>(null)
   const [publishedActivity, setActivity] = useState<Activity | null>(null)
   const [assistantVisible, setAssistantVisible] = useState(false)
+  const [notifications, setNotifications] = useState<AppNotification[]>([])
+  const [hasUnread, setHasUnread] = useState(false)
+  const { toast, showToast, hideToast } = useToast(4000)
+
+  useEffect(() => {
+    if (!business?.id) return
+    const loaded = loadAppNotifications(business.id)
+    setNotifications(loaded)
+    setHasUnread(loaded.some(n => !n.read))
+  }, [business?.id])
+
+  useEffect(() => {
+    if (!business?.id) return
+    const onNotification = (e: Event) => {
+      const customEvent = e as CustomEvent<AppNotification>
+      const notif = customEvent.detail
+      if (notif && notif.businessId === business.id) {
+        setNotifications(prev => [notif, ...prev.filter(n => n.id !== notif.id)])
+        setHasUnread(true)
+        showToast('success', `${notif.title} — ${notif.message}`)
+      }
+    }
+    const onRead = (e: Event) => {
+      const customEvent = e as CustomEvent<{ businessId: string }>
+      if (customEvent.detail?.businessId === business.id) {
+        setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+        setHasUnread(false)
+      }
+    }
+    window.addEventListener('usahaku:notification', onNotification)
+    window.addEventListener('usahaku:notifications_read', onRead)
+    return () => {
+      window.removeEventListener('usahaku:notification', onNotification)
+      window.removeEventListener('usahaku:notifications_read', onRead)
+    }
+  }, [business?.id, showToast])
+
+  const handleMarkAllRead = () => {
+    if (!business?.id) return
+    const updated = markAllAppNotificationsAsRead(business.id)
+    setNotifications(updated)
+    setHasUnread(false)
+  }
+
+  const handleMarkOneRead = (id: string) => {
+    if (!business?.id) return
+    const updated = notifications.map(n => n.id === id ? { ...n, read: true } : n)
+    saveAppNotifications(business.id, updated)
+    setNotifications(updated)
+    setHasUnread(updated.some(n => !n.read))
+  }
   const assistantAllowed = business.category === 'store' && (hasPermission(member.role, member.permissions, 'reports:view') && hasPermission(member.role, member.permissions, 'products:view'))
 
   const activity =
@@ -138,6 +197,7 @@ export function DashboardShell({
 
   return (
     <ActivityPublisher.Provider value={setActivity}>
+      <ToastNotification toast={toast} onClose={hideToast} />
       <main className="min-h-screen w-full flex flex-col text-white bg-transparent">
         {/* Topbar: 3 parts (Kiri, Tengah, Kanan), outside scroll container, non-sticky, non-fixed */}
         <header className="shrink-0 w-full z-30 print:hidden bg-transparent pt-4 sm:pt-5 pb-4 sm:pb-5">
@@ -183,7 +243,7 @@ export function DashboardShell({
                   }`}
                 >
                   <Bell className="size-4.5" />
-                  {(lowStock.length > 0 || sales.length > 0) && (
+                  {hasUnread && (
                     <span className="absolute -top-0.5 -right-0.5 flex size-3">
                       <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#24cbc5] opacity-75" />
                       <span className="relative inline-flex size-3 rounded-full bg-[#24cbc5]" />
@@ -194,33 +254,89 @@ export function DashboardShell({
                 {showNotifications && (
                   <div className="fixed left-4 right-4 top-20 z-50 sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-96 rounded-2xl border border-[#454d5b] bg-[#273242] p-4 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150">
                     <div className="flex items-center justify-between border-b border-[#454d5b] pb-3">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
                         <span className="text-sm font-normal text-white">
                           Notifikasi
                         </span>
-                        <span className="rounded-full bg-[#24cbc5]/15 px-2 py-0.5 text-[11px] font-normal text-[#24cbc5]">
-                          {lowStock.length + (sales.length > 0 ? 1 : 0)} aktivitas
-                        </span>
+                        {notifications.filter(n => !n.read).length > 0 ? (
+                          <span className="rounded-full bg-[#24cbc5]/15 px-2 py-0.5 text-[11px] font-normal text-[#24cbc5]">
+                            {notifications.filter(n => !n.read).length} baru
+                          </span>
+                        ) : (
+                          <span className="rounded-full bg-[#454d5b]/40 px-2 py-0.5 text-[11px] font-normal text-[#a4a7ac]">
+                            {notifications.length} total
+                          </span>
+                        )}
                       </div>
-                      <button
-                        onClick={() => setShowNotifications(false)}
-                        className="rounded-lg p-1 text-[#a4a7ac] hover:bg-[#1c222e] cursor-pointer"
-                        aria-label="Tutup notifikasi"
-                      >
-                        <X className="size-4" />
-                      </button>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={handleMarkAllRead}
+                          disabled={!hasUnread && !notifications.some(n => !n.read)}
+                          className="text-[11px] font-normal text-[#24cbc5] hover:underline cursor-pointer disabled:opacity-40 disabled:hover:no-underline"
+                        >
+                          Tandai semua telah dibaca
+                        </button>
+                        <button
+                          onClick={() => setShowNotifications(false)}
+                          className="rounded-lg p-1 text-[#a4a7ac] hover:bg-[#1c222e] cursor-pointer"
+                          aria-label="Tutup notifikasi"
+                        >
+                          <X className="size-4" />
+                        </button>
+                      </div>
                     </div>
 
-                    {activity && pathname !== '/dashboard' && (
-                      <p className="mt-3 text-xs text-[#a4a7ac]">
-                        Data dari Ringkasan terakhir.
-                      </p>
-                    )}
-                    <div className="mt-3 space-y-2.5 max-h-72 overflow-y-auto">
+                    <div className="mt-3 space-y-2.5 max-h-80 overflow-y-auto pr-1">
+                      {/* App Notifications (Transaction, Product, Inventory, etc.) */}
+                      {notifications.map(notif => (
+                        <div
+                          key={notif.id}
+                          className={`rounded-xl border p-3 text-xs transition-colors ${
+                            !notif.read
+                              ? 'border-[#24cbc5]/40 bg-[#1c222e]'
+                              : 'border-[#454d5b]/60 bg-[#1c222e]/60 text-[#a4a7ac]'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 font-medium text-white min-w-0">
+                              {notif.category === 'transaction' && <CheckCircle2 className="size-3.5 text-[#24cbc5] shrink-0" />}
+                              {notif.category === 'product' && <Package className="size-3.5 text-[#349cb8] shrink-0" />}
+                              {notif.category === 'inventory' && <AlertTriangle className="size-3.5 text-amber-400 shrink-0" />}
+                              {notif.category === 'low_stock' && <AlertTriangle className="size-3.5 text-red-400 shrink-0" />}
+                              {notif.category === 'system' && <Bell className="size-3.5 text-[#24cbc5] shrink-0" />}
+                              <span className="truncate">{notif.title}</span>
+                            </div>
+                            {!notif.read && (
+                              <span className="size-1.5 shrink-0 rounded-full bg-[#24cbc5]" />
+                            )}
+                          </div>
+                          <p className="mt-1 text-xs text-[#c5cbd5] leading-relaxed break-words">{notif.message}</p>
+                          <div className="mt-2 flex items-center justify-between gap-2">
+                            <span className="text-[10px] text-[#a4a7ac]">
+                              {new Date(notif.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+                            </span>
+                            {notif.link && (
+                              <button
+                                onClick={() => {
+                                  handleMarkOneRead(notif.id)
+                                  setShowNotifications(false)
+                                  navigate(notif.link!)
+                                }}
+                                className="text-[11px] font-normal text-[#24cbc5] hover:underline cursor-pointer"
+                              >
+                                {notif.linkLabel || 'Lihat detail →'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Low Stock Warning */}
                       {lowStock.length > 0 && (
                         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-[#c5cbd5]">
                           <div className="flex items-center gap-1.5 font-normal text-amber-400">
-                            <AlertTriangle className="size-3.5" />
+                            <AlertTriangle className="size-3.5 shrink-0" />
                             <span>Peringatan Stok Menipis</span>
                           </div>
                           <p className="mt-1 text-[#c5cbd5]">
@@ -242,10 +358,11 @@ export function DashboardShell({
                         </div>
                       )}
 
-                      {sales.length > 0 && (
+                      {/* Latest sale if not in notifications */}
+                      {sales.length > 0 && !notifications.some(n => n.category === 'transaction') && (
                         <div className="rounded-xl border border-[#454d5b]/60 bg-[#1c222e] p-3 text-xs text-[#c5cbd5]">
                           <div className="flex items-center gap-1.5 font-normal text-[#24cbc5]">
-                            <CheckCircle2 className="size-3.5" />
+                            <CheckCircle2 className="size-3.5 shrink-0" />
                             <span>Transaksi Terakhir</span>
                           </div>
                           <p className="mt-1 text-white font-medium">
@@ -267,13 +384,13 @@ export function DashboardShell({
                         </div>
                       )}
 
-                      {!lowStock.length && !sales.length && (
+                      {!notifications.length && !lowStock.length && !sales.length && (
                         <div className="py-6 text-center text-xs text-[#a4a7ac]">
                           <Bell className="mx-auto size-6 text-[#454d5b] mb-1.5" />
                           <span>
                             {activity
                               ? 'Tidak ada pemberitahuan mendesak.'
-                              : 'Belum ada pemberitahuan yang dimuat.'}
+                              : 'Belum ada pemberitahuan baru.'}
                           </span>
                         </div>
                       )}

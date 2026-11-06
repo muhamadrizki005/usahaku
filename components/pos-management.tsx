@@ -13,6 +13,7 @@ import { discountedPrice, checkoutQuote } from '@/lib/product-pricing'
 import { CustomSelect } from './ui/custom-select'
 import { parseQuantityInput, formatQuantity, quantity, type CatalogProduct } from '@/lib/catalog'
 import { checkoutPos } from '@/app/pos-actions'
+import { emitAppNotification } from '@/lib/notifications'
 import { lineAmount, saleCode, saleDate, paymentLabel, type Sale } from '@/lib/pos'
 import PosCustomerPicker from './pos-customer-picker'
 import type {PosCustomer} from '@/lib/customers'
@@ -120,7 +121,25 @@ export default function PosManagement({ initialCategory = 'toko', business, memb
     busy.current=true;setPending(true)
     try{
       const result=await checkoutPos(request.current.id,request.current.details)
-      if(result.sale){setLastSale(result.sale);setNotice('Transaksi '+saleCode(result.sale)+(result.sale.status==='cancelled'?' sudah tercatat dan telah dibatalkan. Periksa detail transaksi.':' berhasil dicatat.'));setCart([]);setCash('');setAck(false);setCustomer(null);setUncertain(false);request.current=null;router.refresh()}
+      if(result.sale){
+        setLastSale(result.sale)
+        setNotice('Transaksi '+saleCode(result.sale)+(result.sale.status==='cancelled'?' sudah tercatat dan telah dibatalkan. Periksa detail transaksi.':' berhasil dicatat.'))
+        emitAppNotification({
+          businessId: business.id,
+          title: 'Transaksi Berhasil',
+          message: 'Transaksi ' + saleCode(result.sale) + ' senilai Rp' + Math.round(Number(result.sale.total)).toLocaleString('id-ID') + ' berhasil dicatat.',
+          category: 'transaction',
+          link: '/dashboard/transactions',
+          linkLabel: 'Lihat Transaksi'
+        })
+        setCart([])
+        setCash('')
+        setAck(false)
+        setCustomer(null)
+        setUncertain(false)
+        request.current=null
+        router.refresh()
+      }
       else{setNotice(result.error||'Transaksi belum dapat dicatat.');setUncertain(!!result.uncertain);if(!result.uncertain)request.current=null}
     }catch{setUncertain(true);setNotice('Hasil penyimpanan belum pasti. Periksa riwayat atau coba ulang permintaan yang sama.')}
     finally{busy.current=false;setPending(false)}
