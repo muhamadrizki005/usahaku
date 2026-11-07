@@ -292,21 +292,21 @@ export default function ProductManagement({
             {canEdit && (<button
               type="button"
               onClick={bulkCategory}
-              className="rounded-lg border border-[#24cbc5]/30 bg-[#273242] px-3 py-1.5 font-normal text-white"
+              className="rounded-xl border-0 bg-[#303640] px-3 py-1.5 font-medium text-white hover:bg-[#3d4653] transition-all"
             >
               Ubah kategori
             </button>)}
             {canDelete && (<button
               type="button"
               onClick={() => bulkStatus(false)}
-              className="rounded-lg border border-[#24cbc5]/30 bg-[#273242] px-3 py-1.5 font-normal text-white"
+              className="rounded-xl border-0 bg-[#303640] px-3 py-1.5 font-medium text-white hover:bg-[#3d4653] transition-all"
             >
               Nonaktifkan produk
             </button>)}
             <button
               type="button"
               onClick={() => setSelected([])}
-              className="ml-auto font-normal text-white hover:underline"
+              className="ml-auto btn-action-muted !py-1 !px-2.5 !text-xs"
             >
               Batalkan pilihan
             </button>
@@ -397,7 +397,7 @@ export default function ProductManagement({
                     {canEdit && (<button
                       type="button"
                       onClick={() => setEditor(product)}
-                      className="font-normal text-[#24cbc5] hover:underline"
+                      className="btn-action !py-1 !px-2.5 !text-xs"
                     >
                       Ubah
                     </button>)}

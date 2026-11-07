@@ -2,6 +2,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AlertTriangle, CircleDollarSign, CreditCard, Database, Info, Package, Plus } from 'lucide-react'
+import { calculateRevenueTrend, getTodayWib, getPeriodSubtitle, type TrendPeriod } from '@/lib/dashboard-trends'
+import { CustomSelect } from '@/components/ui/custom-select'
+import { DatePicker } from '@/components/ui/date-picker'
 import { useDashboardActivity } from './dashboard-shell'
 import { salesSummary, saleCode, paymentLabel, type Sale } from '@/lib/pos'
 import { roleNames } from '@/lib/auth/permissions'
@@ -131,7 +134,7 @@ function Inventory({ lowStock, onOpen }: { lowStock: Product[]; onOpen: () => vo
     <Card
       title={`${lowStock.length} produk perlu diisi ulang`}
       action={
-        <button className="text-xs sm:text-sm font-normal text-[#24cbc5] hover:underline" onClick={onOpen}>
+        <button type="button" className="btn-action" onClick={onOpen}>
           Kelola inventori →
         </button>
       }
@@ -170,7 +173,7 @@ function Inventory({ lowStock, onOpen }: { lowStock: Product[]; onOpen: () => vo
                     </span>
                   </td>
                   <td className="py-3 px-3 text-right">
-                    <button onClick={onOpen} className="text-xs font-normal text-[#24cbc5] hover:underline">
+                    <button type="button" onClick={onOpen} className="btn-action">
                       Catat stok masuk
                     </button>
                   </td>
@@ -270,6 +273,17 @@ export default function UsahakuDashboard({
   const maxDaily = Math.max(1, ...summary.daily)
   const bars = summary.daily.map((n) => (n / maxDaily) * 90)
 
+  const [trendPeriod, setTrendPeriod] = useState<TrendPeriod>('7d')
+  const todayWib = getTodayWib()
+  const [customStart, setCustomStart] = useState(() => {
+    const d = new Date()
+    d.setDate(d.getDate() - 29)
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(d)
+  })
+  const [customEnd, setCustomEnd] = useState(todayWib)
+
+  const trendData = calculateRevenueTrend(sales, trendPeriod, customStart, customEnd)
+
   useDashboardActivity(business.id, initialProducts, sales)
 
   if (!ready) return <LoadingScreen />
@@ -310,50 +324,126 @@ export default function UsahakuDashboard({
           {/* Tren Omzet Card */}
           <Card
             title="Tren omzet"
-            subtitle="Ringkasan aktivitas penjualan mingguan"
+            subtitle={getPeriodSubtitle(trendPeriod, trendData.startDate, trendData.endDate)}
             action={
-              <span className="rounded-full border border-[#454d5b] bg-[#1c222e] px-3 py-1 text-xs font-medium text-[#c5cbd5]">
-                7 hari terakhir
-              </span>
+              <div className="w-44 sm:w-48">
+                <CustomSelect
+                  value={trendPeriod}
+                  onChange={(val) => setTrendPeriod(val as TrendPeriod)}
+                  options={[
+                    { value: '7d', label: '7 hari terakhir' },
+                    { value: '30d', label: '30 hari terakhir' },
+                    { value: '1m', label: '1 bulan terakhir' },
+                    { value: '3m', label: '3 bulan terakhir' },
+                    { value: '6m', label: '6 bulan terakhir' },
+                    { value: '1y', label: '1 tahun terakhir' },
+                    { value: 'custom', label: 'Periode kustom' },
+                  ]}
+                  size="sm"
+                  ariaLabel="Filter periode tren omzet"
+                />
+              </div>
             }
           >
-            <div className="flex h-56 items-end gap-2.5 sm:gap-4 border-b border-[#454d5b] px-2 pb-3 pt-6">
-              {bars.map((height, i) => {
-                const isToday = i === 6
-                const dayAmount = summary.daily[i]
-                return (
-                  <div key={i} className="group relative flex flex-1 flex-col items-center gap-2">
-                    <div className="pointer-events-none absolute -top-8 z-10 hidden rounded-md bg-[#1c222e] border border-[#454d5b] px-2 py-1 text-[10px] font-normal text-white shadow-md group-hover:block whitespace-nowrap">
-                      {money(dayAmount)}
+            {trendPeriod === 'custom' && (
+              <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-[#1c222e] p-3 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-[#a4a7ac]">Dari:</span>
+                  <DatePicker
+                    value={customStart}
+                    onChange={(val) => {
+                      if (val > customEnd) {
+                        setCustomStart(val);
+                        setCustomEnd(val);
+                      } else {
+                        setCustomStart(val);
+                      }
+                    }}
+                    maxDate={customEnd}
+                    label="Tanggal mulai"
+                    className="w-36 text-xs"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[#a4a7ac]">Sampai:</span>
+                  <DatePicker
+                    value={customEnd}
+                    onChange={(val) => {
+                      if (val < customStart) {
+                        setCustomEnd(val);
+                        setCustomStart(val);
+                      } else {
+                        setCustomEnd(val);
+                      }
+                    }}
+                    minDate={customStart}
+                    maxDate={todayWib}
+                    label="Tanggal akhir"
+                    className="w-36 text-xs"
+                  />
+                </div>
+                <span className="text-[11px] text-[#c5cbd5]">
+                  ({trendData.buckets.length} {trendData.aggregation === 'daily' ? 'hari' : trendData.aggregation === 'weekly' ? 'minggu' : 'bulan'})
+                </span>
+              </div>
+            )}
+
+            {trendData.totalCount === 0 ? (
+              <div className="flex h-56 flex-col items-center justify-center gap-2 px-2 text-center border-b border-[#454d5b]/60">
+                <CircleDollarSign className="size-8 text-[#a4a7ac]/60" />
+                <p className="text-sm text-[#c5cbd5]">Belum ada transaksi selesai pada periode ini</p>
+                <p className="text-xs text-[#a4a7ac]">Pilih rentang waktu lain atau lakukan transaksi baru di kasir</p>
+              </div>
+            ) : (
+              <div className="flex h-56 items-end gap-1.5 sm:gap-2.5 overflow-x-auto border-b border-[#454d5b]/60 px-2 pb-3 pt-6">
+                {trendData.buckets.map((bucket) => {
+                  const maxRev = trendData.maxAmount > 0 ? trendData.maxAmount : 1;
+                  const ratio = bucket.amount > 0 ? bucket.amount / maxRev : 0;
+                  const barHeight = bucket.amount > 0 ? Math.max(8, Math.round(ratio * 140)) : 4;
+
+                  return (
+                    <div key={bucket.key} className="group relative flex flex-1 min-w-[20px] flex-col items-center gap-2">
+                      {/* Tooltip on hover */}
+                      <div className="pointer-events-none absolute -top-12 z-20 hidden rounded-lg bg-[#1c222e] px-2.5 py-1 text-center shadow-lg group-hover:flex flex-col items-center whitespace-nowrap">
+                        <span className="text-[11px] font-semibold text-[#24cbc5]">{money(bucket.amount)}</span>
+                        <span className="text-[9px] text-[#c5cbd5]">{bucket.fullLabel} • {bucket.count} transaksi</span>
+                      </div>
+                      {/* Bar */}
+                      <div
+                        className={`w-full max-w-8 rounded-t-md transition-all duration-300 ${
+                          bucket.isCurrent
+                            ? 'bg-[#24cbc5] shadow-[0_0_12px_rgba(36,203,197,0.35)]'
+                            : bucket.amount > 0
+                            ? 'bg-[#24cbc5]/45 hover:bg-[#24cbc5]/75'
+                            : 'bg-[#454d5b]/30'
+                        }`}
+                        style={{ height: `${barHeight}px` }}
+                      />
+                      {/* X Axis Label */}
+                      <span
+                        className={`text-[10px] sm:text-[11px] truncate max-w-full text-center ${
+                          bucket.isCurrent ? 'font-semibold text-[#24cbc5]' : 'font-medium text-[#c5cbd5]'
+                        }`}
+                        title={bucket.fullLabel}
+                      >
+                        {bucket.shortLabel || bucket.label}
+                      </span>
                     </div>
-                    <div
-                      className={`w-full max-w-10 rounded-t-lg transition-all duration-300 ${
-                        isToday
-                          ? 'bg-[#24cbc5] shadow-[0_0_12px_rgba(36,203,197,0.35)]'
-                          : 'bg-[#24cbc5]/35 hover:bg-[#24cbc5]/60'
-                      }`}
-                      style={{ height: `${Math.max(6, height * 1.5)}px` }}
-                    />
-                    <span
-                      className={`text-[11px] font-medium ${
-                        isToday ? 'text-[#24cbc5] font-normal' : 'text-[#c5cbd5]'
-                      }`}
-                    >
-                      {summary.labels[i]}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-[#a4a7ac]">Total selesai:</span>
-                <strong className="text-sm font-normal text-white">
-                  {money(summary.daily.reduce((a, b) => a + b, 0))}
+                <strong className="text-sm font-semibold text-white">
+                  {money(trendData.totalRevenue)}
                 </strong>
+                <span className="text-xs text-[#a4a7ac]">({trendData.totalCount} transaksi)</span>
               </div>
               <button
-                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-normal text-[#24cbc5] hover:underline"
+                type="button"
+                className="btn-action"
                 onClick={() => nav('Laporan')}
               >
                 Lihat laporan lengkap →
@@ -368,7 +458,8 @@ export default function UsahakuDashboard({
             subtitle="Peringkat penjualan produk teratas"
             action={
               <button
-                className="text-xs sm:text-sm font-normal text-[#24cbc5] hover:underline"
+                type="button"
+                className="btn-action"
                 onClick={() => nav('Produk')}
               >
                 Lihat semua →
@@ -413,7 +504,8 @@ export default function UsahakuDashboard({
             subtitle="Aktivitas struk dan transaksi yang tercatat hari ini"
             action={
               <button
-                className="text-xs sm:text-sm font-normal text-[#24cbc5] hover:underline"
+                type="button"
+                className="btn-action"
                 onClick={() => nav('Transaksi')}
               >
                 Semua transaksi →
@@ -463,7 +555,8 @@ export default function UsahakuDashboard({
                 Catatan analisis performa usaha akan otomatis muncul setelah data penjualan dan inventori tersedia.
               </p>
               <button
-                className="mt-3.5 inline-flex items-center gap-1.5 text-xs sm:text-sm font-normal text-[#24cbc5] hover:underline"
+                type="button"
+                className="mt-3.5 btn-action"
                 onClick={() => nav('Asisten Bisnis AI')}
               >
                 Buka asisten bisnis →
@@ -558,8 +651,9 @@ export default function UsahakuDashboard({
                     <Plus className="size-3.5" /> Buka kasir
                   </button>
                   <button
+                    type="button"
                     onClick={() => nav('Produk')}
-                    className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-[#454d5b] bg-[#273242] px-3.5 py-2 text-xs font-normal text-[#24cbc5] hover:bg-[#303640] transition shadow-xs"
+                    className="hidden sm:inline-flex items-center gap-1.5 rounded-full border-0 bg-[#303640] px-3.5 py-2 text-xs font-semibold text-[#24cbc5] hover:bg-[#3d4653] hover:text-white transition-all shadow-xs active:scale-95"
                   >
                     <Plus className="size-3.5" /> Tambah produk
                   </button>

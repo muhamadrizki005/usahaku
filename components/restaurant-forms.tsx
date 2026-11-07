@@ -10,8 +10,8 @@ import { rupiah } from '@/lib/pos'
 
 export const restaurantPanel = 'rounded-2xl border border-[#454d5b]/50 bg-[#273242] p-5 sm:p-6'
 export const restaurantInput = 'mt-1 min-h-11 w-full min-w-0 rounded-lg border border-[#454d5b] bg-[#273242] px-3 py-2 text-sm font-normal text-white placeholder:font-normal placeholder:text-[#a4a7ac] outline-none focus:border-[#24cbc5] focus:ring-2 focus:ring-[#24cbc5]/20'
-export const restaurantButton = 'min-h-11 rounded-lg border border-[#454d5b] px-4 py-2 text-sm text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5] disabled:opacity-50'
-export const restaurantPrimary = restaurantButton + ' border-transparent bg-[#1835d9] hover:bg-[#132c9e]'
+export const restaurantButton = 'min-h-11 inline-flex items-center justify-center rounded-xl border-0 bg-[#303640] px-4 py-2 text-sm font-medium text-white hover:bg-[#3d4653] active:scale-[0.98] transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5] disabled:opacity-50'
+export const restaurantPrimary = 'min-h-11 inline-flex items-center justify-center rounded-xl border-0 bg-[#1835d9] px-4 py-2 text-sm font-semibold text-white hover:bg-[#132c9e] active:scale-[0.98] transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5] disabled:opacity-50'
 export function RestaurantField({ label, children }: { label: string; children: ReactNode }) {
   const id = useId(), labelId = id + '-label'
   return <div className="min-w-0 text-sm text-[#c5cbd5]"><label id={labelId} htmlFor={id}>{label}</label>{isValidElement(children) ? cloneElement(children as ReactElement<{ id?: string; 'aria-labelledby'?: string }>, { id, 'aria-labelledby': labelId }) : children}</div>

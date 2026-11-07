@@ -576,7 +576,7 @@ export function StaffManagement({
                       <button
                         type="button"
                         onClick={() => handleOpenChangeRole(person)}
-                        className="text-[11px] text-[#24cbc5] hover:underline cursor-pointer"
+                        className="btn-action !text-[11px] !py-0.5 !px-2"
                       >
                         Ubah role
                       </button>

@@ -125,7 +125,7 @@ export default function InventoryManagement({ role, permissions = [], initialCat
                           </span>
                         </td>
                         <td data-label="Tindakan" data-actions="" className="px-3 py-3">
-                          {canMove && (<button className="font-normal text-[#24cbc5] hover:underline" onClick={() => { setSelectedId(p.id); document.getElementById('adjustment')?.scrollIntoView({ behavior: 'smooth' }) }}>
+                          {canMove && (<button type="button" className="btn-action !text-xs !py-1 !px-2.5" onClick={() => { setSelectedId(p.id); document.getElementById('adjustment')?.scrollIntoView({ behavior: 'smooth' }) }}>
                             Sesuaikan →
                           </button>)}
                         </td>
@@ -181,8 +181,8 @@ export default function InventoryManagement({ role, permissions = [], initialCat
                   <input disabled={pending} value={reason} onChange={e => setReason(e.target.value)} className="mt-2 h-11 w-full rounded-xl border border-[#454d5b] bg-[#1c222e]/70 px-3 text-sm text-white" />
                 </label>
                 <div className="mt-5 flex justify-end gap-3">
-                  <button disabled={pending} className="h-10 rounded-xl border border-[#454d5b] px-4 text-xs sm:text-sm font-normal text-[#c5cbd5] hover:text-white hover:bg-[#303640] transition disabled:opacity-50" onClick={() => { setAdjustment(''); setNotice('Perubahan dibatalkan.') }}>Batal</button>
-                  <button disabled={pending || !selected || !Number.isFinite(result) || result < 0 || Number(delta) === 0 || !reason.trim()} className="h-10 rounded-xl bg-[#1835d9] px-4 text-xs sm:text-sm font-normal text-white hover:bg-[#132c9e] transition disabled:opacity-40" onClick={saveAdjustment}>Simpan perubahan stok</button>
+                  <button type="button" disabled={pending} className="h-10 rounded-xl border-0 bg-[#303640] px-4 text-xs sm:text-sm font-medium text-[#c5cbd5] hover:text-white hover:bg-[#3d4653] transition-all disabled:opacity-50" onClick={() => { setAdjustment(''); setNotice('Perubahan dibatalkan.') }}>Batal</button>
+                  <button type="button" disabled={pending || !selected || !Number.isFinite(result) || result < 0 || Number(delta) === 0 || !reason.trim()} className="h-10 rounded-xl border-0 bg-[#1835d9] px-4 text-xs sm:text-sm font-semibold text-white hover:bg-[#132c9e] transition-all disabled:opacity-40" onClick={saveAdjustment}>Simpan perubahan stok</button>
                 </div>
                 {notice && <p className="mt-3 text-xs text-[#24cbc5]">{notice}</p>}
               </section>)}
@@ -193,13 +193,13 @@ export default function InventoryManagement({ role, permissions = [], initialCat
                     <h2 className="text-lg font-normal text-white">Riwayat pergerakan stok</h2>
                     <p className="mt-0.5 text-xs text-[#a4a7ac]">Catatan tersimpan operasional</p>
                   </div>
-                  <button onClick={() => setShowAll(v => !v)} className="text-xs sm:text-sm font-normal text-[#24cbc5] hover:underline">
+                  <button type="button" onClick={() => setShowAll(v => !v)} className="btn-action">
                     {showAll ? 'Ringkas riwayat' : 'Lihat semua'} →
                   </button>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {['Semua', 'Masuk', 'Keluar', 'Hitung fisik'].map(tab => (
-                    <button key={tab} onClick={() => setMovementFilter(tab)} className={`rounded-xl px-3 py-1.5 text-xs font-normal transition ${movementFilter === tab ? 'bg-[#24cbc5]/15 border border-[#24cbc5]/30 text-[#24cbc5]' : 'bg-[#1c222e] text-[#c5cbd5] hover:text-white'}`}>
+                    <button key={tab} onClick={() => setMovementFilter(tab)} className={`rounded-xl border-0 px-3 py-1.5 text-xs font-normal transition ${movementFilter === tab ? 'bg-[#24cbc5]/20 text-[#24cbc5] font-semibold' : 'bg-[#1c222e] text-[#c5cbd5] hover:bg-[#303640] hover:text-white'}`}>
                       {tab}
                     </button>
                   ))}

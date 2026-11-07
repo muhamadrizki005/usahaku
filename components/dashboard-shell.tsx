@@ -273,7 +273,7 @@ export function DashboardShell({
                           type="button"
                           onClick={handleMarkAllRead}
                           disabled={!hasUnread && !notifications.some(n => !n.read)}
-                          className="text-[11px] font-normal text-[#24cbc5] hover:underline cursor-pointer disabled:opacity-40 disabled:hover:no-underline"
+                          className="btn-action !text-[11px] !py-1 !px-2.5 disabled:opacity-40"
                         >
                           Tandai semua telah dibaca
                         </button>
@@ -318,12 +318,13 @@ export function DashboardShell({
                             </span>
                             {notif.link && (
                               <button
+                                type="button"
                                 onClick={() => {
                                   handleMarkOneRead(notif.id)
                                   setShowNotifications(false)
                                   navigate(notif.link!)
                                 }}
-                                className="text-[11px] font-normal text-[#24cbc5] hover:underline cursor-pointer"
+                                className="btn-action !text-[10px] !py-0.5 !px-2"
                               >
                                 {notif.linkLabel || 'Lihat detail →'}
                               </button>
@@ -347,11 +348,12 @@ export function DashboardShell({
                               .join(', ')}
                           </p>
                           <button
+                            type="button"
                             onClick={() => {
                               setShowNotifications(false)
                               nav('Inventori')
                             }}
-                            className="mt-2 text-[11px] font-normal text-[#24cbc5] hover:underline cursor-pointer"
+                            className="mt-2 btn-action !text-[11px] !py-1 !px-2.5"
                           >
                             Kelola persediaan stok →
                           </button>
@@ -373,11 +375,12 @@ export function DashboardShell({
                             {sales[0].actor_name}
                           </p>
                           <button
+                            type="button"
                             onClick={() => {
                               setShowNotifications(false)
                               nav('Transaksi')
                             }}
-                            className="mt-2 text-[11px] font-normal text-[#24cbc5] hover:underline cursor-pointer"
+                            className="mt-2 btn-action !text-[11px] !py-1 !px-2.5"
                           >
                             Lihat riwayat transaksi →
                           </button>
