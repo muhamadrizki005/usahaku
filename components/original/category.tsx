@@ -11,7 +11,7 @@ import { LegalModal, type LegalModalType } from '@/components/legal-modal'
 const categories = [
   { id: 'toko', title: 'Toko / Minimarket / Kios', description: 'Kelola produk, stok harian, dan penjualan langsung di kasir.', features: 'Produk & stok • Kasir • Pembayaran', icon: ShoppingBag },
   { id: 'restoran', title: 'Restoran / Cafe', description: 'Kelola menu, meja, serta pesanan makan di tempat atau bawa pulang.', features: 'Menu • Meja & kapasitas • Pesanan & kasir', icon: Utensils },
-  { id: 'barbershop', title: 'Barbershop / Salon', description: 'Susun layanan, durasi, dan ketersediaan penata rambut.', features: 'Layanan • Penata & terapis • Jadwal kerja', icon: Scissors },
+  { id: 'barbershop', title: 'Barbershop / Salon', description: 'Susun layanan, durasi, dan ketersediaan penata rambut.', features: 'Layanan • Janji temu • Kasir', icon: Scissors },
 ] as const
 
 export default function OriginalCategory({ ownerName, userId, lockedCategory }: { ownerName: string; userId: string; lockedCategory?: 'toko' | 'restoran' | 'barbershop' }) {

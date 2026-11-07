@@ -86,7 +86,7 @@ test('empty carts hide checkout controls and owner/admin stack discounts while c
     await page.route('**/dashboard/pos', async route => { if (!dropped && route.request().method() === 'POST' && route.request().headers()['next-action']) { dropped = true; await route.fetch(); await route.abort('connectionreset') } else await route.continue() })
     await page.getByRole('button', { name: 'Konfirmasi & catat transaksi', exact: true }).click(); await expect(page.getByRole('button', { name: 'Coba ulang permintaan yang sama', exact: true })).toBeVisible()
     await expect(page.getByLabel('Jenis diskon keseluruhan', { exact: true })).toBeDisabled()
-    await page.getByRole('button', { name: 'Coba ulang permintaan yang sama', exact: true }).click(); await expect(page.getByRole('status')).toContainText('berhasil dicatat'); await empty(page); await page.unrouteAll()
+    await page.getByRole('button', { name: 'Coba ulang permintaan yang sama', exact: true }).click(); await expect(page.getByRole('status').filter({hasText:/^Transaksi TRX-.* berhasil dicatat\.$/})).toBeVisible(); await empty(page); await page.unrouteAll()
     const sale = ok(await admin.from('pos_transactions').select('*').eq('business_id', owner.bid).single())
     expect(Number(sale.product_discount)).toBe(2000); expect(Number(sale.order_discount)).toBe(1800); expect(Number(sale.discount)).toBe(3800); expect(Number(sale.total)).toBe(17982); expect(Number(sale.change)).toBe(2018)
     const fresh = await login(owner.email, owner.password)
@@ -100,7 +100,7 @@ test('empty carts hide checkout controls and owner/admin stack discounts while c
       await actor.page.goto('/dashboard/pos'); await empty(actor.page); await actor.page.getByRole('button', { name: 'Tambah Susu UHT Uji', exact: true }).click()
       if (actor === cashier) { await expect(actor.page.getByLabel('Jenis diskon keseluruhan', { exact: true })).toHaveCount(0); await actor.page.getByLabel('Nominal tunai diterima', { exact: true }).fill('10000') }
       else { await actor.page.getByLabel('Jenis diskon keseluruhan', { exact: true }).click(); await actor.page.getByRole('option', { name: 'Rupiah (Rp)', exact: true }).click(); await actor.page.getByLabel('Nilai diskon keseluruhan', { exact: true }).fill('1000'); await actor.page.getByLabel('Nominal tunai diterima', { exact: true }).fill('10000') }
-      await cart(actor.page).getByRole('checkbox').check(); await actor.page.getByRole('button', { name: 'Konfirmasi & catat transaksi', exact: true }).click(); await expect(actor.page.getByRole('status')).toContainText('berhasil dicatat'); await empty(actor.page)
+      await cart(actor.page).getByRole('checkbox').check(); await actor.page.getByRole('button', { name: 'Konfirmasi & catat transaksi', exact: true }).click(); await expect(actor.page.getByRole('status').filter({hasText:/^Transaksi TRX-.* berhasil dicatat\.$/})).toBeVisible(); await empty(actor.page)
     }
     await cashier.page.goto('/dashboard/transactions/' + sale.id); await expect(cashier.page.getByRole('heading', { name: /404/ })).toBeVisible()
     const bounds = reportBounds(defaultReportFilter())
