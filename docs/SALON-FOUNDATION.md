@@ -1,5 +1,7 @@
 # Fondasi Barbershop / Salon
 
+Catatan ini merekam tahap fondasi. Perkembangan operasional terbaru ada di [SALON-OPERATIONS.md](SALON-OPERATIONS.md); pernyataan fitur yang belum tersedia di bawah adalah kondisi saat fondasi dibuat.
+
 Branch: `feat/salon-foundation`. Tahap ini mengaktifkan kategori salon pada onboarding, layanan, penata/terapis dan jadwal mingguan. Janji temu, DP, kasir, laporan salon, komisi, stok bahan salon dan booking publik belum termasuk.
 
 ## Cara menggunakan

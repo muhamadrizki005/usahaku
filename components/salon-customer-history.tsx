@@ -1,0 +1,11 @@
+'use client'
+import Link from 'next/link'
+import {useRouter} from 'next/navigation'
+import {salonStatuses,type SalonVisitPage} from '@/lib/salon-operations'
+import {saleDate,rupiah} from '@/lib/pos'
+import {restaurantPanel,restaurantButton} from './restaurant-forms'
+export default function SalonCustomerHistory({data,customerId,year}:{data:SalonVisitPage;customerId:string;year:number}){
+ const router=useRouter()
+ const change=(nextYear:number,page=0)=>router.replace('/dashboard/customers/'+customerId+'?'+new URLSearchParams({year:String(nextYear),visitPage:String(page)}))
+ return <section className={restaurantPanel+' mt-5'}><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl">Riwayat kunjungan salon · {year}</h2><div className="flex gap-2"><button disabled={year<=2000} className={restaurantButton} onClick={()=>change(year-1)}>Tahun sebelumnya</button><button disabled={year>=2100} className={restaurantButton} onClick={()=>change(year+1)}>Tahun berikutnya</button></div></div><p className="mt-2 text-xs text-[#c5cbd5]">Kunjungan dihubungkan melalui ID pelanggan saat pencatatan, termasuk yang belum dibayar. Nama yang sama tidak menggabungkan riwayat.</p><ul className="mt-4 divide-y divide-[#454d5b]">{data.items.map(v=><li key={v.id} className="space-y-2 py-4 text-sm"><p>{saleDate(v.starts_at)} · {v.practitioner_name} · {salonStatuses[v.status]}</p><p>{v.lines.map(l=>l.name).join(', ')} · {rupiah(Number(v.subtotal))}</p><p className="break-words text-[#c5cbd5]">Catatan: {v.notes||'Tidak ada'}</p>{v.sale_id&&<Link href={'/dashboard/transactions/'+v.sale_id} className="text-[#24cbc5] underline">Detail & struk</Link>}</li>)}</ul>{!data.items.length&&<p className="mt-4 text-sm text-[#c5cbd5]">Belum ada kunjungan pada tahun ini.</p>}<div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm"><span>{data.total} kunjungan</span><div className="flex gap-2"><button disabled={data.page===0} className={restaurantButton} onClick={()=>change(year,data.page-1)}>Kunjungan sebelumnya</button><button disabled={(data.page+1)*data.pageSize>=data.total} className={restaurantButton} onClick={()=>change(year,data.page+1)}>Kunjungan berikutnya</button></div></div></section>
+}

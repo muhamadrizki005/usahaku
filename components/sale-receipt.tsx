@@ -47,9 +47,9 @@ export default function SaleReceipt({ sale, business, id }: { sale: Sale; busine
           </>
         )}
       </dl>
-      <table className="receipt-items" aria-label="Rincian barang">
+      <table className="receipt-items" aria-label={business.category==='barbershop'?'Rincian layanan':'Rincian barang'}>
         <colgroup><col className="receipt-name-column" /><col className="receipt-quantity-column" /><col className="receipt-price-column" /><col className="receipt-price-column" /></colgroup>
-        <thead className="receipt-double-rule"><tr><th scope="col">Nama Barang</th><th scope="col">Qty</th><th scope="col">Harga/U</th><th scope="col">Total</th></tr></thead>
+        <thead className="receipt-double-rule"><tr><th scope="col">{business.category==='barbershop'?'Nama Layanan':'Nama Barang'}</th><th scope="col">Qty</th><th scope="col">Harga/U</th><th scope="col">Total</th></tr></thead>
         <tbody className="receipt-dashed-rule">
           {sale.lines.map(line => (
             <tr key={line.id}>
@@ -67,7 +67,7 @@ export default function SaleReceipt({ sale, business, id }: { sale: Sale; busine
       <dl className="receipt-totals receipt-double-rule">
         <ReceiptRow label="Total Item">{sale.lines.length}</ReceiptRow>
         <ReceiptRow label="Subtotal">{rupiah(Number(sale.subtotal))}</ReceiptRow>
-        {sale.product_discount != null && sale.order_discount != null ? <>
+        {business.category!=='barbershop' && sale.product_discount != null && sale.order_discount != null ? <>
           <ReceiptRow label="Diskon produk">{rupiah(Number(sale.product_discount))}</ReceiptRow>
           <ReceiptRow label={orderDiscountLabel}>{rupiah(Number(sale.order_discount))}</ReceiptRow>
         </> : <ReceiptRow label={fallbackDiscountLabel}>{rupiah(Number(sale.discount))}</ReceiptRow>}
@@ -84,7 +84,7 @@ export default function SaleReceipt({ sale, business, id }: { sale: Sale; busine
         <p>Dibatalkan oleh {sale.cancelled_by_name}</p>
         <p>{saleDate(sale.cancelled_at!)}</p>
         <p>Alasan: {sale.cancellation_reason}</p>
-        <p>{business.category === 'restaurant' ? 'Pembatalan pesanan dicatat.' : 'Stok dikembalikan.'}</p>
+        <p>{business.category === 'barbershop' ? 'Pembatalan transaksi dicatat; riwayat pelayanan tetap tersimpan.' : business.category === 'restaurant' ? 'Pembatalan pesanan dicatat.' : 'Stok dikembalikan.'}</p>
         <p>Pengembalian dana manual dikonfirmasi: {rupiah(Number(sale.refund_amount))}.</p>
       </div>}
       <footer className="receipt-footer receipt-double-rule">

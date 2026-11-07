@@ -1,4 +1,5 @@
 import {requireBusiness} from '@/lib/access'
+import {redirect} from 'next/navigation'
 import {readProducts} from '@/lib/catalog-server'
 import PosManagement from '@/components/pos-management'
 import RestaurantOrders from '@/components/restaurant-orders'
@@ -9,6 +10,7 @@ import { readRestaurantBilling } from '@/lib/restaurant-billing-server'
 import { z } from 'zod'
 export default async function PosPage({searchParams}:{searchParams:Promise<Record<string,string|string[]|undefined>>}){
  const {supabase,business,member}=await requireBusiness(undefined, false, 'pos:view')
+ if(business.category==='barbershop')redirect('/dashboard/salon/appointments')
  if(business.category==='restaurant') {
   const query=await searchParams, key=z.uuid().safeParse(query.reservation)
   const reservation=key.success?await readReservation(supabase,business.id,key.data):null

@@ -1,0 +1,14 @@
+import {test,expect} from '@playwright/test'
+import {mkdir,writeFile} from 'node:fs/promises'
+import {chooseSelect} from './helpers/select-option'
+test('salon visual fixture: responsive layout, keyboard dialogs, calendar, services and deposit-aware payment preview',async({page})=>{
+ const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message))
+ await page.goto('/preview/salon-qa');await page.evaluate(()=>document.fonts.ready)
+ const dir='.cache/salon-operations/visual';await mkdir(dir,{recursive:true})
+ for(const width of [320,390,768,1440]){
+  await page.setViewportSize({width,height:900});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await expect(page.getByRole('heading',{name:'Janji temu & kasir',exact:true})).toBeVisible();await page.screenshot({path:dir+'/appointments-'+width+'.png',fullPage:true})
+  await page.getByRole('button',{name:'Buat janji temu',exact:true}).click();const modal=page.getByRole('dialog',{name:'Buat janji temu',exact:true});await expect(modal).toBeVisible();const box=(await modal.boundingBox())!;expect(box.x).toBeGreaterThanOrEqual(0);expect(box.x+box.width).toBeLessThanOrEqual(width)
+  await modal.getByRole('checkbox',{name:/^Potong QA/}).check();await chooseSelect(modal.getByLabel('Penata / terapis',{exact:true}),'22222222-2222-4222-8222-222222222222');await expect(modal).toContainText('Durasi: 30 menit');await modal.getByLabel('Mulai kunjungan (WIB)',{exact:true}).click();const calendar=page.getByRole('dialog',{name:'Kalender Mulai kunjungan (WIB)',exact:true});await expect(calendar).toBeVisible();const rect=(await calendar.boundingBox())!;expect(rect.x).toBeGreaterThanOrEqual(0);expect(rect.x+rect.width).toBeLessThanOrEqual(width);await page.keyboard.press('Escape');await expect(modal).toBeVisible();await page.screenshot({path:dir+'/booking-'+width+'.png'});await modal.getByRole('button',{name:'Simpan kunjungan',exact:true}).scrollIntoViewIfNeeded();await expect(modal.getByRole('button',{name:'Simpan kunjungan',exact:true})).toBeVisible();await page.keyboard.press('Escape');await expect(modal).toHaveCount(0)
+ }
+ await page.setViewportSize({width:390,height:900});await page.getByRole('button',{name:'Bayar',exact:true}).click();const payment=page.getByRole('dialog',{name:'Pembayaran salon',exact:true});await expect(payment).toContainText('Sisa tagihan: Rp45.000');await chooseSelect(payment.getByLabel('Jenis diskon salon',{exact:true}),'percent');await payment.getByLabel('Nilai diskon salon',{exact:true}).fill('10');await expect(payment).toContainText('Sisa tagihan: Rp39.500');await page.screenshot({path:dir+'/payment-390.png'});await page.keyboard.press('Escape');expect(errors).toEqual([]);await writeFile(dir+'/results.json',JSON.stringify({passed:true,pageErrors:errors,viewports:[320,390,768,1440],databaseWrites:false},null,2))
+})
