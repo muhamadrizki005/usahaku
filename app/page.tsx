@@ -169,7 +169,7 @@ export default function LandingPage() {
       </motion.header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-transparent px-5 pt-24 pb-16 text-white sm:px-8 sm:pt-28 sm:pb-20 lg:px-12 lg:pt-32 lg:pb-24">
+      <section className="relative overflow-hidden bg-transparent px-4 pt-24 pb-16 text-white sm:px-6 sm:pt-28 sm:pb-20 lg:px-8 lg:pt-32 lg:pb-24 xl:px-10 2xl:px-12">
         <div className="absolute inset-0 z-0 pointer-events-none">
           <ShapeGrid
             shape="square"
@@ -193,7 +193,7 @@ export default function LandingPage() {
             intro
           />
         </div>
-        <div className="relative z-10 mx-auto grid max-w-[1800px] items-center gap-10 xl:grid-cols-[1.05fr_.95fr] 2xl:gap-16">
+        <div className="relative z-10 mx-auto grid w-full items-center gap-10 xl:grid-cols-[1.05fr_.95fr] 2xl:gap-16">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
@@ -382,7 +382,7 @@ export default function LandingPage() {
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         className="bg-transparent"
       >
-        <div className="mx-auto flex max-w-[1800px] flex-col items-center justify-center gap-6 px-5 py-8 sm:flex-row sm:flex-wrap sm:gap-10 lg:gap-16">
+        <div className="mx-auto flex w-full flex-col items-center justify-center gap-6 px-4 py-8 sm:flex-row sm:flex-wrap sm:gap-10 sm:px-6 lg:gap-16 lg:px-8 xl:px-10 2xl:px-12">
           {['Operasional sesuai kategori', 'Pelanggan dan data usaha', 'Akses dari berbagai perangkat'].map((item, idx) => (
             <motion.div
               key={item}
@@ -406,7 +406,7 @@ export default function LandingPage() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.15 }}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        className="mx-auto max-w-[1800px] px-5 py-20 sm:px-8 lg:px-12"
+        className="mx-auto w-full px-4 py-20 sm:px-6 lg:px-8 xl:px-10 2xl:px-12"
       >
         <p className="text-xs font-normal tracking-[0.18em] text-[#24cbc5]">SATU PLATFORM, LIMA KATEGORI</p>
         <h2 className="mt-4 max-w-2xl text-4xl font-medium tracking-tight text-white">Usaha Anda punya cara kerja sendiri. Kami mengikutinya.</h2>
@@ -449,9 +449,9 @@ export default function LandingPage() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.15 }}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        className="bg-transparent px-5 py-20 text-white sm:px-8 lg:px-12"
+        className="bg-transparent px-4 py-20 text-white sm:px-6 lg:px-8 xl:px-10 2xl:px-12"
       >
-        <div className="mx-auto grid max-w-[1800px] items-center gap-12 lg:grid-cols-[.8fr_1.2fr]">
+        <div className="mx-auto grid w-full items-center gap-12 lg:grid-cols-[.8fr_1.2fr]">
           <div>
             <p className="text-xs font-normal tracking-[0.18em] text-[#24cbc5]">LEBIH JELAS, DARI AWAL HINGGA AKHIR</p>
             <h2 className="mt-4 text-4xl font-medium leading-tight text-white">Operasional tertata.<br />Keputusan tetap<br />di tangan Anda.</h2>
@@ -538,7 +538,7 @@ export default function LandingPage() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.15 }}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        className="mx-auto max-w-[1800px] px-5 py-20 sm:px-8 lg:px-12"
+        className="mx-auto w-full px-4 py-20 sm:px-6 lg:px-8 xl:px-10 2xl:px-12"
       >
         <p className="text-xs font-normal tracking-[0.18em] text-accent">DARI AKTIVITAS MENJADI PEMAHAMAN</p>
         <h2 className="mt-4 max-w-xl text-4xl font-medium leading-tight">Bukan hanya mengelola hari ini.<br />Kenali usaha Anda lebih baik.</h2>
@@ -575,9 +575,9 @@ export default function LandingPage() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.15 }}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        className="px-5 py-20 sm:px-8 lg:px-12"
+        className="px-4 py-20 sm:px-6 lg:px-8 xl:px-10 2xl:px-12"
       >
-        <div className="mx-auto max-w-[1800px]">
+        <div className="mx-auto w-full">
           <p className="text-xs font-normal tracking-[0.18em] text-accent">CARA MEMULAI</p>
           <h2 className="mt-4 text-4xl font-medium">Mulai dari akun, lanjut sesuai usaha Anda.</h2>
           <p className="mt-5 text-muted-foreground">Tidak perlu menyiapkan semuanya sekaligus. Ikuti langkah yang relevan untuk usaha Anda.</p>
@@ -606,7 +606,7 @@ export default function LandingPage() {
         whileInView={{ opacity: 1, scale: 1, y: 0 }}
         viewport={{ once: true, amount: 0.2 }}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        className="mx-auto my-20 max-w-[1800px] px-5 py-14 text-center sm:px-8 lg:px-12"
+        className="mx-auto my-20 w-full px-4 py-14 text-center sm:px-6 lg:px-8 xl:px-10 2xl:px-12"
       >
         <h2 className="text-4xl font-medium">Usaha Anda, lebih tertata.<br />Mulai dari satu langkah hari ini.</h2>
         <p className="mx-auto mt-5 max-w-xl text-muted-foreground">Buat akun pemilik dan bangun ruang kerja yang sesuai usaha Anda.</p>
@@ -648,7 +648,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t border-border bg-transparent text-white">
-        <div className="mx-auto grid max-w-[1800px] gap-10 px-5 py-14 sm:px-8 md:grid-cols-[1.3fr_.7fr_.7fr_.7fr] lg:px-12">
+        <div className="mx-auto grid w-full gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.3fr_.7fr_.7fr_.7fr] lg:px-8 xl:px-10 2xl:px-12">
           <div>
             <UsahakuLogo dark />
             <p className="mt-4 max-w-xs text-sm leading-6 text-white/60">Satu platform untuk mengelola usaha, pelanggan, dan pertumbuhan bisnis.</p>
@@ -677,7 +677,7 @@ export default function LandingPage() {
           </div>
         </div>
         <div className="border-t border-white/10">
-          <div className="mx-auto flex max-w-[1800px] flex-col gap-2 px-5 py-5 text-xs text-white/45 sm:px-8 md:flex-row md:justify-between lg:px-12">
+          <div className="mx-auto flex w-full flex-col gap-2 px-4 py-5 text-xs text-white/45 sm:px-6 md:flex-row md:justify-between lg:px-8 xl:px-10 2xl:px-12">
             <span>© 2026 Usahaku. Seluruh hak dilindungi.</span>
             <span>Dirancang untuk beragam UMKM Indonesia.</span>
           </div>
