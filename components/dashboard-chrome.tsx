@@ -21,10 +21,10 @@ export const topItemsForRole = (role: Role, category = 'store', permissions: str
   (category === 'barbershop' ? salonTopNavigationItems : category === 'restaurant' ? restaurantTopNavigationItems : topNavigationItems).filter(([, , path]) => (category !== 'store' ? rolesForPath(path).includes(role) : canAccessPath(path, role, permissions)))
 
 export const sidebarItemsForRole = (role: Role, category = 'store', permissions: string[] = []) =>
-  (category !== 'store' ? restaurantSidebarNavigationItems : sidebarNavigationItems).filter(([, , path]) => (category !== 'store' ? rolesForPath(path).includes(role) : canAccessPath(path, role, permissions)))
+  (category !== 'store' ? restaurantSidebarNavigationItems : sidebarNavigationItems).filter(([, , path]) => !(category === 'barbershop' && path === '/dashboard/assistant') && (category !== 'store' ? rolesForPath(path).includes(role) : canAccessPath(path, role, permissions)))
 
 export const dashboardItemsForRole = (role: Role, category = 'store', permissions: string[] = []) =>
-  (category === 'barbershop' ? [...salonTopNavigationItems, ...restaurantSidebarNavigationItems] : category === 'restaurant' ? [...restaurantTopNavigationItems, ...restaurantSidebarNavigationItems] : dashboardNavigation).filter(([, , path], index, self) => (category !== 'store' ? rolesForPath(path).includes(role) : canAccessPath(path, role, permissions)) && self.findIndex(([, , p]) => p === path) === index)
+  (category === 'barbershop' ? [...salonTopNavigationItems, ...restaurantSidebarNavigationItems] : category === 'restaurant' ? [...restaurantTopNavigationItems, ...restaurantSidebarNavigationItems] : dashboardNavigation).filter(([, , path], index, self) => !(category === 'barbershop' && path === '/dashboard/assistant') && (category !== 'store' ? rolesForPath(path).includes(role) : canAccessPath(path, role, permissions)) && self.findIndex(([, , p]) => p === path) === index)
 
 export function DashboardBrand({ onHome }: { onHome: () => void }) {
   return (

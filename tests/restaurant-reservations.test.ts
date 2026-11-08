@@ -76,6 +76,8 @@ test('restaurant reservations enforce slot/capacity, own cashier scope, atomic D
     await as(owner);await db.query('select public.cancel_restaurant_sale($1,$2,$3,true,true)',[bid,paid.sale.id,'Refund penuh'])
     assert.equal(Number((await db.query<any>('select deposit_refunded from public.restaurant_reservations where id=$1',[rid])).rows[0].deposit_refunded),20000)
     await as(a);assert.equal((await pay()).sale.status,'cancelled');await as(owner)
+    const tableRevision=(await db.query<any>('select revision from public.restaurant_tables where id=$1',[tid])).rows[0].revision
+    await db.query('select public.set_restaurant_table_availability($1,$2,$3,$4,true)',[bid,tid,tableRevision,randomUUID()])
     const rid2=randomUUID();await save(rid2);await db.query("select public.record_restaurant_deposit($1,$2,0,$3,10000,'qris',true)",[bid,rid2,randomUUID()])
     const closeReq=randomUUID();const close=()=>db.query<any>('select public.close_restaurant_reservation($1,$2,1,$3,$4,false,true) value',[bid,rid2,closeReq,'Batal dan refund']).then(r=>r.rows[0].value)
     assert.equal((await close()).deposit_refunded,10000);assert.equal((await close()).status,'cancelled')

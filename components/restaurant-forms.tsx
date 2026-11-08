@@ -1,9 +1,10 @@
 'use client'
 import { SelectInput } from '@/components/ui/select-input'
 import { NumericInput } from '@/components/ui/numeric-input'
-import { cloneElement, isValidElement, useEffect, useId, useRef, useState, type ReactElement, type ReactNode, type FormEvent } from 'react'
+import { cloneElement, isValidElement, useEffect, useId, useRef, useState, useTransition, type ReactElement, type ReactNode, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { saveRestaurantResource } from '@/app/restaurant-actions'
+import { saveRestaurantResource, deleteRestaurantTable, setRestaurantTableAvailability } from '@/app/restaurant-actions'
+import { Pencil, X } from 'lucide-react'
 import type { RestaurantMenu, RestaurantTable } from '@/lib/restaurant'
 import RestaurantTableRefresh from './restaurant-table-refresh'
 import { rupiah } from '@/lib/pos'
@@ -37,10 +38,15 @@ export function RestaurantDialog({ title, busy, close, children, wide = false }:
   </dialog>
 }
 
-export function RestaurantResources({ resource, menu = [], tables = [], usage = [] }: { resource: 'menu' | 'table'; menu?: RestaurantMenu[]; tables?: RestaurantTable[]; usage?: import('@/lib/restaurant').RestaurantTableUsage[] }) {
+export function RestaurantResources({ resource, menu = [], tables = [], usage = [], canManage = true, draft = false }: { resource: 'menu' | 'table'; canManage?: boolean; draft?: boolean; menu?: RestaurantMenu[]; tables?: RestaurantTable[]; usage?: import('@/lib/restaurant').RestaurantTableUsage[] }) {
   const router = useRouter()
+  const [refreshing, startRefresh] = useTransition()
+  const refreshView = () => startRefresh(() => router.refresh())
   const [query, setQuery] = useState(''), [page, setPage] = useState(0), [editing, setEditing] = useState<RestaurantMenu | RestaurantTable | 'new' | null>(null), [notice, setNotice] = useState('')
   const [viewing, setViewing] = useState<string | null>(null)
+  const [deleting,setDeleting]=useState<RestaurantTable|null>(null),[deletePending,setDeletePending]=useState(false),[deleteError,setDeleteError]=useState('')
+  const deletePacket=useRef<{id:string;revision:number;request:string}|null>(null),deleteBusy=useRef(false)
+  async function removeTable(){if(!deleting||deleteBusy.current)return;deleteBusy.current=true;setDeletePending(true);setDeleteError('');const packet=deletePacket.current||{id:deleting.id,revision:deleting.revision,request:crypto.randomUUID()};deletePacket.current=packet;try{const result=await deleteRestaurantTable(packet);if(result.value){setDeleting(null);deletePacket.current=null;setNotice('Meja dihapus dari daftar. Riwayat tetap tersimpan.');refreshView()}else{setDeleteError(result.error||'Meja belum dihapus.');if(!result.uncertain)deletePacket.current=null}}catch{setDeleteError('Hasil belum pasti. Ulangi permintaan yang sama atau muat ulang.')}finally{deleteBusy.current=false;setDeletePending(false)}}
   const occupiedHint = useId()
   const selectedTable = tables.find(table => table.id === viewing)
   const occupied = Boolean(selectedTable && usage.some(item => item.id === selectedTable.id && item.occupied))
@@ -49,28 +55,57 @@ export function RestaurantResources({ resource, menu = [], tables = [], usage = 
   const items = resource === 'menu' ? menu : [...tables].sort((a, b) => a.name.localeCompare(b.name, 'id-ID', { numeric: true, sensitivity: 'base' }))
   const visible = items.filter(item => item.name.toLowerCase().includes(query.toLowerCase()))
   return <section className={restaurantPanel}><RestaurantTableRefresh usage={usage}/>
-    <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg font-normal">{resource === 'menu' ? 'Daftar menu' : 'Daftar meja'}</h2><button type="button" onClick={() => { setNotice(''); setEditing('new') }} className={restaurantPrimary}>Tambah {title}</button></div>
+    <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg font-normal">{resource === 'menu' ? 'Daftar menu' : 'Daftar meja'}</h2>{canManage&&<button type="button" onClick={() => { setNotice(''); setEditing('new') }} className={restaurantPrimary}>Tambah {title}</button>}</div>
     <p className="mt-2 text-sm leading-6 text-[#c5cbd5]">{resource === 'menu' ? 'Atur harga dan ketersediaan menu. Stok bahan baku dan resep belum dihitung.' : 'Kapasitas diperiksa saat pesanan dibuat. Satu meja menampung satu pesanan terbuka.'}</p>
     {notice && <p role="status" className="mt-3 text-sm text-[#24cbc5]">{notice}</p>}
     <RestaurantField label={`Cari ${title}`}><input value={query} onChange={e => { setQuery(e.target.value); setPage(0) }} className={restaurantInput} /></RestaurantField>
     {resource === 'table' ? <div className="mt-5">
-      <div role="group" aria-label="Pilihan meja" className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
+      <div role="group" aria-label="Pilihan meja" className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,240px),1fr))] gap-4">
         {visible.slice(page * 25, page * 25 + 25).map(item => {
           const taken = usage.some(table => table.id === item.id && (table.occupied || table.reserved))
-          return <button key={item.id} type="button" aria-label={item.name} aria-describedby={taken ? occupiedHint : undefined} aria-haspopup="dialog" title={taken ? `${item.name}: terpakai atau reservasi, tidak tersedia untuk pesanan baru` : item.name} onClick={() => setViewing(item.id)} className={'flex aspect-square min-w-0 items-center justify-center rounded-xl border border-[#454d5b] bg-[#1c222e] p-3 text-center text-sm text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5] ' + (taken ? 'opacity-60' : 'hover:border-[#24cbc5] hover:bg-[#303640]')}><span className="line-clamp-3 [overflow-wrap:anywhere]">{item.name}</span></button>
+          const state=usage.find(t=>t.id===item.id),label=!item.active?'Tidak tersedia':state?.occupied&&state.reserved?'Terpakai / reservasi':state?.reserved?'Reservasi':(item as RestaurantTable).occupied_until_released?'Tidak tersedia':state?.occupied?'Terpakai':'Tersedia'
+          return <div key={item.id} role="group" aria-label={`Kartu ${item.name}`} className="relative min-w-0">
+            <button type="button" aria-label={item.name} aria-describedby={taken ? occupiedHint : undefined} aria-haspopup="dialog" title={`${item.name}: ${label}`} onClick={() => setViewing(item.id)} className={'flex aspect-square w-full min-w-0 items-center justify-center rounded-xl border border-[#454d5b] bg-[#1c222e] px-4 pb-8 pt-20 text-center text-sm text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5] ' + (taken || !item.active ? 'opacity-60' : 'hover:border-[#24cbc5] hover:bg-[#303640]')}><span className="line-clamp-3 [overflow-wrap:anywhere]">{item.name}</span></button>
+            {canManage&&<button type="button" aria-label={`Edit meja ${item.name}`} title="Edit meja" className="absolute left-3 top-3 grid size-11 place-items-center rounded-lg text-white hover:bg-[#303640] focus-visible:outline-2 focus-visible:outline-[#24cbc5]" onClick={()=>setEditing(item)}><Pencil aria-hidden="true" className="size-4"/></button>}
+            <TableAvailability draft={draft} refreshing={refreshing} table={item as RestaurantTable} occupied={taken} label={label} saved={()=>{setNotice('Status meja tersimpan.');refreshView()}}/>
+            {canManage&&<button type="button" aria-label={`Hapus meja ${item.name}`} className="absolute right-3 top-3 grid size-11 place-items-center rounded-lg text-[#ffb4ae] hover:bg-[#303640] focus-visible:outline-2 focus-visible:outline-[#24cbc5]" onClick={()=>{deletePacket.current=null;setDeleteError('');setDeleting(item as RestaurantTable)}}><X aria-hidden="true" className="size-4"/></button>}
+          </div>
         })}
       </div>
-      <p id={occupiedHint} className="mt-3 text-xs leading-5 text-[#c5cbd5]">Meja pudar sedang terpakai atau dikunci untuk reservasi dan tidak dapat dipilih untuk pesanan baru. Tekan meja untuk melihat detail.</p>
+      <p id={occupiedHint} className="mt-3 text-xs leading-5 text-[#c5cbd5]">Meja pudar belum tersedia atau dikunci untuk reservasi. Setelah pelanggan pergi, pilih Tersedia secara manual. Pembayaran tidak melepas meja. Tekan meja untuk melihat detail.</p>
       {!visible.length && <p className="py-8 text-sm text-[#c5cbd5]">Belum ada meja yang sesuai.</p>}
     </div> : <div className="mt-4 overflow-x-auto"><table className="w-full text-left text-sm"><thead className="border-b border-[#454d5b] text-[#c5cbd5]"><tr><th className="p-3 font-normal">Nama</th><th className="p-3 font-normal">Kategori / harga</th><th className="p-3 font-normal">Status</th><th className="p-3 font-normal">Tindakan</th></tr></thead><tbody>{visible.slice(page * 25, page * 25 + 25).map(item => <tr key={item.id} className="border-b border-[#454d5b]/50"><td className="max-w-64 break-words p-3">{item.name}</td><td className="p-3">{'price' in item && <>{item.category}<br />{rupiah(Number(item.price))}</>}</td><td className="p-3">{!item.active ? 'Nonaktif' : 'available' in item && (item.available ? 'Tersedia' : 'Habis')}</td><td className="p-3"><button type="button" onClick={() => setEditing(item)} className={restaurantButton} aria-label={`Ubah ${item.name}`}>Ubah</button></td></tr>)}</tbody></table>{!visible.length && <p className="py-8 text-sm text-[#c5cbd5]">Belum ada menu yang sesuai.</p>}</div>}
     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-[#c5cbd5]"><span>{visible.length} {title}</span><div className="flex gap-2"><button disabled={!page} onClick={() => setPage(v => v - 1)} className={restaurantButton}>Sebelumnya</button><button disabled={(page + 1) * 25 >= visible.length} onClick={() => setPage(v => v + 1)} className={restaurantButton}>Berikutnya</button></div></div>
     {resource === 'table' && selectedTable && <RestaurantDialog title={`Detail ${selectedTable.name}`} busy={false} close={() => setViewing(null)}>
-      <dl className="space-y-4 text-sm"><div><dt className="text-[#c5cbd5]">Nama / nomor meja</dt><dd className="mt-1 break-words text-white [overflow-wrap:anywhere]">{selectedTable.name}</dd></div><div><dt className="text-[#c5cbd5]">Kapasitas</dt><dd className="mt-1 text-white">{selectedTable.capacity} orang</dd></div><div><dt className="text-[#c5cbd5]">Status</dt><dd className="mt-1 text-white">{!selectedTable.active ? 'Nonaktif' : occupied && reserved ? 'Masih terpakai menjelang reservasi' : occupied ? 'Terpakai' : reserved ? 'Dikunci untuk reservasi' : 'Tersedia'}</dd></div></dl>
-      <p className="mt-5 text-sm leading-6 text-[#c5cbd5]">{!selectedTable.active ? 'Meja nonaktif tidak dapat dipilih untuk pesanan baru.' : occupied ? 'Meja ini memiliki pesanan yang belum dibayar.' : reserved ? 'Meja ini dikunci sesuai waktu penguncian yang diatur owner. Periksa halaman Reservasi sebelum menerima tamu.' : 'Belum ada pesanan terbuka pada meja ini.'}</p>
-      <div className="mt-5 flex justify-end"><button type="button" onClick={() => { setViewing(null); setEditing(selectedTable) }} className={restaurantPrimary}>Ubah meja</button></div>
+      <dl className="space-y-4 text-sm"><div><dt className="text-[#c5cbd5]">Nama / nomor meja</dt><dd className="mt-1 break-words text-white [overflow-wrap:anywhere]">{selectedTable.name}</dd></div><div><dt className="text-[#c5cbd5]">Kapasitas</dt><dd className="mt-1 text-white">{selectedTable.capacity} orang</dd></div><div><dt className="text-[#c5cbd5]">Status</dt><dd className="mt-1 text-white">{!selectedTable.active ? 'Tidak tersedia' : occupied && reserved ? 'Masih terpakai menjelang reservasi' : occupied ? 'Terpakai' : reserved ? 'Dikunci untuk reservasi' : 'Tersedia'}</dd></div></dl>
+      <p className="mt-5 text-sm leading-6 text-[#c5cbd5]">{!selectedTable.active ? 'Meja dinonaktifkan oleh pengelola dan tidak dapat dipilih untuk pesanan baru.' : occupied ? 'Meja ini masih terpakai. Pembayaran tidak otomatis melepas meja; pilih Tersedia setelah pelanggan pergi.' : reserved ? 'Meja ini dikunci sesuai waktu penguncian yang diatur owner. Periksa halaman Reservasi sebelum menerima tamu.' : 'Belum ada pesanan terbuka pada meja ini.'}</p>
     </RestaurantDialog>}
-    {editing && <ResourceEditor resource={resource} initial={editing === 'new' ? null : editing} close={() => setEditing(null)} saved={() => { setEditing(null); setNotice(`${resource === 'menu' ? 'Menu' : 'Meja'} tersimpan.`); router.refresh() }} />}
+    {editing && <ResourceEditor resource={resource} initial={editing === 'new' ? null : editing} close={() => setEditing(null)} saved={() => { setEditing(null); setNotice(`${resource === 'menu' ? 'Menu' : 'Meja'} tersimpan.`); refreshView() }} />}
+    {deleting&&<RestaurantDialog title="Hapus meja" busy={deletePending} close={()=>setDeleting(null)}><p className="text-sm leading-6">Hapus {deleting.name} dari daftar meja? Riwayat pesanan dan reservasi tetap tersimpan. Meja dengan pesanan atau reservasi aktif harus diselesaikan atau dipindahkan dahulu.</p>{deleteError&&<p role="alert" className="mt-4 text-sm text-[#ffb4ae]">{deleteError}</p>}<div className="mt-5 flex justify-end gap-3"><button disabled={deletePending} onClick={()=>setDeleting(null)} className={restaurantButton}>Batal</button><button disabled={deletePending} onClick={()=>void removeTable()} className={restaurantPrimary}>{deletePending?'Menghapus...':deletePacket.current?'Ulangi permintaan yang sama':'Hapus meja'}</button></div></RestaurantDialog>}
   </section>
+}
+
+function TableAvailability({table,occupied,label,saved,refreshing,draft}:{draft:boolean;refreshing:boolean;table:RestaurantTable;occupied:boolean;label:string;saved:()=>void}){
+  const [current,setCurrent]=useState(table),[pending,setPending]=useState(false),[error,setError]=useState(''),busy=useRef(false)
+  const retry=useRef<{input:{id:string;revision:number;request:string};available:boolean}|null>(null)
+  useEffect(()=>{if(!busy.current&&!retry.current)setCurrent(table)},[table])
+  async function change(available:boolean){
+    if(busy.current)return
+    const packet=retry.current||{input:{id:current.id,revision:current.revision,request:crypto.randomUUID()},available}
+    busy.current=true;setPending(true);setError('')
+    try{const result=draft?await saveRestaurantResource('table',packet.input,{name:current.name,capacity:current.capacity,active:packet.available}):await setRestaurantTableAvailability(packet.input,packet.available);if(result.value){retry.current=null;setCurrent(result.value as RestaurantTable);saved()}else{setError(result.error||'Status belum tersimpan.');retry.current=result.uncertain?packet:null}}
+    catch{retry.current=packet;setError('Hasil belum pasti. Ulangi permintaan yang sama atau muat ulang.')}
+    finally{busy.current=false;setPending(false)}
+  }
+  return <>
+    <div className="absolute left-16 right-16 top-3">
+      <SelectInput aria-label={`Status meja ${table.name}`} value={occupied?'busy':current.active?'available':'unavailable'} disabled={pending||refreshing||Boolean(retry.current)} onChange={e=>void change(e.target.value==='available')} className={'!min-h-11 !h-11 !gap-1 !rounded-lg !px-2 !py-2 !text-[11px] [&>span]:flex [&>span]:items-center [&>span]:gap-1.5 [&>span]:!whitespace-normal [&>span]:!overflow-visible [&>span]:break-words [&>span]:before:size-1.5 [&>span]:before:shrink-0 [&>span]:before:rounded-full [&>svg]:!size-3 '+(!occupied&&current.active?'[&>span]:before:bg-[#4ade80]':'[&>span]:before:bg-[#f87171]')}>
+        {occupied&&<option value="busy" disabled>{label}</option>}<option value="available">Tersedia</option><option value="unavailable">Tidak tersedia</option>
+      </SelectInput>
+    </div>
+    {pending&&<p role="status" className="mt-2 text-xs text-[#c5cbd5]">Menyimpan status...</p>}
+    {error&&<div role="alert" className="mt-2 text-xs leading-5 text-[#ffb4ae]">{error}{retry.current&&<button type="button" disabled={pending} onClick={()=>void change(retry.current!.available)} className={restaurantButton+' mt-2 w-full'}>Ulangi permintaan yang sama</button>}</div>}
+  </>
 }
 
 function ResourceEditor({ resource, initial, close, saved }: { resource: 'menu' | 'table'; initial: RestaurantMenu | RestaurantTable | null; close: () => void; saved: () => void }) {
@@ -94,6 +129,6 @@ function ResourceEditor({ resource, initial, close, saved }: { resource: 'menu' 
   return <RestaurantDialog title={`${initial ? 'Ubah' : 'Tambah'} ${resource === 'menu' ? 'menu' : 'meja'}`} busy={pending} close={close}><form onSubmit={submit}><fieldset disabled={pending || locked} className="space-y-4">
     <RestaurantField label="Nama"><input required maxLength={resource === 'menu' ? 100 : 60} value={name} onChange={e => setName(e.target.value)} className={restaurantInput} /></RestaurantField>
     {resource === 'menu' ? <><RestaurantField label="Kategori menu"><SelectInput value={category} onChange={e => setCategory(e.target.value)} className={restaurantInput}><option>Makanan</option><option>Minuman</option><option>Lainnya</option></SelectInput></RestaurantField>{category === 'Lainnya' && <RestaurantField label="Kategori lainnya"><input required maxLength={100} value={custom} onChange={e => setCustom(e.target.value)} className={restaurantInput} /></RestaurantField>}<RestaurantField label="Harga menu"><input required inputMode="numeric" value={price} onChange={e => setPrice(e.target.value)} className={restaurantInput} /></RestaurantField><label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" className="rounded-full cursor-pointer" checked={available} onChange={e => setAvailable(e.target.checked)} />Menu tersedia</label></> : <RestaurantField label="Kapasitas orang"><NumericInput required type="number" min={1} max={1000} value={capacity} onChange={e => setCapacity(e.target.value)} className={restaurantInput} /></RestaurantField>}
-    <label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" className="rounded-full cursor-pointer" checked={active} onChange={e => setActive(e.target.checked)} />Aktif</label>
+    {resource==='table'?<RestaurantField label="Meja diaktifkan pengelola"><SelectInput value={active?'available':'unavailable'} onChange={e=>setActive(e.target.value==='available')} className={restaurantInput}><option value="available">Tersedia</option><option value="unavailable">Tidak tersedia</option></SelectInput></RestaurantField>:<label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" className="rounded-full cursor-pointer" checked={active} onChange={e => setActive(e.target.checked)} />Aktif</label>}
   </fieldset>{error && <p role="alert" className="mt-4 text-sm text-[#ffb4ae]">{error}</p>}<div className="mt-5 flex justify-end gap-3"><button type="button" disabled={pending} onClick={close} className={restaurantButton}>Batal</button><button disabled={pending} className={restaurantPrimary}>{pending ? 'Menyimpan...' : locked ? 'Ulangi permintaan yang sama' : 'Simpan'}</button></div></form></RestaurantDialog>
 }

@@ -23,10 +23,12 @@ export const restaurantTopNavigationItems = [
   ['Reservasi', CalendarDays, '/dashboard/restaurant/reservations'],
   ['Pesanan & kasir', ShoppingBag, '/dashboard/pos'],
   ['Transaksi', CreditCard, '/dashboard/transactions'],
+  ['Pelanggan', Users, '/dashboard/customers'],
   ['Laporan', BarChart3, '/dashboard/reports'],
 ] as const
 export const restaurantSidebarNavigationItems = [
   ['Home', Home, '/dashboard'],
+  ['Asisten Bisnis AI', Sparkles, '/dashboard/assistant'],
   ['Pengaturan', Settings2, '/dashboard/settings'],
 ] as const
 

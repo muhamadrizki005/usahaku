@@ -1,6 +1,8 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useId } from 'react'
+import { createPortal } from 'react-dom'
+import { ModalFrame } from './ui/modal-frame'
 import { User, UserPlus, X } from 'lucide-react'
 import { CustomSelect, type CustomSelectOption } from '@/components/ui/custom-select'
 import { saveCustomer, searchPosCustomers } from '@/app/customer-actions'
@@ -12,9 +14,10 @@ interface PosCustomerPickerProps {
   value: PosCustomer | null
   onChange: (v: PosCustomer | null) => void
   member?: Member
+  addLabel?: string
 }
 
-export default function PosCustomerPicker({ value, onChange, member }: PosCustomerPickerProps) {
+export default function PosCustomerPicker({ value, onChange, member, addLabel = 'Tambah pelanggan' }: PosCustomerPickerProps) {
   const [category, setCategory] = useState<'non-pelanggan' | 'pelanggan'>(value ? 'pelanggan' : 'non-pelanggan')
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<PosCustomer[]>([])
@@ -84,7 +87,7 @@ export default function PosCustomerPicker({ value, onChange, member }: PosCustom
           className="inline-flex items-center gap-1.5 rounded-full border border-[#1835d9] bg-[#1835d9]/10 px-2.5 py-1 text-xs font-normal text-[#24cbc5] hover:bg-[#1835d9]/25 hover:border-[#2b4af5] hover:text-white transition-all cursor-pointer shadow-xs"
         >
           <UserPlus className="size-3.5" />
-          <span>Tambah pelanggan</span>
+          <span>{addLabel}</span>
         </button>}
       </div>
 
@@ -218,8 +221,9 @@ export default function PosCustomerPicker({ value, onChange, member }: PosCustom
         </div>
       )}
 
-      {showModal && (
+      {showModal && createPortal(
         <AddCustomerModal
+          title={addLabel}
           member={member}
           onClose={() => setShowModal(false)}
           onSuccess={newCustomer => {
@@ -228,21 +232,24 @@ export default function PosCustomerPicker({ value, onChange, member }: PosCustom
             setShowModal(false)
             setToast(`Pelanggan ${newCustomer.name} berhasil didaftarkan dan dipilih.`)
           }}
-        />
+        />, document.body
       )}
     </>
   )
 }
 
 function AddCustomerModal({
+  title,
   member,
   onClose,
   onSuccess,
 }: {
+  title: string
   member?: Member
   onClose: () => void
   onSuccess: (customer: PosCustomer) => void
 }) {
+  const fieldId = useId()
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [notes, setNotes] = useState('')
@@ -253,6 +260,7 @@ function AddCustomerModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    e.stopPropagation()
     if (saving || isCashier) return
 
     const trimmedName = name.trim()
@@ -318,17 +326,17 @@ function AddCustomerModal({
   }
 
   return (
-    <div
+    <ModalFrame onDismiss={onClose} busy={saving}
       role="dialog"
       aria-modal="true"
-      aria-labelledby="modal-title"
+      aria-labelledby={fieldId+'-title'}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs animate-in fade-in duration-150"
     >
-      <div className="relative w-full max-w-md rounded-2xl border border-[#454d5b] bg-[#273242] p-5 shadow-2xl animate-in zoom-in-95 duration-150">
+      <div className="relative max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-2xl border border-[#454d5b] bg-[#273242] p-5 shadow-2xl animate-in zoom-in-95 duration-150">
         <div className="flex items-start justify-between gap-3 border-b border-[#454d5b] pb-3">
           <div>
-            <h3 id="modal-title" className="text-base font-semibold text-white">
-              Tambah pelanggan
+            <h3 id={fieldId+'-title'} className="text-base font-semibold text-white">
+              {title}
             </h3>
             <p className="mt-1 text-xs text-[#a4a7ac]">
               Daftarkan pelanggan langsung dari kasir untuk transaksi ini.
@@ -338,6 +346,7 @@ function AddCustomerModal({
             type="button"
             onClick={onClose}
             className="rounded-lg p-1 text-[#a4a7ac] hover:bg-[#303640] hover:text-white"
+            disabled={saving}
             aria-label="Tutup formulir"
           >
             <X className="size-5" />
@@ -352,10 +361,11 @@ function AddCustomerModal({
           )}
 
           <div>
-            <label className="block text-xs font-normal text-[#c5cbd5]">
+            <label htmlFor={fieldId+'-name'} className="block text-xs font-normal text-[#c5cbd5]">
               Nama pelanggan <span className="text-[#24cbc5]">*</span>
             </label>
             <input
+              id={fieldId+'-name'}
               required
               autoFocus
               maxLength={100}
@@ -368,10 +378,11 @@ function AddCustomerModal({
           </div>
 
           <div>
-            <label className="block text-xs font-normal text-[#c5cbd5]">
+            <label htmlFor={fieldId+'-phone'} className="block text-xs font-normal text-[#c5cbd5]">
               Nomor telepon (opsional)
             </label>
             <input
+              id={fieldId+'-phone'}
               type="tel"
               maxLength={40}
               value={phone}
@@ -426,6 +437,6 @@ function AddCustomerModal({
           </div>
         </form>
       </div>
-    </div>
+    </ModalFrame>
   )
 }

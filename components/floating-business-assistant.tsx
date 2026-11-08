@@ -11,10 +11,12 @@ export const assistantLauncherId = 'dashboard-floating-assistant-launcher'
 export function FloatingBusinessAssistant({
   visible,
   configured,
+  category = 'store',
   onClose
 }: {
   visible: boolean
   configured: boolean
+  category?: 'store' | 'restaurant'
   onClose?: () => void
 }) {
   const [mounted, setMounted] = useState(false)
@@ -314,6 +316,7 @@ export function FloatingBusinessAssistant({
           <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative">
             {opened && (
               <BusinessAssistant
+                category={category}
                 configured={configured}
                 variant="floating"
                 active={visible}

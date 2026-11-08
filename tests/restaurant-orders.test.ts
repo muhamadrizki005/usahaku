@@ -8,7 +8,8 @@ import { restaurantOrderSchema, restaurantPaymentSchema } from '../lib/restauran
 test('restaurant payload validation rejects fractional portions, forged totals and invalid dining modes', () => {
   const data = { kind: 'takeaway', tableId: null, guests: 1, customer: 'Pelanggan umum', notes: '', stage: 'new', lines: [{ id: randomUUID(), quantity: 2 }] }
   assert.ok(restaurantOrderSchema.safeParse(data).success)
-  assert.equal(restaurantOrderSchema.safeParse({ ...data, kind: 'dine_in' }).success, false)
+  assert.equal(restaurantOrderSchema.safeParse({ ...data, kind: 'dine_in' }).success, true)
+  assert.equal(restaurantOrderSchema.safeParse({ ...data, tableId: randomUUID() }).success, false)
   assert.equal(restaurantOrderSchema.safeParse({ ...data, lines: [{ id: randomUUID(), quantity: 0.5 }] }).success, false)
   assert.equal(restaurantOrderSchema.safeParse({ ...data, subtotal: 1 }).success, false)
   assert.equal(restaurantPaymentSchema.safeParse({ payment: 'qris', received: '15000', discountKind: 'none', discountValue: '0', confirmed: false }).success, false)
@@ -83,7 +84,7 @@ test('restaurant orders, occupied tables, exact payments, cancellation and repor
     assert.equal(paid.sale.total, 30000); assert.equal(paid.sale.change, 20000); assert.equal(paid.order.status, 'paid')
     assert.equal((await pay(id, 1, payDetails, paymentRequest)).sale.id, paid.sale.id)
     await assert.rejects(pay(id, 1), (e: any) => JSON.parse(e.detail).reason === 'order_paid')
-    assert.equal((await db.query<any>('select * from public.restaurant_table_usage($1)', [restaurant])).rows[0].occupied, false)
+    assert.equal((await db.query<any>('select * from public.restaurant_table_usage($1)', [restaurant])).rows[0].occupied, true)
     await assert.rejects(db.query("select public.read_sales_report($1,date_trunc('day',now() at time zone 'Asia/Jakarta') at time zone 'Asia/Jakarta',(date_trunc('day',now() at time zone 'Asia/Jakarta')+interval '1 day') at time zone 'Asia/Jakarta')", [restaurant]), /access denied/)
     await as(b); assert.equal((await db.query('select id from public.pos_transactions')).rows.length, 0)
     await as(owner); await resource('menu', menuId, 1, { ...menu, price: '17000' })

@@ -53,6 +53,22 @@ export function buildAssistantContext(data: ReportData, stock: StockSnapshot[], 
   return { filter, generatedAt: data.generatedAt, stockAt, facts, advice }
 }
 
+export function buildRestaurantAssistantContext(data: ReportData, filter: ReportFilter, at: string): AssistantContext {
+  const base = buildAssistantContext(data, [], filter, at)
+  const facts = base.facts.filter(f => !/^(stock_|empty_stock)/.test(f.id)).map(f => ({
+    ...f,
+    text: f.text.replace('nilai barang sebelum diskon transaksi', 'nilai menu sebelum diskon transaksi'),
+    providerText: f.providerText.replace('Produk peringkat', 'Menu peringkat').replace('satuan produk', 'porsi menu'),
+  }))
+  const advice = { ...base.advice }
+  delete advice.add_products
+  delete advice.check_stock
+  if (advice.review_products) advice.review_products = 'Tinjau menu dengan nilai penjualan tinggi bersama jumlah porsi. Nilai ini belum membuktikan laba atau biaya bahan baku.'
+  if (advice.review_refunds) advice.review_refunds = 'Cocokkan pembatalan dengan bukti refund manual. Aplikasi tidak mengirim refund otomatis.'
+  facts.push({ id: 'restaurant_scope', text: 'Data ini berasal dari restoran/cafe. Stok bahan baku, resep, laba, pesanan terbuka dan DP yang belum dilunasi tidak tersedia dalam ringkasan ini.', providerText: 'Kategori restoran/cafe. Ringkasan hanya transaksi selesai dan refund manual; tidak mencakup stok bahan baku, resep, laba, pesanan terbuka atau DP yang belum dilunasi.' })
+  return { ...base, facts, advice }
+}
+
 export function validateSelection(value: unknown, context: AssistantContext): Selection {
   const parsed = z.object({ topic: z.enum(topics), factIds: z.array(z.string()).max(8), adviceIds: z.array(z.string()).max(3) }).strict().parse(value)
   if (parsed.factIds.some(id => !context.facts.some(f => f.id === id)) || parsed.adviceIds.some(id => !Object.hasOwn(context.advice, id))) throw Error('Unknown evidence')

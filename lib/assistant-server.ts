@@ -1,6 +1,6 @@
 import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { buildAssistantContext, assistantFilter, type AssistantRequest, type StockSnapshot } from './assistant'
+import { buildAssistantContext, buildRestaurantAssistantContext, assistantFilter, type AssistantRequest, type StockSnapshot } from './assistant'
 import { readReport } from './reports-server'
 import { AssistantLimit } from './assistant-limit'
 
@@ -8,9 +8,10 @@ const state = globalThis as typeof globalThis & { usahakuAssistantLimit?: Assist
 export const assistantLimit = state.usahakuAssistantLimit ||= new AssistantLimit()
 export const geminiConfig = () => ({ key: process.env.GEMINI_API_KEY?.trim() || '', model: process.env.GEMINI_MODEL?.trim() || 'gemini-3.5-flash-lite' })
 
-export async function readAssistantContext(client: SupabaseClient, businessId: string, period: AssistantRequest['period']) {
+export async function readAssistantContext(client: SupabaseClient, businessId: string, period: AssistantRequest['period'], category: 'store' | 'restaurant' = 'store') {
   const filter = assistantFilter(period)
   const data = await readReport(client, businessId, filter)
+  if (category === 'restaurant') return buildRestaurantAssistantContext(data, filter, new Date().toISOString())
   const stock: StockSnapshot[] = []
   for (let start = 0; start <= 5000; start += 500) {
     const { data: rows, error } = await client.from('catalog_products').select('id,name,unit,stock,minimum_stock,active').eq('business_id', businessId).order('id').range(start, start + 499).abortSignal(AbortSignal.timeout(10000))
