@@ -20,7 +20,7 @@ test('cashiers keep their own-transaction scope without receiving management pri
 })
 
 test('owner registration rejects mismatched, too short, and excessive passwords', () => {
-  const owner = { name: 'Test Owner', email: 'owner@example.com', password: 'long-test-password', confirmation: 'long-test-password' }
+  const owner = { name: 'Test Owner', email: 'owner@example.com', password: 'Long-test-password1!', confirmation: 'Long-test-password1!' }
   assert.equal(registerSchema.safeParse(owner).success, true)
   assert.equal(registerSchema.safeParse({ ...owner, confirmation: 'different-password' }).success, false)
   assert.equal(registerSchema.safeParse({ ...owner, password: 'short', confirmation: 'short' }).success, false)
