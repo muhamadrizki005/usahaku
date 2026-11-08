@@ -1,6 +1,12 @@
 import { z } from 'zod';
 
-export const passwordSchema = z.string().min(10, 'Gunakan minimal 10 karakter.').max(128, 'Maksimal 128 karakter.');
+export const passwordSchema = z.string()
+  .min(8, 'Password minimal 8 karakter.')
+  .max(128, 'Maksimal 128 karakter.')
+  .regex(/[A-Z]/, 'Password harus mengandung setidaknya 1 huruf kapital.')
+  .regex(/[a-z]/, 'Password harus mengandung setidaknya 1 huruf kecil.')
+  .regex(/[0-9]/, 'Password harus mengandung setidaknya 1 angka.')
+  .regex(/[^A-Za-z0-9]/, 'Password harus mengandung setidaknya 1 simbol khusus.');
 export const ownerLoginSchema = z.object({ email: z.email('Email tidak valid.').max(254), password: z.string().min(1, 'Isi kata sandi.').max(128) });
 export const registerSchema = ownerLoginSchema.extend({ name: z.string().trim().min(2, 'Isi nama lengkap.').max(100), phone: z.string().trim().max(30).optional(), password: passwordSchema, confirmation: z.string() }).refine(data => data.password === data.confirmation, { message: 'Konfirmasi kata sandi belum sama.', path: ['confirmation'] });
 export const businessSchema = z.object({ name: z.string().trim().min(2, 'Nama usaha minimal 2 karakter.').max(100), ownerName: z.string().trim().min(2).max(100), phone: z.string().trim().max(30), address: z.string().trim().max(500) });

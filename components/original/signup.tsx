@@ -28,10 +28,17 @@ export default function OriginalSignup() {
   const validName = form.name.trim().length >= 2
   const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)
   const validPhone = /^(?:08|\+62)[0-9]{8,13}$/.test(form.phone.replace(/[\s-]/g, ''))
-  const strongPassword = form.password.length >= 10
+  const passwordCriteria = useMemo(() => [
+    { label: 'Minimal 8 karakter', valid: form.password.length >= 8 },
+    { label: '1 huruf kapital (A–Z)', valid: /[A-Z]/.test(form.password) },
+    { label: '1 huruf kecil (a–z)', valid: /[a-z]/.test(form.password) },
+    { label: '1 angka (0–9)', valid: /[0-9]/.test(form.password) },
+    { label: '1 simbol khusus (!, @, #, $, %)', valid: /[^A-Za-z0-9]/.test(form.password) },
+  ], [form.password])
+  const strongPassword = passwordCriteria.every((c) => c.valid)
   const matchingPassword = form.password.length > 0 && form.password === form.confirmPassword
+  const passwordMismatch = form.confirmPassword.length > 0 && form.password !== form.confirmPassword
   const canSubmit = validName && validEmail && (!form.phone.trim() || validPhone) && strongPassword && matchingPassword && !pending
-  const strength = useMemo(() => [form.password.length >= 10, /[A-Za-z]/.test(form.password), /\d/.test(form.password), form.password.length >= 12], [form.password])
 
   function update(field: keyof typeof form, value: string) {
     setForm((current) => ({ ...current, [field]: value }))
@@ -107,15 +114,56 @@ export default function OriginalSignup() {
                 <p className="text-xs text-[#c5cbd5]">Gunakan nomor aktif, diawali 08 atau +62.</p>
               </Field>
               <Field label="Kata sandi" htmlFor="password">
-                <PasswordInput id="password" value={form.password} visible={showPassword} onChange={(value) => update('password', value)} onToggle={() => setShowPassword((visible) => !visible)} />
-                <div className="mt-2 flex gap-1.5" aria-label="Kekuatan kata sandi">
-                  {strength.map((active, index) => <span key={index} className={`h-1.5 flex-1 rounded-full ${active ? 'bg-[#24cbc5]' : 'bg-[#e5eaf2]'}`} />)}
+                <PasswordInput
+                  id="password"
+                  placeholder="Minimal 8 karakter"
+                  value={form.password}
+                  visible={showPassword}
+                  onChange={(value) => update('password', value)}
+                  onToggle={() => setShowPassword((visible) => !visible)}
+                />
+                <div className="mt-2 space-y-1.5" aria-label="Persyaratan kata sandi">
+                  <p className="text-xs text-[#a4a7ac]">Kata sandi wajib memenuhi persyaratan berikut:</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs">
+                    {passwordCriteria.map((criterion, idx) => (
+                      <div
+                        key={idx}
+                        className={`flex items-center gap-1.5 transition-colors ${
+                          criterion.valid
+                            ? 'text-[#24cbc5]'
+                            : form.password.length > 0
+                            ? 'text-[#a4a7ac]'
+                            : 'text-[#8b929e]'
+                        }`}
+                      >
+                        <span
+                          className={`inline-flex items-center justify-center size-3.5 rounded-full text-[10px] font-bold ${
+                            criterion.valid
+                              ? 'bg-[#24cbc5]/20 text-[#24cbc5]'
+                              : 'bg-white/10 text-[#8b929e]'
+                          }`}
+                        >
+                          {criterion.valid ? '✓' : '•'}
+                        </span>
+                        <span>{criterion.label}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <p className={`text-xs ${strongPassword ? 'text-[#24cbc5]' : 'text-[#c5cbd5]'}`}>Kuat • Minimal 10 karakter, dengan huruf dan angka.</p>
               </Field>
               <Field label="Konfirmasi kata sandi" htmlFor="confirmPassword">
-                <PasswordInput id="confirmPassword" value={form.confirmPassword} visible={showConfirm} onChange={(value) => update('confirmPassword', value)} onToggle={() => setShowConfirm((visible) => !visible)} />
-                {matchingPassword && <p className="text-xs text-[#24cbc5]">Kata sandi sudah cocok.</p>}
+                <PasswordInput
+                  id="confirmPassword"
+                  placeholder="Masukkan ulang kata sandi"
+                  value={form.confirmPassword}
+                  visible={showConfirm}
+                  onChange={(value) => update('confirmPassword', value)}
+                  onToggle={() => setShowConfirm((visible) => !visible)}
+                />
+                {matchingPassword && <p className="text-xs text-[#24cbc5]">✓ Kata sandi sudah cocok.</p>}
+                {passwordMismatch && (
+                  <p className="text-xs text-[#ffb4ae]">Konfirmasi kata sandi belum sama dengan kata sandi.</p>
+                )}
               </Field>
               <p className="text-xs leading-5 text-[#c5cbd5]">Dengan membuat akun, Anda menyetujui <button type="button" onClick={() => setLegalModal('terms')} className="font-medium text-[#24cbc5] hover:underline">Syarat Penggunaan</button> dan <button type="button" onClick={() => setLegalModal('privacy')} className="font-medium text-[#24cbc5] hover:underline">Kebijakan Privasi</button> Usahaku.</p>
               <button disabled={!canSubmit} className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#1835d9] font-normal text-white transition-colors hover:bg-[#132c9e] disabled:cursor-not-allowed disabled:opacity-50">{pending ? 'Membuat akun...' : 'Buat Akun Pemilik'} <ArrowRight aria-hidden="true" /></button>
@@ -145,5 +193,5 @@ export default function OriginalSignup() {
 function GoogleMark() { return <span aria-hidden="true" className="text-lg font-semibold text-[#4285f4]">G</span> }
 
 function Field({ label, htmlFor, children }: { label: string; htmlFor: string; children: React.ReactNode }) { return <label htmlFor={htmlFor} className="flex flex-col gap-2 text-sm font-normal text-white">{label}{children}</label> }
-function PasswordInput({ id, value, visible, onChange, onToggle }: { id: string; value: string; visible: boolean; onChange: (value: string) => void; onToggle: () => void }) { return <div className="relative"><input aria-label={id === 'confirmPassword' ? 'Konfirmasi kata sandi' : 'Kata sandi'} id={id} type={visible ? 'text' : 'password'} value={value} onChange={(e) => onChange(e.target.value)} className="h-12 w-full rounded-xl border border-white/10 bg-[#1c222e] px-4 pr-12 font-normal outline-none placeholder:text-[#a4a7ac] focus:border-[#24cbc5] focus:ring-2 focus:ring-[#1835d9]/15" placeholder="Minimal 10 karakter" /><button type="button" onClick={onToggle} className="absolute inset-y-0 right-0 grid w-12 place-items-center text-[#c5cbd5] hover:text-[#24cbc5]" aria-label={visible ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}>{visible ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}</button></div> }
+function PasswordInput({ id, value, visible, onChange, onToggle, placeholder }: { id: string; value: string; visible: boolean; onChange: (value: string) => void; onToggle: () => void; placeholder?: string }) { return <div className="relative"><input aria-label={id === 'confirmPassword' ? 'Konfirmasi kata sandi' : 'Kata sandi'} id={id} type={visible ? 'text' : 'password'} value={value} onChange={(e) => onChange(e.target.value)} className="h-12 w-full rounded-xl border border-white/10 bg-[#1c222e] px-4 pr-12 font-normal outline-none placeholder:text-[#a4a7ac] focus:border-[#24cbc5] focus:ring-2 focus:ring-[#1835d9]/15" placeholder={placeholder || (id === 'confirmPassword' ? 'Masukkan ulang kata sandi' : 'Minimal 8 karakter')} /><button type="button" onClick={onToggle} className="absolute inset-y-0 right-0 grid w-12 place-items-center text-[#c5cbd5] hover:text-[#24cbc5]" aria-label={visible ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}>{visible ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}</button></div> }
 function Benefit({ icon: Icon, title, description }: { icon: typeof Store; title: string; description: string }) { return <div className="flex gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-lg bg-white/10 text-[#24cbc5]"><Icon aria-hidden="true" /></span><div><p className="text-sm font-normal">{title}</p><p className="mt-1 text-sm leading-5 text-[#c5cbd5]">{description}</p></div></div> }
