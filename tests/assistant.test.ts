@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { assistantFilter, assistantRequest, buildAssistantContext, renderAssistantAnswer, validateSelection } from '../lib/assistant'
+import { assistantFilter, assistantRequest, buildAssistantContext, buildRestaurantAssistantContext, renderAssistantAnswer, validateSelection } from '../lib/assistant'
 import { selectWithGemini, GeminiError } from '../lib/assistant-gemini'
 import { AssistantLimit } from '../lib/assistant-limit'
 import type { ReportData } from '../lib/reports'
@@ -12,6 +12,15 @@ const filter = assistantFilter('7d', new Date('2026-10-30T00:00:00Z'))
 const context = () => buildAssistantContext(report, [{ id: 'p1', name: 'Private Product', unit: 'kg', stock: 0.125, minimum_stock: 1, active: true }], filter, '2026-10-30T00:01:00Z')
 const stub = (body: unknown, status = 200): typeof fetch => async () => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
 const envelope = (value: unknown, finishReason = 'STOP') => ({ candidates: [{ finishReason, content: { parts: [{ text: JSON.stringify(value) }] } }] })
+
+test('restaurant assistant uses completed sales without inventing ingredient stock or disclosing identities',()=>{
+ const c=buildRestaurantAssistantContext(report,filter,report.generatedAt)
+ assert.ok(c.facts.find(f=>f.id==='restaurant_scope'))
+ assert.equal(c.facts.some(f=>/^(stock_|empty_stock)/.test(f.id)),false)
+ assert.equal('add_products' in c.advice,false)
+ for(const secret of ['Private Staff','Private Customer','Private Product','secret-business','secret-staff-id'])assert.equal(JSON.stringify(c.facts.map(f=>f.providerText)).includes(secret),false)
+ assert.equal(c.facts.find(f=>f.id==='net')!.text,context().facts.find(f=>f.id==='net')!.text)
+})
 
 test('assistant rejects tenant overrides, validates periods, and uses WIB across midnight/month boundaries', () => {
   assert.equal(assistantRequest.safeParse({ question: 'stok?', period: '7d', businessId: 'other' }).success, false)

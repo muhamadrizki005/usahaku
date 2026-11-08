@@ -7,12 +7,13 @@ import DashboardSection from './dashboard-section'
 import type { AssistantRequest } from '@/lib/assistant'
 import { chatBasisLabels, chatMoney, type ChatAnswer } from '@/lib/assistant-chat'
 
-const prompts = ['Bantu susun ide barang baru dan rencana belanja.', 'Buatkan caption promosi toko.', 'Ringkas penjualan pada periode ini.', 'Stok apa yang perlu saya periksa?']
+const storePrompts = ['Bantu susun ide barang baru dan rencana belanja.', 'Buatkan caption promosi toko.', 'Ringkas penjualan pada periode ini.', 'Stok apa yang perlu saya periksa?']
 const focus = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5]'
 const time = (s: string) => new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Jakarta' }).format(new Date(s)) + ' WIB'
 type Turn = { id: string; question: string; period: AssistantRequest['period']; status: 'pending' | 'failed' | 'done'; answer?: ChatAnswer }
 
-export default function BusinessAssistant({ configured, variant = 'page', active = true }: { configured: boolean; variant?: 'page' | 'floating'; active?: boolean }) {
+export default function BusinessAssistant({ configured, variant = 'page', active = true, category = 'store' }: { configured: boolean; variant?: 'page' | 'floating'; active?: boolean; category?: 'store' | 'restaurant' }) {
+  const prompts = category === 'restaurant' ? ['Bantu susun ide menu dan rencana belanja.', 'Buatkan caption promosi cafe.', 'Ringkas penjualan pada periode ini.', 'Bantu susun SOP pelayanan restoran.'] : storePrompts
   const id = useId(), periodId = id + '-period', questionId = id + '-question', privacyId = id + '-privacy'
   const [question, setQuestion] = useState(''), [period, setPeriod] = useState<AssistantRequest['period']>('7d')
   const [turns, setTurns] = useState<Turn[]>([]), [pending, setPending] = useState(false), [error, setError] = useState('')
@@ -94,7 +95,7 @@ export default function BusinessAssistant({ configured, variant = 'page', active
         <div ref={log} role="log" aria-label="Percakapan Asisten" aria-live="polite" aria-relevant="additions text" tabIndex={0} onScroll={() => { const el = log.current; if (el) { nearBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80; setAway(!nearBottom.current) } }} className={'min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-5 sm:px-6 bg-[#273242] ' + focus}>
           {!turns.length && <div className="mx-auto flex min-h-full max-w-[600px] flex-col justify-center py-4">
             <p className="text-xs font-medium text-[#24cbc5]">Mulai percakapan</p><h3 className="mt-2 text-xl font-semibold sm:text-2xl text-white">Apa yang ingin kamu kerjakan hari ini?</h3>
-            <p className="mt-3 text-sm leading-6 text-[#c5cbd5]">Cari ide barang, susun promosi, rencanakan belanja, atau bahas penjualan dan stok. Ceritakan kebutuhanmu; saya bantu menyusun langkahnya.</p>
+            <p className="mt-3 text-sm leading-6 text-[#c5cbd5]">{category === 'restaurant' ? 'Cari ide menu, susun promosi, rencanakan belanja, atau bahas penjualan dan pelayanan. Ringkasan belum mencakup stok bahan baku dan DP yang belum dilunasi.' : 'Cari ide barang, susun promosi, rencanakan belanja, atau bahas penjualan dan stok. Ceritakan kebutuhanmu; saya bantu menyusun langkahnya.'}</p>
             <div className="mt-5 grid gap-2 sm:grid-cols-2" aria-label="Contoh pertanyaan">{prompts.map(prompt => <button key={prompt} type="button" disabled={!configured} onClick={() => { setQuestion(prompt); input.current?.focus() }} className={'min-h-11 rounded-xl border border-[#454d5b] bg-[#1c222e] p-3 text-left text-xs leading-5 text-[#c5cbd5] hover:bg-[#303640] hover:text-white disabled:opacity-60 transition-colors ' + focus}>{prompt}</button>)}</div>
           </div>}
           <div className="space-y-6">

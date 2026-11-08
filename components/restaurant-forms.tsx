@@ -1,142 +1,55 @@
 'use client'
 import { SelectInput } from '@/components/ui/select-input'
 import { NumericInput } from '@/components/ui/numeric-input'
-import {
-  cloneElement,
-  isValidElement,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type ReactElement,
-  type ReactNode,
-  type FormEvent,
-  type ChangeEvent,
-} from 'react'
+import { cloneElement, isValidElement, useEffect, useId, useRef, useState, useTransition, type ReactElement, type ReactNode, type FormEvent, type ChangeEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { Upload, X, Trash2, AlertTriangle, UtensilsCrossed } from 'lucide-react'
-import { saveRestaurantResource } from '@/app/restaurant-actions'
+import { saveRestaurantResource, deleteRestaurantTable, setRestaurantTableAvailability } from '@/app/restaurant-actions'
+import { Pencil, X, Upload, Trash2, AlertTriangle, UtensilsCrossed } from 'lucide-react'
 import type { RestaurantMenu, RestaurantTable } from '@/lib/restaurant'
 import RestaurantTableRefresh from './restaurant-table-refresh'
 import { rupiah } from '@/lib/pos'
 import { discountedPrice } from '@/lib/product-pricing'
 
 export const restaurantPanel = 'rounded-2xl border border-[#454d5b]/50 bg-[#273242] p-5 sm:p-6'
-export const restaurantInput =
-  'mt-1 min-h-11 w-full min-w-0 rounded-lg border border-[#454d5b] bg-[#273242] px-3 py-2 text-sm font-normal text-white placeholder:font-normal placeholder:text-[#a4a7ac] outline-none focus:border-[#24cbc5] focus:ring-2 focus:ring-[#24cbc5]/20'
-export const restaurantButton =
-  'min-h-11 inline-flex items-center justify-center rounded-xl border-0 bg-[#303640] px-4 py-2 text-sm font-medium text-white hover:bg-[#3d4653] active:scale-[0.98] transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5] disabled:opacity-50'
-export const restaurantPrimary =
-  'min-h-11 inline-flex items-center justify-center rounded-xl border-0 bg-[#1835d9] px-4 py-2 text-sm font-semibold text-white hover:bg-[#132c9e] active:scale-[0.98] transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5] disabled:opacity-50'
-
+export const restaurantInput = 'mt-1 min-h-11 w-full min-w-0 rounded-lg border border-[#454d5b] bg-[#273242] px-3 py-2 text-sm font-normal text-white placeholder:font-normal placeholder:text-[#a4a7ac] outline-none focus:border-[#24cbc5] focus:ring-2 focus:ring-[#24cbc5]/20'
+export const restaurantButton = 'min-h-11 inline-flex items-center justify-center rounded-xl border-0 bg-[#303640] px-4 py-2 text-sm font-medium text-white hover:bg-[#3d4653] active:scale-[0.98] transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5] disabled:opacity-50'
+export const restaurantPrimary = 'min-h-11 inline-flex items-center justify-center rounded-xl border-0 bg-[#1835d9] px-4 py-2 text-sm font-semibold text-white hover:bg-[#132c9e] active:scale-[0.98] transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5] disabled:opacity-50'
 export function RestaurantField({ label, children }: { label: string; children: ReactNode }) {
-  const id = useId()
-  const labelId = id + '-label'
-  return (
-    <div className="min-w-0 text-sm text-[#c5cbd5]">
-      <label id={labelId} htmlFor={id}>
-        {label}
-      </label>
-      {isValidElement(children)
-        ? cloneElement(children as ReactElement<{ id?: string; 'aria-labelledby'?: string }>, {
-            id,
-            'aria-labelledby': labelId,
-          })
-        : children}
-    </div>
-  )
+  const id = useId(), labelId = id + '-label'
+  return <div className="min-w-0 text-sm text-[#c5cbd5]"><label id={labelId} htmlFor={id}>{label}</label>{isValidElement(children) ? cloneElement(children as ReactElement<{ id?: string; 'aria-labelledby'?: string }>, { id, 'aria-labelledby': labelId }) : children}</div>
 }
-
-export function RestaurantDialog({
-  title,
-  busy,
-  close,
-  children,
-  wide = false,
-}: {
-  title: string
-  busy: boolean
-  close: () => void
-  children: ReactNode
-  wide?: boolean
-}) {
+export function RestaurantDialog({ title, busy, close, children, wide = false }: { title: string; busy: boolean; close: () => void; children: ReactNode; wide?: boolean }) {
   const dialog = useRef<HTMLDialogElement>(null)
   useEffect(() => {
-    const el = dialog.current
-    const previous = document.activeElement
+    const el = dialog.current, previous = document.activeElement
     if (!el) return
     const trap = (event: KeyboardEvent) => {
       if (event.key !== 'Tab') return
-      const controls = Array.from(
-        el.querySelectorAll<HTMLElement>(
-          'button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href],[tabindex]:not([tabindex="-1"])'
-        )
-      ).filter((item) => item.getClientRects().length > 0)
-      const first = controls[0]
-      const last = controls[controls.length - 1]
-      if (!first) {
-        event.preventDefault()
-        el.focus()
-      } else if (event.shiftKey && (document.activeElement === first || document.activeElement === el)) {
-        event.preventDefault()
-        last.focus()
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault()
-        first.focus()
-      }
+      const controls = Array.from(el.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href],[tabindex]:not([tabindex="-1"])')).filter(item => item.getClientRects().length > 0)
+      const first = controls[0], last = controls[controls.length - 1]
+      if (!first) { event.preventDefault(); el.focus() }
+      else if (event.shiftKey && (document.activeElement === first || document.activeElement === el)) { event.preventDefault(); last.focus() }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus() }
     }
-    el.showModal()
-    el.addEventListener('keydown', trap)
-    return () => {
-      el.removeEventListener('keydown', trap)
-      el.close()
-      if (previous instanceof HTMLElement && previous.isConnected) previous.focus()
-    }
+    el.showModal(); el.addEventListener('keydown', trap)
+    return () => { el.removeEventListener('keydown', trap); el.close(); if (previous instanceof HTMLElement && previous.isConnected) previous.focus() }
   }, [])
-  return (
-    <dialog
-      ref={dialog}
-      aria-label={title}
-      onCancel={(e) => {
-        e.preventDefault()
-        if (!busy) close()
-      }}
-      className={`m-auto max-h-[90dvh] w-[calc(100%_-_2rem)] ${
-        wide ? 'max-w-[900px]' : 'max-w-[640px]'
-      } overflow-y-auto rounded-2xl border border-[#454d5b] bg-[#273242] p-5 text-white backdrop:bg-black/60 sm:p-6`}
-    >
-      <div className="mb-5 flex items-center justify-between gap-4">
-        <h2 className="min-w-0 break-words text-lg font-semibold [overflow-wrap:anywhere]">{title}</h2>
-        <button type="button" disabled={busy} onClick={close} aria-label="Tutup dialog" className={restaurantButton + ' shrink-0'}>
-          Tutup
-        </button>
-      </div>
-      {children}
-    </dialog>
-  )
+  return <dialog ref={dialog} aria-label={title} onCancel={e => { e.preventDefault(); if (!busy) close() }} className={`m-auto max-h-[90dvh] w-[calc(100%_-_2rem)] ${wide ? 'max-w-[900px]' : 'max-w-[640px]'} overflow-y-auto rounded-2xl border border-[#454d5b] bg-[#273242] p-5 text-white backdrop:bg-black/60 sm:p-6`}>
+    <div className="mb-5 flex items-center justify-between gap-4"><h2 className="min-w-0 break-words text-lg font-semibold [overflow-wrap:anywhere]">{title}</h2><button type="button" disabled={busy} onClick={close} aria-label="Tutup dialog" className={restaurantButton + ' shrink-0'}>Tutup</button></div>{children}
+  </dialog>
 }
 
-export function RestaurantResources({
-  resource,
-  menu = [],
-  tables = [],
-  usage = [],
-}: {
-  resource: 'menu' | 'table'
-  menu?: RestaurantMenu[]
-  tables?: RestaurantTable[]
-  usage?: import('@/lib/restaurant').RestaurantTableUsage[]
-}) {
+export function RestaurantResources({ resource, menu = [], tables = [], usage = [], canManage = true, draft = false }: { resource: 'menu' | 'table'; canManage?: boolean; draft?: boolean; menu?: RestaurantMenu[]; tables?: RestaurantTable[]; usage?: import('@/lib/restaurant').RestaurantTableUsage[] }) {
   const router = useRouter()
-  const [query, setQuery] = useState('')
-  const [page, setPage] = useState(0)
-  const [editing, setEditing] = useState<RestaurantMenu | RestaurantTable | 'new' | null>(null)
-  const [deletingMenu, setDeletingMenu] = useState<RestaurantMenu | null>(null)
-  const [deletePending, setDeletePending] = useState(false)
-  const [notice, setNotice] = useState('')
+  const [refreshing, startRefresh] = useTransition()
+  const refreshView = () => startRefresh(() => router.refresh())
+  const [query, setQuery] = useState(''), [page, setPage] = useState(0), [editing, setEditing] = useState<RestaurantMenu | RestaurantTable | 'new' | null>(null), [notice, setNotice] = useState('')
   const [viewing, setViewing] = useState<string | null>(null)
+  const [deleting,setDeleting]=useState<RestaurantTable|null>(null),[deletePending,setDeletePending]=useState(false),[deleteError,setDeleteError]=useState('')
+  const deletePacket=useRef<{id:string;revision:number;request:string}|null>(null),deleteBusy=useRef(false)
+  async function removeTable(){if(!deleting||deleteBusy.current)return;deleteBusy.current=true;setDeletePending(true);setDeleteError('');const packet=deletePacket.current||{id:deleting.id,revision:deleting.revision,request:crypto.randomUUID()};deletePacket.current=packet;try{const result=await deleteRestaurantTable(packet);if(result.value){setDeleting(null);deletePacket.current=null;setNotice('Meja dihapus dari daftar. Riwayat tetap tersimpan.');refreshView()}else{setDeleteError(result.error||'Meja belum dihapus.');if(!result.uncertain)deletePacket.current=null}}catch{setDeleteError('Hasil belum pasti. Ulangi permintaan yang sama atau muat ulang.')}finally{deleteBusy.current=false;setDeletePending(false)}}
+  const [deletingMenu,setDeletingMenu]=useState<RestaurantMenu|null>(null),[menuDeletePending,setMenuDeletePending]=useState(false)
   const occupiedHint = useId()
-
   // Track menu photos from persistent browser storage
   const [menuPhotos, setMenuPhotos] = useState<Record<string, string>>({})
   // Track menu discounts from persistent browser storage
@@ -163,19 +76,15 @@ export function RestaurantResources({
     setMenuDiscounts(discounts)
   }, [resource, menu])
 
-  const selectedTable = tables.find((table) => table.id === viewing)
-  const occupied = Boolean(selectedTable && usage.some((item) => item.id === selectedTable.id && item.occupied))
-  const reserved = Boolean(selectedTable && usage.some((item) => item.id === selectedTable.id && item.reserved))
+  const selectedTable = tables.find(table => table.id === viewing)
+  const occupied = Boolean(selectedTable && usage.some(item => item.id === selectedTable.id && item.occupied))
+  const reserved = Boolean(selectedTable && usage.some(item => item.id === selectedTable.id && item.reserved))
   const title = resource === 'menu' ? 'menu' : 'meja'
-  const items =
-    resource === 'menu'
-      ? menu
-      : [...tables].sort((a, b) => a.name.localeCompare(b.name, 'id-ID', { numeric: true, sensitivity: 'base' }))
-  const visible = items.filter((item) => item.name.toLowerCase().includes(query.toLowerCase()))
-
+  const items = resource === 'menu' ? menu : [...tables].sort((a, b) => a.name.localeCompare(b.name, 'id-ID', { numeric: true, sensitivity: 'base' }))
+  const visible = items.filter(item => item.name.toLowerCase().includes(query.toLowerCase()))
   const handleConfirmDeleteMenu = async () => {
     if (!deletingMenu) return
-    setDeletePending(true)
+    setMenuDeletePending(true)
     try {
       const result = await saveRestaurantResource(
         'menu',
@@ -194,7 +103,7 @@ export function RestaurantResources({
         } catch {}
         setNotice(`Menu "${deletingMenu.name}" berhasil dihapus.`)
         setDeletingMenu(null)
-        router.refresh()
+        refreshView()
       } else {
         setNotice(result.error || 'Gagal menghapus menu.')
         setDeletingMenu(null)
@@ -203,80 +112,31 @@ export function RestaurantResources({
       setNotice('Gagal menghapus menu. Periksa koneksi dan coba lagi.')
       setDeletingMenu(null)
     } finally {
-      setDeletePending(false)
+      setMenuDeletePending(false)
     }
   }
 
-  return (
-    <section className={restaurantPanel}>
-      <RestaurantTableRefresh usage={usage} />
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-normal">{resource === 'menu' ? 'Daftar menu' : 'Daftar meja'}</h2>
-        <button
-          type="button"
-          onClick={() => {
-            setNotice('')
-            setEditing('new')
-          }}
-          className={restaurantPrimary}
-        >
-          Tambah {title}
-        </button>
-      </div>
-      <p className="mt-2 text-sm leading-6 text-[#c5cbd5]">
-        {resource === 'menu'
-          ? 'Atur harga, foto, dan ketersediaan menu. Stok bahan baku dan resep belum dihitung.'
-          : 'Kapasitas diperiksa saat pesanan dibuat. Satu meja menampung satu pesanan terbuka.'}
-      </p>
-      {notice && (
-        <p role="status" className="mt-3 text-sm text-[#24cbc5]">
-          {notice}
-        </p>
-      )}
-      <RestaurantField label={`Cari ${title}`}>
-        <input
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value)
-            setPage(0)
-          }}
-          className={restaurantInput}
-        />
-      </RestaurantField>
-      {resource === 'table' ? (
-        <div className="mt-5">
-          <div
-            role="group"
-            aria-label="Pilihan meja"
-            className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8"
-          >
-            {visible.slice(page * 25, page * 25 + 25).map((item) => {
-              const taken = usage.some((table) => table.id === item.id && (table.occupied || table.reserved))
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  aria-label={item.name}
-                  aria-describedby={taken ? occupiedHint : undefined}
-                  aria-haspopup="dialog"
-                  title={taken ? `${item.name}: terpakai atau reservasi, tidak tersedia untuk pesanan baru` : item.name}
-                  onClick={() => setViewing(item.id)}
-                  className={
-                    'flex aspect-square min-w-0 items-center justify-center rounded-xl border border-[#454d5b] bg-[#1c222e] p-3 text-center text-sm text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5] ' +
-                    (taken ? 'opacity-60' : 'hover:border-[#24cbc5] hover:bg-[#303640]')
-                  }
-                >
-                  <span className="line-clamp-3 [overflow-wrap:anywhere]">{item.name}</span>
-                </button>
-              )
-            })}
+  return <section className={restaurantPanel}><RestaurantTableRefresh usage={usage}/>
+    <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg font-normal">{resource === 'menu' ? 'Daftar menu' : 'Daftar meja'}</h2>{canManage&&<button type="button" onClick={() => { setNotice(''); setEditing('new') }} className={restaurantPrimary}>Tambah {title}</button>}</div>
+    <p className="mt-2 text-sm leading-6 text-[#c5cbd5]">{resource === 'menu' ? 'Atur harga dan ketersediaan menu. Stok bahan baku dan resep belum dihitung.' : 'Kapasitas diperiksa saat pesanan dibuat. Satu meja menampung satu pesanan terbuka.'}</p>
+    {notice && <p role="status" className="mt-3 text-sm text-[#24cbc5]">{notice}</p>}
+    <RestaurantField label={`Cari ${title}`}><input value={query} onChange={e => { setQuery(e.target.value); setPage(0) }} className={restaurantInput} /></RestaurantField>
+    {resource === 'table' ? <div className="mt-5">
+      <div role="group" aria-label="Pilihan meja" className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,240px),1fr))] gap-4">
+        {visible.slice(page * 25, page * 25 + 25).map(item => {
+          const taken = usage.some(table => table.id === item.id && (table.occupied || table.reserved))
+          const state=usage.find(t=>t.id===item.id),label=!item.active?'Tidak tersedia':state?.occupied&&state.reserved?'Terpakai / reservasi':state?.reserved?'Reservasi':(item as RestaurantTable).occupied_until_released?'Tidak tersedia':state?.occupied?'Terpakai':'Tersedia'
+          return <div key={item.id} role="group" aria-label={`Kartu ${item.name}`} className="relative min-w-0">
+            <button type="button" aria-label={item.name} aria-describedby={taken ? occupiedHint : undefined} aria-haspopup="dialog" title={`${item.name}: ${label}`} onClick={() => setViewing(item.id)} className={'flex aspect-square w-full min-w-0 items-center justify-center rounded-xl border border-[#454d5b] bg-[#1c222e] px-4 pb-8 pt-20 text-center text-sm text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5] ' + (taken || !item.active ? 'opacity-60' : 'hover:border-[#24cbc5] hover:bg-[#303640]')}><span className="line-clamp-3 [overflow-wrap:anywhere]">{item.name}</span></button>
+            {canManage&&<button type="button" aria-label={`Edit meja ${item.name}`} title="Edit meja" className="absolute left-3 top-3 grid size-11 place-items-center rounded-lg text-white hover:bg-[#303640] focus-visible:outline-2 focus-visible:outline-[#24cbc5]" onClick={()=>setEditing(item)}><Pencil aria-hidden="true" className="size-4"/></button>}
+            <TableAvailability draft={draft} refreshing={refreshing} table={item as RestaurantTable} occupied={taken} label={label} saved={()=>{setNotice('Status meja tersimpan.');refreshView()}}/>
+            {canManage&&<button type="button" aria-label={`Hapus meja ${item.name}`} className="absolute right-3 top-3 grid size-11 place-items-center rounded-lg text-[#ffb4ae] hover:bg-[#303640] focus-visible:outline-2 focus-visible:outline-[#24cbc5]" onClick={()=>{deletePacket.current=null;setDeleteError('');setDeleting(item as RestaurantTable)}}><X aria-hidden="true" className="size-4"/></button>}
           </div>
-          <p id={occupiedHint} className="mt-3 text-xs leading-5 text-[#c5cbd5]">
-            Meja pudar sedang terpakai atau dikunci untuk reservasi dan tidak dapat dipilih untuk pesanan baru. Tekan meja untuk melihat detail.
-          </p>
-          {!visible.length && <p className="py-8 text-sm text-[#c5cbd5]">Belum ada meja yang sesuai.</p>}
-        </div>
-      ) : (
+        })}
+      </div>
+      <p id={occupiedHint} className="mt-3 text-xs leading-5 text-[#c5cbd5]">Meja pudar belum tersedia atau dikunci untuk reservasi. Setelah pelanggan pergi, pilih Tersedia secara manual. Pembayaran tidak melepas meja. Tekan meja untuk melihat detail.</p>
+      {!visible.length && <p className="py-8 text-sm text-[#c5cbd5]">Belum ada meja yang sesuai.</p>}
+    </div> : (
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-[#454d5b] text-[#c5cbd5]">
@@ -369,75 +229,16 @@ export function RestaurantResources({
           {!visible.length && <p className="py-8 text-sm text-[#c5cbd5]">Belum ada menu yang sesuai.</p>}
         </div>
       )}
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-[#c5cbd5]">
-        <span>
-          {visible.length} {title}
-        </span>
-        <div className="flex gap-2">
-          <button disabled={!page} onClick={() => setPage((v) => v - 1)} className={restaurantButton}>
-            Sebelumnya
-          </button>
-          <button disabled={(page + 1) * 25 >= visible.length} onClick={() => setPage((v) => v + 1)} className={restaurantButton}>
-            Berikutnya
-          </button>
-        </div>
-      </div>
-      {resource === 'table' && selectedTable && (
-        <RestaurantDialog title={`Detail ${selectedTable.name}`} busy={false} close={() => setViewing(null)}>
-          <dl className="space-y-4 text-sm">
-            <div>
-              <dt className="text-[#c5cbd5]">Nama / nomor meja</dt>
-              <dd className="mt-1 break-words text-white [overflow-wrap:anywhere]">{selectedTable.name}</dd>
-            </div>
-            <div>
-              <dt className="text-[#c5cbd5]">Kapasitas</dt>
-              <dd className="mt-1 text-white">{selectedTable.capacity} orang</dd>
-            </div>
-            <div>
-              <dt className="text-[#c5cbd5]">Status</dt>
-              <dd className="mt-1 text-white">
-                {!selectedTable.active
-                  ? 'Nonaktif'
-                  : occupied && reserved
-                  ? 'Masih terpakai menjelang reservasi'
-                  : occupied
-                  ? 'Terpakai'
-                  : reserved
-                  ? 'Dikunci untuk reservasi'
-                  : 'Tersedia'}
-              </dd>
-            </div>
-          </dl>
-          <p className="mt-5 text-sm leading-6 text-[#c5cbd5]">
-            {!selectedTable.active
-              ? 'Meja nonaktif tidak dapat dipilih untuk pesanan baru.'
-              : occupied
-              ? 'Meja ini memiliki pesanan yang belum dibayar.'
-              : reserved
-              ? 'Meja ini dikunci sesuai waktu penguncian yang diatur owner. Periksa halaman Reservasi sebelum menerima tamu.'
-              : 'Belum ada pesanan terbuka pada meja ini.'}
-          </p>
-          <div className="mt-5 flex justify-end">
-            <button
-              type="button"
-              onClick={() => {
-                setViewing(null)
-                setEditing(selectedTable)
-              }}
-              className={restaurantPrimary}
-            >
-              Ubah meja
-            </button>
-          </div>
-        </RestaurantDialog>
-      )}
-
-      {/* Confirmation Dialog for Menu Deletion (Requirement 3) */}
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-[#c5cbd5]"><span>{visible.length} {title}</span><div className="flex gap-2"><button disabled={!page} onClick={() => setPage(v => v - 1)} className={restaurantButton}>Sebelumnya</button><button disabled={(page + 1) * 25 >= visible.length} onClick={() => setPage(v => v + 1)} className={restaurantButton}>Berikutnya</button></div></div>
+    {resource === 'table' && selectedTable && <RestaurantDialog title={`Detail ${selectedTable.name}`} busy={false} close={() => setViewing(null)}>
+      <dl className="space-y-4 text-sm"><div><dt className="text-[#c5cbd5]">Nama / nomor meja</dt><dd className="mt-1 break-words text-white [overflow-wrap:anywhere]">{selectedTable.name}</dd></div><div><dt className="text-[#c5cbd5]">Kapasitas</dt><dd className="mt-1 text-white">{selectedTable.capacity} orang</dd></div><div><dt className="text-[#c5cbd5]">Status</dt><dd className="mt-1 text-white">{!selectedTable.active ? 'Tidak tersedia' : occupied && reserved ? 'Masih terpakai menjelang reservasi' : occupied ? 'Terpakai' : reserved ? 'Dikunci untuk reservasi' : 'Tersedia'}</dd></div></dl>
+      <p className="mt-5 text-sm leading-6 text-[#c5cbd5]">{!selectedTable.active ? 'Meja dinonaktifkan oleh pengelola dan tidak dapat dipilih untuk pesanan baru.' : occupied ? 'Meja ini masih terpakai. Pembayaran tidak otomatis melepas meja; pilih Tersedia setelah pelanggan pergi.' : reserved ? 'Meja ini dikunci sesuai waktu penguncian yang diatur owner. Periksa halaman Reservasi sebelum menerima tamu.' : 'Belum ada pesanan terbuka pada meja ini.'}</p>
+    </RestaurantDialog>}
       {deletingMenu && (
         <RestaurantDialog
           title={`Hapus Menu "${deletingMenu.name}"?`}
-          busy={deletePending}
-          close={() => !deletePending && setDeletingMenu(null)}
+          busy={menuDeletePending}
+          close={() => !menuDeletePending && setDeletingMenu(null)}
         >
           <div className="space-y-3 text-sm text-[#c5cbd5]">
             <div className="flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-3.5 text-red-300 leading-relaxed">
@@ -453,7 +254,7 @@ export function RestaurantResources({
           <div className="mt-5 flex justify-end gap-3">
             <button
               type="button"
-              disabled={deletePending}
+              disabled={menuDeletePending}
               onClick={() => setDeletingMenu(null)}
               className={restaurantButton}
             >
@@ -461,30 +262,41 @@ export function RestaurantResources({
             </button>
             <button
               type="button"
-              disabled={deletePending}
+              disabled={menuDeletePending}
               onClick={handleConfirmDeleteMenu}
               className="min-h-11 inline-flex items-center justify-center rounded-xl border-0 bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 active:scale-[0.98] transition-all disabled:opacity-50"
             >
-              {deletePending ? 'Menghapus...' : 'Ya, Hapus Menu'}
+              {menuDeletePending ? 'Menghapus...' : 'Ya, Hapus Menu'}
             </button>
           </div>
         </RestaurantDialog>
       )}
+    {editing && <ResourceEditor resource={resource} initial={editing === 'new' ? null : editing} close={() => setEditing(null)} saved={() => { setEditing(null); setNotice(`${resource === 'menu' ? 'Menu' : 'Meja'} tersimpan.`); refreshView() }} />}
+    {deleting&&<RestaurantDialog title="Hapus meja" busy={deletePending} close={()=>setDeleting(null)}><p className="text-sm leading-6">Hapus {deleting.name} dari daftar meja? Riwayat pesanan dan reservasi tetap tersimpan. Meja dengan pesanan atau reservasi aktif harus diselesaikan atau dipindahkan dahulu.</p>{deleteError&&<p role="alert" className="mt-4 text-sm text-[#ffb4ae]">{deleteError}</p>}<div className="mt-5 flex justify-end gap-3"><button disabled={deletePending} onClick={()=>setDeleting(null)} className={restaurantButton}>Batal</button><button disabled={deletePending} onClick={()=>void removeTable()} className={restaurantPrimary}>{deletePending?'Menghapus...':deletePacket.current?'Ulangi permintaan yang sama':'Hapus meja'}</button></div></RestaurantDialog>}
+  </section>
+}
 
-      {editing && (
-        <ResourceEditor
-          resource={resource}
-          initial={editing === 'new' ? null : editing}
-          close={() => setEditing(null)}
-          saved={() => {
-            setEditing(null)
-            setNotice(`${resource === 'menu' ? 'Menu' : 'Meja'} tersimpan.`)
-            router.refresh()
-          }}
-        />
-      )}
-    </section>
-  )
+function TableAvailability({table,occupied,label,saved,refreshing,draft}:{draft:boolean;refreshing:boolean;table:RestaurantTable;occupied:boolean;label:string;saved:()=>void}){
+  const [current,setCurrent]=useState(table),[pending,setPending]=useState(false),[error,setError]=useState(''),busy=useRef(false)
+  const retry=useRef<{input:{id:string;revision:number;request:string};available:boolean}|null>(null)
+  useEffect(()=>{if(!busy.current&&!retry.current)setCurrent(table)},[table])
+  async function change(available:boolean){
+    if(busy.current)return
+    const packet=retry.current||{input:{id:current.id,revision:current.revision,request:crypto.randomUUID()},available}
+    busy.current=true;setPending(true);setError('')
+    try{const result=draft?await saveRestaurantResource('table',packet.input,{name:current.name,capacity:current.capacity,active:packet.available}):await setRestaurantTableAvailability(packet.input,packet.available);if(result.value){retry.current=null;setCurrent(result.value as RestaurantTable);saved()}else{setError(result.error||'Status belum tersimpan.');retry.current=result.uncertain?packet:null}}
+    catch{retry.current=packet;setError('Hasil belum pasti. Ulangi permintaan yang sama atau muat ulang.')}
+    finally{busy.current=false;setPending(false)}
+  }
+  return <>
+    <div className="absolute left-16 right-16 top-3">
+      <SelectInput aria-label={`Status meja ${table.name}`} value={occupied?'busy':current.active?'available':'unavailable'} disabled={pending||refreshing||Boolean(retry.current)} onChange={e=>void change(e.target.value==='available')} className={'!min-h-11 !h-11 !gap-1 !rounded-lg !px-2 !py-2 !text-[11px] [&>span]:flex [&>span]:items-center [&>span]:gap-1.5 [&>span]:!whitespace-normal [&>span]:!overflow-visible [&>span]:break-words [&>span]:before:size-1.5 [&>span]:before:shrink-0 [&>span]:before:rounded-full [&>svg]:!size-3 '+(!occupied&&current.active?'[&>span]:before:bg-[#4ade80]':'[&>span]:before:bg-[#f87171]')}>
+        {occupied&&<option value="busy" disabled>{label}</option>}<option value="available">Tersedia</option><option value="unavailable">Tidak tersedia</option>
+      </SelectInput>
+    </div>
+    {pending&&<p role="status" className="mt-2 text-xs text-[#c5cbd5]">Menyimpan status...</p>}
+    {error&&<div role="alert" className="mt-2 text-xs leading-5 text-[#ffb4ae]">{error}{retry.current&&<button type="button" disabled={pending} onClick={()=>void change(retry.current!.available)} className={restaurantButton+' mt-2 w-full'}>Ulangi permintaan yang sama</button>}</div>}
+  </>
 }
 
 function ResourceEditor({
@@ -821,7 +633,7 @@ function ResourceEditor({
               />
             </RestaurantField>
           )}
-          <label className="flex min-h-11 items-center gap-3 text-sm">
+          {resource==='table'?<RestaurantField label="Meja diaktifkan pengelola"><SelectInput value={active?'available':'unavailable'} onChange={e=>setActive(e.target.value==='available')} className={restaurantInput}><option value="available">Tersedia</option><option value="unavailable">Tidak tersedia</option></SelectInput></RestaurantField>:<label className="flex min-h-11 items-center gap-3 text-sm">
             <input
               type="checkbox"
               className="rounded-full cursor-pointer"
@@ -829,7 +641,7 @@ function ResourceEditor({
               onChange={(e) => setActive(e.target.checked)}
             />
             Aktif
-          </label>
+          </label>}
         </fieldset>
         {error && (
           <p role="alert" className="mt-4 text-sm text-[#ffb4ae]">

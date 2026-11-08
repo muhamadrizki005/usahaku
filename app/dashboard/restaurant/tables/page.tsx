@@ -5,7 +5,7 @@ import { RestaurantResources } from '@/components/restaurant-forms'
 import DashboardSection from '@/components/dashboard-section'
 
 export default async function RestaurantTablesPage() {
-  const { business, supabase } = await requireBusiness(['owner', 'admin'])
+  const { business, supabase, member } = await requireBusiness(['owner', 'admin', 'cashier'])
   if (business.category !== 'restaurant') redirect('/dashboard')
-  return <DashboardSection title="Meja & kapasitas"><RestaurantResources resource="table" tables={await readRestaurantTables(supabase, business.id)} usage={await readRestaurantUsage(supabase, business.id)} /></DashboardSection>
+  return <DashboardSection title="Meja & kapasitas"><RestaurantResources resource="table" canManage={['owner','admin'].includes(member.role)} tables={await readRestaurantTables(supabase, business.id)} usage={await readRestaurantUsage(supabase, business.id)} /></DashboardSection>
 }

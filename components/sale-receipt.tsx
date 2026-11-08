@@ -67,7 +67,10 @@ export default function SaleReceipt({ sale, business, id }: { sale: Sale; busine
       <dl className="receipt-totals receipt-double-rule">
         <ReceiptRow label="Total Item">{sale.lines.length}</ReceiptRow>
         <ReceiptRow label="Subtotal">{rupiah(Number(sale.subtotal))}</ReceiptRow>
-        {business.category!=='barbershop' && sale.product_discount != null && sale.order_discount != null ? <>
+        {business.category==='restaurant' && Number(sale.point_discount)>0 ? <>
+          <ReceiptRow label={fallbackDiscountLabel}>{rupiah(Number(sale.discount)-Number(sale.point_discount))}</ReceiptRow>
+          <ReceiptRow label={`Tukar ${Number(sale.points_redeemed)} poin`}>{rupiah(Number(sale.point_discount))}</ReceiptRow>
+        </> : business.category!=='barbershop' && sale.product_discount != null && sale.order_discount != null ? <>
           <ReceiptRow label="Diskon produk">{rupiah(Number(sale.product_discount))}</ReceiptRow>
           <ReceiptRow label={orderDiscountLabel}>{rupiah(Number(sale.order_discount))}</ReceiptRow>
         </> : <ReceiptRow label={fallbackDiscountLabel}>{rupiah(Number(sale.discount))}</ReceiptRow>}

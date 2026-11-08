@@ -103,6 +103,9 @@ test('preorders, arrival, exact table locks, buffered slots, owner settings and 
  await pay(walkId,1)
  await as(owner)
  await save(preorderId,0,{...d,notes:'Tambah catatan'})
+ assert.equal((await usage()).find((v:any)=>v.id===tables[0]).occupied,true)
+ const tableRevision=(await db.query<any>('select revision from public.restaurant_tables where id=$1',[tables[0]])).rows[0].revision
+ await rpc('set_restaurant_table_availability',[bid,tables[0],tableRevision,randomUUID(),true])
  assert.equal((await usage()).find((v:any)=>v.id===tables[0]).occupied,false)
  const arrivalOp=randomUUID()
  const arrived=await rpc('arrive_restaurant_reservation',[bid,r.id,0,arrivalOp])

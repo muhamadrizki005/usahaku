@@ -5,10 +5,12 @@ import { readRestaurantBilling } from '@/lib/restaurant-billing-server'
 import { readBusinessPayments } from '@/lib/business-payments-server'
 import { readSalonSettings } from '@/lib/salon-server'
 import SalonOperationSettings from '@/components/salon-operation-settings'
+import RestaurantLoyaltySettings from '@/components/restaurant-loyalty-settings'
 
 export default async function SettingsPage() {
   const { user, member, business, supabase } = await requireBusiness(['owner'])
   const payments = await readBusinessPayments(supabase, business.id)
+  const restaurantBilling = business.category === 'restaurant' ? await readRestaurantBilling(supabase,business.id) : null
 
   return (
     <OriginalIdentity
@@ -17,7 +19,7 @@ export default async function SettingsPage() {
       business={business}
       embedded
       payments={payments}
-      restaurantBillingNode={business.category === 'restaurant' ? <RestaurantBillingSettings initial={await readRestaurantBilling(supabase,business.id)}/> : business.category==='barbershop' ? <SalonOperationSettings initial={await readSalonSettings(supabase,business.id)}/> : undefined}
+      restaurantBillingNode={restaurantBilling ? <><RestaurantBillingSettings initial={restaurantBilling}/><RestaurantLoyaltySettings key={restaurantBilling.revision} initial={restaurantBilling}/></> : business.category==='barbershop' ? <SalonOperationSettings initial={await readSalonSettings(supabase,business.id)}/> : undefined}
     />
   )
 }

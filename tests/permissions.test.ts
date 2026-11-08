@@ -8,6 +8,7 @@ test('cashiers keep their own-transaction scope without receiving management pri
   assert.equal(transactionVisibility('admin'), 'business')
   assert.equal(transactionVisibility('owner'), 'business')
   assert.ok(rolesForPath('/dashboard/transactions').includes('cashier'))
+  assert.ok(rolesForPath('/dashboard/restaurant/tables').includes('cashier'))
   for (const path of ['/dashboard', '/dashboard/products', '/dashboard/inventory', '/dashboard/customers', '/dashboard/reports', '/dashboard/assistant', '/dashboard/settings/staff']) {
     assert.equal(rolesForPath(path).includes('cashier'), false)
   }

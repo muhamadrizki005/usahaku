@@ -37,6 +37,13 @@ export function restaurantFailure(input: RestaurantError | string, operation: Op
   const error = typeof input === 'string' ? { code: input } : input
   const code = error?.code || '', message = error?.message || ''
   const reservationMessages = [
+    'Meja masih memiliki pesanan atau reservasi aktif. Selesaikan atau pindahkan terlebih dahulu.',
+    'Member tidak aktif atau tidak ditemukan.',
+    'Nominal poin tidak valid.',
+    'Penukaran poin belum aktif atau member belum dipilih.',
+    'Saldo poin tidak cukup. Muat ulang member.',
+    'Potongan poin melebihi subtotal setelah diskon.',
+    'Saldo poin melampaui batas.',
     'Metode pembayaran berubah. Muat ulang sebelum menerima pembayaran.',
     'Metode pembayaran ini tidak aktif. Pilih metode yang diaktifkan owner.',
     'Pengaturan pajak atau biaya layanan berubah. Muat ulang sebelum pembayaran.',
@@ -58,6 +65,10 @@ export function restaurantFailure(input: RestaurantError | string, operation: Op
   const specific = reasonMessage(error)
   if (specific) return { error: specific, uncertain: false }
   const known: Record<string, string> = {
+    'Table awaits manual release': 'Meja masih ditandai terpakai. Pegawai harus menandainya Tersedia setelah pelanggan meninggalkan meja.',
+    'Unpaid order locks table': 'Meja masih memiliki pesanan belum lunas. Selesaikan atau pindahkan pesanan sebelum melepas meja.',
+    'Reservation locks table': 'Meja sedang dikunci untuk reservasi atau pelanggan reservasi masih dilayani. Selesaikan atau pindahkan reservasi sebelum melepas meja.',
+    'Table disabled by manager': 'Meja dinonaktifkan oleh pengelola. Minta owner/admin mengaktifkannya melalui Edit meja.',
     'Table already occupied': 'Meja ini sedang terpakai oleh pesanan yang belum dibayar. Pilih meja lain atau selesaikan pesanan tersebut.',
     'Menu changed; reload': 'Menu telah diperbarui di tab lain. Tutup editor dan muat ulang sebelum menyimpan.',
     'Table changed; reload': 'Data meja telah diperbarui di tab lain. Tutup editor dan muat ulang sebelum menyimpan.',
