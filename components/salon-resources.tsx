@@ -28,6 +28,8 @@ import {
   saveProductDescription,
   getProductPhoto,
   saveProductPhoto,
+  getProductCostPrice,
+  saveProductCostPrice,
 } from '@/lib/salon-benefits'
 
 const EMPTY_PRODUCTS: CatalogProduct[] = []
@@ -405,19 +407,20 @@ export function SalonResources({
                   </td>
                   <td className="px-3 py-3 text-xs">
                     {row.schedule ? (
-                      <details>
-                        <summary className="cursor-pointer text-[#24cbc5] focus-visible:outline-2 focus-visible:outline-[#24cbc5]">
-                          Lihat jadwal
-                        </summary>
-                        <dl className="mt-2 space-y-1">
-                          {businessDays.map(day => (
-                            <div key={day} className="flex gap-3">
-                              <dt className="w-16 text-[#a4a7ac]">{day}</dt>
-                              <dd className="text-white">{describeHours(row.schedule![day])}</dd>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 min-w-[220px] max-w-[280px]">
+                        {businessDays.map(day => {
+                          const item = row.schedule![day];
+                          const isClosed = !item || item.closed;
+                          return (
+                            <div key={day} className="flex items-center justify-between gap-1 text-[11px] py-0.5">
+                              <span className="font-medium text-[#c5cbd5]">{day}:</span>
+                              <span className={isClosed ? 'text-[#8b949e]' : 'text-[#24cbc5] font-medium'}>
+                                {describeHours(item)}
+                              </span>
                             </div>
-                          ))}
-                        </dl>
-                      </details>
+                          );
+                        })}
+                      </div>
                     ) : (
                       <span className="text-[#a4a7ac]">Belum diatur</span>
                     )}
@@ -1391,7 +1394,7 @@ function SalonProductEditor({
   const [category, setCategory] = useState(initial?.category || 'Styling')
   const [customCategory, setCustomCategory] = useState('')
   const [price, setPrice] = useState(initial ? String(initial.price) : '')
-  const [costPrice, setCostPrice] = useState('')
+  const [costPrice, setCostPrice] = useState(() => (initial?.id ? getProductCostPrice(initial.id) : ''))
   const [stock, setStock] = useState(initial ? String(initial.stock) : '10')
   const [unit, setUnit] = useState(initial?.unit || 'pcs')
   const [customUnit, setCustomUnit] = useState('')
@@ -1536,6 +1539,7 @@ function SalonProductEditor({
 
         // Persist description
         saveProductDescription(id, description)
+        saveProductCostPrice(id, costPrice)
 
         // Persist discount
         if (discountKind !== 'none' && numDiscount > 0) {

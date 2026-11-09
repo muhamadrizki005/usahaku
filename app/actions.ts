@@ -437,7 +437,7 @@ export async function updateAccountAvatar(avatarUrl: string | null): Promise<Act
 
 export async function saveLoyaltySettings(_: ActionState, form: FormData): Promise<ActionState> {
   const { supabase, business } = await requireBusiness(['owner'], true)
-  if (business.category !== 'store') return { error: 'Program poin hanya tersedia untuk usaha toko.' }
+  if (business.category !== 'store' && business.category !== 'barbershop') return { error: 'Program poin hanya tersedia untuk usaha toko dan barbershop/salon.' }
   if (!['true', 'false'].includes(String(form.get('loyaltyActive')))) return { error: 'Pilihan program poin tidak valid.' }
   const parsed = loyaltySettingsSchema.safeParse({ active: form.get('loyaltyActive') === 'true', nominal: form.get('loyaltyPointNominal') })
   if (!parsed.success) return { error: loyaltySaveError('22023') }

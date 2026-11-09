@@ -10,6 +10,7 @@ import {customerSchema,normalizeCustomerPhone,matchesCustomer,type Customer} fro
 import type {Business, Member} from '@/lib/validation'
 import { hasPermission } from '@/lib/auth/rbac'
 import DashboardSection from './dashboard-section'
+import { showSuccessToast, notify } from '@/lib/notifications'
 
 const card='rounded-2xl border border-[#454d5b] bg-[#273242] p-5 shadow-sm'
 const input='mt-1 w-full rounded-lg border border-[#454d5b] bg-[#273242] px-3 py-2.5 text-sm'
@@ -51,7 +52,16 @@ function CustomerEditor({customer,canDeactivate,onClose,onSaved,onLock}:{canDeac
     e?.preventDefault();if(busy.current)return
     if(!request.current){const parsed=customerSchema.safeParse(draft);if(!parsed.success)return setError(parsed.error.issues[0].message);try{normalizeCustomerPhone(parsed.data.phone)}catch(e){return setError((e as Error).message)}const f=new FormData();f.set('id',id);f.set('revision',customer?String(customer.revision):'');f.set('request',crypto.randomUUID());f.set('details',JSON.stringify(parsed.data));request.current=f}
     busy.current=true;setPending(true);setError('')
-    try{const result=await saveCustomer(request.current);if(result.customer)onSaved(result.customer);else{setError(result.error||'Pelanggan belum dapat disimpan.');setUncertain(!!result.uncertain);if(!result.uncertain)request.current=null}}
+    try{const result=await saveCustomer(request.current);if(result.customer){
+      const isEdit = Boolean(customer);
+      showSuccessToast(isEdit ? `Data pelanggan "${result.customer.name}" berhasil diperbarui.` : `Pelanggan "${result.customer.name}" berhasil ditambahkan.`);
+      notify({
+        title: isEdit ? 'Pelanggan Diperbarui' : 'Pelanggan Baru Terdaftar',
+        message: isEdit ? `Data pelanggan "${result.customer.name}" berhasil diperbarui.` : `Pelanggan baru "${result.customer.name}" berhasil ditambahkan.`,
+        category: 'customer',
+      });
+      onSaved(result.customer);
+    }else{setError(result.error||'Pelanggan belum dapat disimpan.');setUncertain(!!result.uncertain);if(!result.uncertain)request.current=null}}
     catch{setUncertain(true);setError('Hasil penyimpanan belum pasti. Coba ulang permintaan yang sama atau muat ulang untuk memeriksa.')}
     finally{busy.current=false;setPending(false)}
   }

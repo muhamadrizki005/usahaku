@@ -171,3 +171,25 @@ export function saveProductPhoto(productId: string, photo: string) {
   } catch {}
 }
 
+
+
+export function getProductCostPrice(productId: string): string {
+  if (typeof window === 'undefined') return ''
+  try {
+    return localStorage.getItem('usahaku_product_cost_price_' + productId) || ''
+  } catch {
+    return ''
+  }
+}
+
+export function saveProductCostPrice(productId: string, costPrice: string) {
+  if (typeof window === 'undefined') return
+  try {
+    if (costPrice.trim()) {
+      localStorage.setItem('usahaku_product_cost_price_' + productId, costPrice.trim())
+    } else {
+      localStorage.removeItem('usahaku_product_cost_price_' + productId)
+    }
+    window.dispatchEvent(new CustomEvent('usahaku:product_cost_price_changed', { detail: { productId, costPrice } }))
+  } catch {}
+}
