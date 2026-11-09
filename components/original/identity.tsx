@@ -605,25 +605,27 @@ export default function OriginalIdentity({
               <BusinessHoursSettings business={business} onNotify={showToast} />
               {business.category === "restaurant" && <div className="mt-6"><RestaurantReservationSettings minutes={business.reservation_lock_minutes ?? 120} revision={business.reservation_settings_revision ?? 0}/></div>}
             </div>
-            {restaurantBillingNode && <div>{restaurantBillingNode}</div>}
+            <div>
+              {restaurantBillingNode}
+              {(paymentSettingsNode || payments) && (
+                <div className={restaurantBillingNode ? "mt-6" : ""}>
+                  {payments ? (
+                    <BusinessPaymentSettings
+                      initial={payments}
+                      businessId={business.id}
+                      onNotify={showToast}
+                    />
+                  ) : React.isValidElement(paymentSettingsNode) ? (
+                    React.cloneElement(paymentSettingsNode as React.ReactElement<any>, {
+                      onNotify: showToast,
+                    })
+                  ) : (
+                    paymentSettingsNode
+                  )}
+                </div>
+              )}
+            </div>
             {business && <div className="lg:col-span-2"><BusinessTaxSettings business={business} canManage={true} /></div>}
-            {(paymentSettingsNode || payments) && (
-              <div>
-                {payments ? (
-                  <BusinessPaymentSettings
-                    initial={payments}
-                    businessId={business.id}
-                    onNotify={showToast}
-                  />
-                ) : React.isValidElement(paymentSettingsNode) ? (
-                  React.cloneElement(paymentSettingsNode as React.ReactElement<any>, {
-                    onNotify: showToast,
-                  })
-                ) : (
-                  paymentSettingsNode
-                )}
-              </div>
-            )}
           </div>
         )}
       </div>

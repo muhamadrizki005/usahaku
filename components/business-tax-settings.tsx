@@ -112,15 +112,13 @@ export default function BusinessTaxSettings({
                 role="switch"
                 aria-checked={t.enabled}
                 onClick={() => updateTax(t.id, { enabled: !t.enabled })}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5] ${
-                  t.enabled ? 'bg-[#24cbc5]' : 'bg-[#303640] border-[#454d5b]'
-                }`}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5] ${t.enabled ? 'bg-[#24cbc5]' : 'bg-[#303640] border-[#454d5b]'
+                  }`}
                 aria-label={`Aktifkan ${t.name}`}
               >
                 <span
-                  className={`pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                    t.enabled ? 'translate-x-5' : 'translate-x-0'
-                  }`}
+                  className={`pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${t.enabled ? 'translate-x-5' : 'translate-x-0'
+                    }`}
                 />
               </button>
 
@@ -243,4 +241,3 @@ export default function BusinessTaxSettings({
     </section>
   )
 }
-

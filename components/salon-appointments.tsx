@@ -169,7 +169,7 @@ export default function SalonAppointments({
         try {
           const p = localStorage.getItem('usahaku_service_photo_' + s.id)
           if (p) sPhotos[s.id] = p
-        } catch {}
+        } catch { }
         sDiscounts[s.id] = getServiceDiscount(s.id, Number(s.price))
       })
       setServicePhotos(sPhotos)
@@ -183,12 +183,12 @@ export default function SalonAppointments({
           getProductDiscount(p.id, p.price) ||
           (p.discountKind && p.discountKind !== 'none'
             ? {
-                enabled: true,
-                kind: p.discountKind,
-                value: p.discountValue || 0,
-                basePrice: p.price,
-                discountedPrice: calculateDiscountedPrice(p.price, p.discountKind, p.discountValue || 0),
-              }
+              enabled: true,
+              kind: p.discountKind,
+              value: p.discountValue || 0,
+              basePrice: p.price,
+              discountedPrice: calculateDiscountedPrice(p.price, p.discountKind, p.discountValue || 0),
+            }
             : null)
       })
       setProductPhotos(pPhotos)
@@ -559,7 +559,7 @@ export default function SalonAppointments({
             form.append('delta', String(p.quantity))
             form.append('reason', `Penjualan kasir salon untuk ${customerName}`)
             await moveCatalogStock(form)
-          } catch {}
+          } catch { }
         }
       } else {
         // Scenario B: Pure product sale (e.g. buying pomade directly)
@@ -719,7 +719,7 @@ export default function SalonAppointments({
     startTransition(() =>
       router.replace(
         '/dashboard/salon/appointments?' +
-          new URLSearchParams({ day: nextDay, page: String(page) })
+        new URLSearchParams({ day: nextDay, page: String(page) })
       )
     )
   }
@@ -782,33 +782,30 @@ export default function SalonAppointments({
               <button
                 type="button"
                 onClick={() => setCatalogFilter('all')}
-                className={`rounded-full px-3 py-1 text-xs font-normal transition cursor-pointer border-0 ${
-                  catalogFilter === 'all'
+                className={`rounded-full px-3 py-1 text-xs font-normal transition cursor-pointer border-0 ${catalogFilter === 'all'
                     ? 'bg-[#1835d9] text-white shadow-xs'
                     : 'bg-[#303640] text-[#c5cbd5] hover:bg-[#3d4653]'
-                }`}
+                  }`}
               >
                 Semua
               </button>
               <button
                 type="button"
                 onClick={() => setCatalogFilter('services')}
-                className={`rounded-full px-3 py-1 text-xs font-normal transition cursor-pointer border-0 ${
-                  catalogFilter === 'services'
+                className={`rounded-full px-3 py-1 text-xs font-normal transition cursor-pointer border-0 ${catalogFilter === 'services'
                     ? 'bg-[#1835d9] text-white shadow-xs'
                     : 'bg-[#303640] text-[#c5cbd5] hover:bg-[#3d4653]'
-                }`}
+                  }`}
               >
                 Layanan ({foundation.services.filter(s => s.active).length})
               </button>
               <button
                 type="button"
                 onClick={() => setCatalogFilter('products')}
-                className={`rounded-full px-3 py-1 text-xs font-normal transition cursor-pointer border-0 ${
-                  catalogFilter === 'products'
+                className={`rounded-full px-3 py-1 text-xs font-normal transition cursor-pointer border-0 ${catalogFilter === 'products'
                     ? 'bg-[#1835d9] text-white shadow-xs'
                     : 'bg-[#303640] text-[#c5cbd5] hover:bg-[#3d4653]'
-                }`}
+                  }`}
               >
                 Produk ({products.filter(p => p.active).length})
               </button>
@@ -868,7 +865,7 @@ export default function SalonAppointments({
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between gap-1 px-1 pt-1 border-t border-[#454d5b]/40">
+                  <div className="flex items-center justify-between gap-1 px-1 pt-1">
                     <div className="min-w-0">
                       {discount ? (
                         <div className="flex flex-col">
@@ -910,9 +907,8 @@ export default function SalonAppointments({
                 <article
                   key={'product-' + p.id}
                   onClick={() => setDetailModal({ kind: 'product', item: p })}
-                  className={`group flex flex-col justify-between overflow-hidden rounded-xl border border-[#454d5b] bg-[#1c222e] p-2 text-left transition hover:border-[#06b6d4] focus-visible:outline-2 focus-visible:outline-[#06b6d4] cursor-pointer ${
-                    outOfStock ? 'opacity-50' : ''
-                  }`}
+                  className={`group flex flex-col justify-between overflow-hidden rounded-xl border border-[#454d5b] bg-[#1c222e] p-2 text-left transition hover:border-[#06b6d4] focus-visible:outline-2 focus-visible:outline-[#06b6d4] cursor-pointer ${outOfStock ? 'opacity-50' : ''
+                    }`}
                 >
                   <div>
                     <div className="relative mb-2 aspect-[4/3] w-full overflow-hidden rounded-lg bg-[#273242]">
@@ -928,11 +924,10 @@ export default function SalonAppointments({
                         </div>
                       )}
                       <span
-                        className={`absolute top-1.5 left-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-medium shadow-xs ${
-                          outOfStock
+                        className={`absolute top-1.5 left-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-medium shadow-xs ${outOfStock
                             ? 'bg-red-500/90 text-white'
                             : 'bg-[#273242]/90 text-[#a4a7ac]'
-                        }`}
+                          }`}
                       >
                         {outOfStock ? 'Habis' : `Stok: ${p.stock} ${p.unit}`}
                       </span>
@@ -945,7 +940,7 @@ export default function SalonAppointments({
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between gap-1 px-1 pt-1 border-t border-[#454d5b]/40">
+                  <div className="flex items-center justify-between gap-1 px-1 pt-1">
                     <div className="min-w-0">
                       {discount ? (
                         <div className="flex flex-col">
@@ -1031,11 +1026,10 @@ export default function SalonAppointments({
               <button
                 type="button"
                 onClick={() => setTxMode('walk_in')}
-                className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-medium transition cursor-pointer border-0 ${
-                  txMode === 'walk_in'
+                className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-medium transition cursor-pointer border-0 ${txMode === 'walk_in'
                     ? 'bg-[#1835d9] text-white shadow-xs'
                     : 'bg-[#1c222e] text-[#c5cbd5] hover:bg-[#1c222e]/80'
-                }`}
+                  }`}
               >
                 <Scissors className="size-3.5" />
                 <span>Walk-in (Langsung)</span>
@@ -1043,11 +1037,10 @@ export default function SalonAppointments({
               <button
                 type="button"
                 onClick={() => setTxMode('appointment')}
-                className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-medium transition cursor-pointer border-0 ${
-                  txMode === 'appointment'
+                className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-medium transition cursor-pointer border-0 ${txMode === 'appointment'
                     ? 'bg-[#1835d9] text-white shadow-xs'
                     : 'bg-[#1c222e] text-[#c5cbd5] hover:bg-[#1c222e]/80'
-                }`}
+                  }`}
               >
                 <CalendarDays className="size-3.5" />
                 <span>Janji Temu</span>
@@ -1267,11 +1260,10 @@ export default function SalonAppointments({
                         key={m}
                         type="button"
                         onClick={() => setPaymentMethod(m)}
-                        className={`rounded-xl py-2 px-3 text-xs font-medium transition cursor-pointer border-0 ${
-                          paymentMethod === m
+                        className={`rounded-xl py-2 px-3 text-xs font-medium transition cursor-pointer border-0 ${paymentMethod === m
                             ? 'bg-[#1835d9] text-white shadow-xs'
                             : 'bg-[#1c222e] text-[#c5cbd5] hover:bg-[#1c222e]/80'
-                        }`}
+                          }`}
                       >
                         {paymentLabel[m] || m}
                       </button>
@@ -1598,11 +1590,10 @@ export default function SalonAppointments({
               key={tab.key}
               type="button"
               onClick={() => setVisitStatusFilter(tab.key)}
-              className={`rounded-full px-3 py-1 text-xs font-normal transition cursor-pointer border-0 ${
-                visitStatusFilter === tab.key
+              className={`rounded-full px-3 py-1 text-xs font-normal transition cursor-pointer border-0 ${visitStatusFilter === tab.key
                   ? 'bg-[#1835d9] text-white shadow-xs'
                   : 'bg-[#303640] text-[#c5cbd5] hover:bg-[#3d4653]'
-              }`}
+                }`}
             >
               {tab.label}
             </button>
@@ -1690,17 +1681,16 @@ export default function SalonAppointments({
 
                   <td className="min-w-40 p-3">
                     <span
-                      className={`inline-block rounded-full px-2 py-0.5 text-xs font-normal mb-1.5 ${
-                        v.status === 'finished'
+                      className={`inline-block rounded-full px-2 py-0.5 text-xs font-normal mb-1.5 ${v.status === 'finished'
                           ? 'bg-green-500/15 text-green-400'
                           : v.status === 'in_service'
-                          ? 'bg-[#24cbc5]/15 text-[#24cbc5]'
-                          : v.status === 'waiting'
-                          ? 'bg-amber-500/15 text-amber-400'
-                          : v.status === 'cancelled' || v.status === 'no_show'
-                          ? 'bg-red-500/15 text-red-400'
-                          : 'bg-[#1835d9]/15 text-[#a5b4fc]'
-                      }`}
+                            ? 'bg-[#24cbc5]/15 text-[#24cbc5]'
+                            : v.status === 'waiting'
+                              ? 'bg-amber-500/15 text-amber-400'
+                              : v.status === 'cancelled' || v.status === 'no_show'
+                                ? 'bg-red-500/15 text-red-400'
+                                : 'bg-[#1835d9]/15 text-[#a5b4fc]'
+                        }`}
                     >
                       {salonStatuses[v.status]}
                     </span>
@@ -1855,6 +1845,147 @@ export default function SalonAppointments({
       {/* ======================================================== */}
       {/* 5. EXISTING BOOKING / VISIT ACTION DIALOGS               */}
       {/* ======================================================== */}
+      {/* ======================================================== */}
+      {/* 5. ITEM DETAIL MODAL & EXISTING BOOKING DIALOGS          */}
+      {/* ======================================================== */}
+      {detailModal && (
+        <RestaurantDialog
+          title={detailModal.kind === 'service' ? 'Detail Layanan' : 'Detail Produk'}
+          busy={false}
+          close={() => setDetailModal(null)}
+        >
+          {detailModal.kind === 'service' ? (
+            <div className="space-y-4">
+              <div className="aspect-[16/9] w-full overflow-hidden rounded-xl bg-[#1c222e] border border-[#454d5b]/60 flex items-center justify-center">
+                {servicePhotos[detailModal.item.id] ? (
+                  <img src={servicePhotos[detailModal.item.id]} alt={detailModal.item.name} className="size-full object-cover" />
+                ) : (
+                  <Scissors className="size-12 text-[#24cbc5]/60" />
+                )}
+              </div>
+              <div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium text-[#24cbc5] uppercase tracking-wider">Layanan Barbershop</span>
+                  <span className="rounded-full bg-[#1835d9]/20 px-2.5 py-0.5 text-xs font-medium text-[#93c5fd]">
+                    Durasi: {detailModal.item.duration_minutes} menit
+                  </span>
+                </div>
+                <h3 className="mt-1 text-lg font-bold text-white">{detailModal.item.name}</h3>
+                <div className="mt-2 flex items-baseline gap-2">
+                  {serviceDiscounts[detailModal.item.id] ? (
+                    <>
+                      <span className="text-lg font-bold text-[#24cbc5]">
+                        {rupiah(serviceDiscounts[detailModal.item.id]!.discountedPrice)}
+                      </span>
+                      <del className="text-xs text-[#a4a7ac]">
+                        {rupiah(serviceDiscounts[detailModal.item.id]!.basePrice)}
+                      </del>
+                    </>
+                  ) : (
+                    <span className="text-lg font-bold text-[#24cbc5]">{rupiah(Number(detailModal.item.price))}</span>
+                  )}
+                </div>
+              </div>
+              {getServiceBenefits(detailModal.item.id).length > 0 && (
+                <div className="rounded-xl border border-[#454d5b]/60 bg-[#1c222e] p-3 space-y-2">
+                  <p className="text-xs font-semibold text-[#c5cbd5]">Fasilitas / Benefit Layanan:</p>
+                  <ul className="space-y-1">
+                    {getServiceBenefits(detailModal.item.id).map((b, i) => (
+                      <li key={i} className="flex items-center gap-2 text-xs text-[#a4a7ac]">
+                        <span className="text-[#24cbc5]">✓</span>
+                        <span>{b}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <div className="flex gap-2 pt-2 border-t border-[#454d5b]/60">
+                <button
+                  type="button"
+                  onClick={() => setDetailModal(null)}
+                  className={button + ' flex-1 !py-2.5'}
+                >
+                  Tutup
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    addServiceToCart(detailModal.item)
+                    setDetailModal(null)
+                  }}
+                  className={primary + ' flex-1 flex items-center justify-center gap-1.5 border-0 !py-2.5'}
+                >
+                  <Plus className="size-4" />
+                  <span>Tambah ke Keranjang</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="aspect-[16/9] w-full overflow-hidden rounded-xl bg-[#1c222e] border border-[#454d5b]/60 flex items-center justify-center">
+                {productPhotos[detailModal.item.id] ? (
+                  <img src={productPhotos[detailModal.item.id]} alt={detailModal.item.name} className="size-full object-cover" />
+                ) : (
+                  <Package className="size-12 text-[#24cbc5]/60" />
+                )}
+              </div>
+              <div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium text-[#24cbc5] uppercase tracking-wider">{detailModal.item.category || 'Produk'}</span>
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${detailModal.item.stock > 0 ? 'bg-[#24cbc5]/15 text-[#24cbc5]' : 'bg-red-500/20 text-[#ffb4ae]'}`}>
+                    {detailModal.item.stock > 0 ? `Stok: ${detailModal.item.stock} ${detailModal.item.unit}` : 'Habis'}
+                  </span>
+                </div>
+                <h3 className="mt-1 text-lg font-bold text-white">{detailModal.item.name}</h3>
+                <p className="mt-0.5 text-xs text-[#a4a7ac]">SKU: {detailModal.item.sku || '—'}</p>
+                <div className="mt-2 flex items-baseline gap-2">
+                  {productDiscounts[detailModal.item.id] ? (
+                    <>
+                      <span className="text-lg font-bold text-[#06b6d4]">
+                        {rupiah(productDiscounts[detailModal.item.id]!.discountedPrice)}
+                      </span>
+                      <del className="text-xs text-[#a4a7ac]">
+                        {rupiah(productDiscounts[detailModal.item.id]!.basePrice)}
+                      </del>
+                    </>
+                  ) : (
+                    <span className="text-lg font-bold text-[#06b6d4]">{rupiah(detailModal.item.price)}</span>
+                  )}
+                  <span className="text-xs text-[#a4a7ac]">/ {detailModal.item.unit}</span>
+                </div>
+              </div>
+              {getProductDescription(detailModal.item.id) && (
+                <div className="rounded-xl border border-[#454d5b]/60 bg-[#1c222e] p-3">
+                  <p className="text-xs font-semibold text-[#c5cbd5] mb-1">Deskripsi Produk:</p>
+                  <p className="text-xs text-[#a4a7ac] leading-relaxed">{getProductDescription(detailModal.item.id)}</p>
+                </div>
+              )}
+              <div className="flex gap-2 pt-2 border-t border-[#454d5b]/60">
+                <button
+                  type="button"
+                  onClick={() => setDetailModal(null)}
+                  className={button + ' flex-1 !py-2.5'}
+                >
+                  Tutup
+                </button>
+                <button
+                  type="button"
+                  disabled={detailModal.item.stock <= 0}
+                  onClick={() => {
+                    addProductToCart(detailModal.item)
+                    setDetailModal(null)
+                  }}
+                  className={primary + ' flex-1 flex items-center justify-center gap-1.5 border-0 !py-2.5 disabled:opacity-40'}
+                >
+                  <Plus className="size-4" />
+                  <span>Tambah ke Keranjang</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </RestaurantDialog>
+      )}
+
       {dialog?.kind === 'edit' && (
         <BookingDialog
           key={dialog.visit?.id || 'new'}
@@ -1983,8 +2114,8 @@ function BookingDialog({
           title: initial
             ? 'Kunjungan salon diperbarui'
             : walkIn
-            ? 'Walk-in dicatat'
-            : 'Janji temu baru dibuat',
+              ? 'Walk-in dicatat'
+              : 'Janji temu baru dibuat',
           message: `Kunjungan untuk "${customer}" berhasil disimpan.`,
           category: 'appointment',
         })
@@ -2046,11 +2177,11 @@ function BookingDialog({
                 deposit:
                   !initial && deposit
                     ? {
-                        amount: deposit,
-                        payment: method,
-                        confirmed,
-                        paymentRevision: payments.revision,
-                      }
+                      amount: deposit,
+                      payment: method,
+                      confirmed,
+                      paymentRevision: payments.revision,
+                    }
                     : null,
               },
             })
@@ -2187,10 +2318,10 @@ function BookingDialog({
                       {!p.active
                         ? ' / nonaktif'
                         : !p.schedule
-                        ? ' / jadwal belum diatur'
-                        : !compatible(p)
-                        ? ' / tidak menangani pilihan'
-                        : ''}
+                          ? ' / jadwal belum diatur'
+                          : !compatible(p)
+                            ? ' / tidak menangani pilihan'
+                            : ''}
                     </option>
                   ))}
               </SelectInput>
@@ -2297,8 +2428,8 @@ function BookingDialog({
             {pending
               ? 'Menyimpan...'
               : locked
-              ? 'Ulangi permintaan yang sama'
-              : 'Simpan kunjungan'}
+                ? 'Ulangi permintaan yang sama'
+                : 'Simpan kunjungan'}
           </button>
         </div>
       </form>
@@ -2371,9 +2502,8 @@ function VisitActionDialog({
         } else if (kind === 'cancel') {
           notify({
             title: noShow ? 'Pelanggan tidak hadir' : 'Kunjungan dibatalkan',
-            message: `Kunjungan ${visit.customer} telah ${
-              noShow ? 'ditandai tidak hadir' : 'dibatalkan'
-            }.`,
+            message: `Kunjungan ${visit.customer} telah ${noShow ? 'ditandai tidak hadir' : 'dibatalkan'
+              }.`,
             category: 'appointment',
           })
         } else if (kind === 'deposit') {
@@ -2403,8 +2533,8 @@ function VisitActionDialog({
     kind === 'deposit'
       ? 'Catat DP salon'
       : kind === 'pay'
-      ? 'Pembayaran salon'
-      : 'Batalkan kunjungan / tidak hadir'
+        ? 'Pembayaran salon'
+        : 'Batalkan kunjungan / tidak hadir'
   const blockedRefund = kind === 'cancel' && Number(visit.deposit_amount) > 0 && !manage
 
   return (
@@ -2419,8 +2549,8 @@ function VisitActionDialog({
             kind === 'cancel'
               ? { reason, refundConfirmed: confirmed }
               : kind === 'deposit'
-              ? { amount, payment: method, confirmed, paymentRevision: payments.revision }
-              : {
+                ? { amount, payment: method, confirmed, paymentRevision: payments.revision }
+                : {
                   payment: method,
                   received: method === 'cash' ? amount : String(pricing?.balance ?? 0),
                   discountKind,
@@ -2644,12 +2774,12 @@ function VisitActionDialog({
             {pending
               ? 'Menyimpan...'
               : locked
-              ? 'Ulangi permintaan yang sama'
-              : kind === 'cancel'
-              ? 'Simpan pembatalan'
-              : kind === 'deposit'
-              ? 'Simpan DP'
-              : 'Catat pembayaran'}
+                ? 'Ulangi permintaan yang sama'
+                : kind === 'cancel'
+                  ? 'Simpan pembatalan'
+                  : kind === 'deposit'
+                    ? 'Simpan DP'
+                    : 'Catat pembayaran'}
           </button>
         </div>
       </form>
