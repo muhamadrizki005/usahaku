@@ -27,7 +27,9 @@ import {
 import {
   type AppNotification,
   type NotificationCategory,
-  NOTIFICATION_CATEGORIES,
+  getNotificationCategories,
+  notificationMatchesCategory,
+  getNotificationCategoryDefinition,
   loadAppNotifications,
   markAllAppNotificationsAsRead,
   markAppNotificationAsRead,
@@ -325,14 +327,11 @@ export function DashboardShell({
 
                     {/* Category Filter Pills */}
                     <div className="mt-3 flex flex-wrap gap-1.5 pb-2.5 border-b border-[#454d5b]/60">
-                      {NOTIFICATION_CATEGORIES.map(cat => {
+                      {getNotificationCategories(business?.category).map(cat => {
                         const isActive = activeCategory === cat.key
                         const count = cat.key === 'all'
                           ? notifications.length
-                          : notifications.filter(n => {
-                              if (cat.key === 'product') return n.category === 'product' || n.category === 'inventory' || n.category === 'low_stock'
-                              return n.category === cat.key
-                            }).length
+                          : notifications.filter(n => notificationMatchesCategory(n.category, cat.key, business?.category)).length
                         return (
                           <button
                             key={cat.key}
@@ -358,17 +357,9 @@ export function DashboardShell({
                     {/* Notifications List */}
                     <div className="mt-3 space-y-2.5 max-h-80 overflow-y-auto pr-1">
                       {notifications
-                        .filter(n => {
-                          if (activeCategory === 'all') return true
-                          if (activeCategory === 'product') return n.category === 'product' || n.category === 'inventory' || n.category === 'low_stock'
-                          return n.category === activeCategory
-                        })
+                        .filter(n => notificationMatchesCategory(n.category, activeCategory, business?.category))
                         .map(notif => {
-                          const catDef =
-                            NOTIFICATION_CATEGORIES.find(c => c.key === notif.category) ||
-                            (notif.category === 'inventory' || notif.category === 'low_stock'
-                              ? NOTIFICATION_CATEGORIES.find(c => c.key === 'product')
-                              : NOTIFICATION_CATEGORIES.find(c => c.key === 'system'))
+                          const catDef = getNotificationCategoryDefinition(notif.category, business?.category)
 
                           return (
                             <div
@@ -469,18 +460,14 @@ export function DashboardShell({
                       )}
 
                       {/* Empty state when no notifications in active filter */}
-                      {notifications.filter(n => {
-                        if (activeCategory === 'all') return true
-                        if (activeCategory === 'product') return n.category === 'product' || n.category === 'inventory' || n.category === 'low_stock'
-                        return n.category === activeCategory
-                      }).length === 0 && (!lowStock.length || (activeCategory !== 'all' && activeCategory !== 'product')) && (
+                      {notifications.filter(n => notificationMatchesCategory(n.category, activeCategory, business?.category)).length === 0 && (!lowStock.length || (activeCategory !== 'all' && activeCategory !== 'product')) && (
                         <div className="py-8 text-center text-xs text-[#a4a7ac]">
                           <Bell className="mx-auto size-6 text-[#454d5b] mb-2" />
                           <span>
                             {activeCategory === 'all'
                               ? 'Belum ada notifikasi.'
                               : `Belum ada notifikasi untuk kategori ${
-                                  NOTIFICATION_CATEGORIES.find(c => c.key === activeCategory)?.label || ''
+                                  getNotificationCategories(business?.category).find(c => c.key === activeCategory)?.label || ''
                                 }.`}
                           </span>
                         </div>

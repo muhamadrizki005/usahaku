@@ -6,11 +6,34 @@ import type { Member } from '@/lib/validation'
 import RestaurantOverview from '@/components/restaurant-overview'
 import { readRestaurantOverview, readRestaurantMenu, readRestaurantTables, readRestaurantUsage } from '@/lib/restaurant-server'
 import SalonOverview from '@/components/salon-overview'
-import { readSalonFoundation,readSalonSummary } from '@/lib/salon-server'
+import { readSalonFoundation, readSalonSummary, readSalonVisits } from '@/lib/salon-server'
 import {wibDate} from '@/lib/reports'
 export default async function DashboardPage() {
   const { business, member, supabase } = await requireBusiness(undefined, false, 'overview:view')
-  if (business.category === 'barbershop') {const day=wibDate(new Date()),from=new Date(day+'T00:00:00+07:00').toISOString(),to=new Date(Date.parse(from)+86400000).toISOString();const [data,summary]=await Promise.all([readSalonFoundation(supabase,business.id),readSalonSummary(supabase,business.id,from,to)]);return <SalonOverview business={business} data={data} summary={summary} day={day}/>}
+  if (business.category === 'barbershop') {
+    const day = wibDate(new Date())
+    const from = new Date(day + 'T00:00:00+07:00').toISOString()
+    const to = new Date(Date.parse(from) + 86400000).toISOString()
+    const [data, summary, sales, products, visits] = await Promise.all([
+      readSalonFoundation(supabase, business.id),
+      readSalonSummary(supabase, business.id, from, to),
+      readSales(supabase, business.id),
+      readProducts(supabase, business.id),
+      readSalonVisits(supabase, business.id, from, to, 0),
+    ])
+    return (
+      <SalonOverview
+        business={business}
+        member={member}
+        data={data}
+        summary={summary}
+        sales={sales}
+        products={products}
+        visits={visits}
+        day={day}
+      />
+    )
+  }
   if (business.category === 'restaurant') {
     const [summary, sales, menu, tables, usage] = await Promise.all([
       readRestaurantOverview(supabase, business.id),
