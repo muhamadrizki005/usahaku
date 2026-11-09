@@ -20,6 +20,7 @@ import type { Business } from "@/lib/validation";
 import { createBusiness, saveBusinessProfile, saveLoyaltySettings } from "@/app/actions";
 import RestaurantReservationSettings from "@/components/restaurant-reservation-settings";
 import BusinessPaymentSettings from "@/components/business-payment-settings";
+import BusinessTaxSettings from "@/components/business-tax-settings";
 import type { PaymentSettings } from "@/lib/business-payments";
 import React from "react";
 import { useRouter } from "next/navigation";
@@ -447,7 +448,7 @@ export default function OriginalIdentity({
             </section>
 
             {/* Program Poin Member Section */}
-            {category === "toko" && <section className="rounded-xl border border-[#454d5b] bg-[#273242] p-5 shadow-sm transition-all duration-300">
+            {(category === "toko" || category === "barbershop") && <section className="rounded-xl border border-[#454d5b] bg-[#273242] p-5 shadow-sm transition-all duration-300">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="font-medium text-white">Program Poin Member</h2>
@@ -605,6 +606,7 @@ export default function OriginalIdentity({
               {business.category === "restaurant" && <div className="mt-6"><RestaurantReservationSettings minutes={business.reservation_lock_minutes ?? 120} revision={business.reservation_settings_revision ?? 0}/></div>}
             </div>
             {restaurantBillingNode && <div>{restaurantBillingNode}</div>}
+            {business && <div className="lg:col-span-2"><BusinessTaxSettings business={business} canManage={true} /></div>}
             {(paymentSettingsNode || payments) && (
               <div>
                 {payments ? (

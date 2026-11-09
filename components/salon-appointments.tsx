@@ -50,8 +50,12 @@ import {
   User,
   Tag,
   Search,
+  Plus,
 } from 'lucide-react'
 import { notify, showSuccessToast, showErrorToast } from '@/lib/notifications'
+import { createPortal } from 'react-dom'
+import SaleReceipt from './sale-receipt'
+import { getBusinessTaxes, calculateCustomTaxes, type CustomTaxItem } from '@/lib/business-taxes'
 import type { CatalogProduct } from '@/lib/catalog'
 import {
   type SalonDiscount,
@@ -232,8 +236,32 @@ export default function SalonAppointments({
   const [checkoutPending, setCheckoutPending] = useState(false)
   const [checkoutError, setCheckoutError] = useState('')
 
-  // Struk / Receipt Modal
+  // Struk / Receipt Modal & Thermal Print
   const [receipt, setReceipt] = useState<CompletedSaleReceipt | null>(null)
+  const [receiptSale, setReceiptSale] = useState<Sale | null>(null)
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
+  // Item Detail Modal
+  const [detailModal, setDetailModal] = useState<
+    | { kind: 'service'; item: SalonService }
+    | { kind: 'product'; item: CatalogProduct }
+    | null
+  >(null)
+
+  // Custom Taxes
+  const [customTaxes, setCustomTaxes] = useState<CustomTaxItem[]>(() =>
+    getBusinessTaxes(business.id, 'barbershop', settings.tax_rate || 0)
+  )
+  useEffect(() => {
+    const reload = () => setCustomTaxes(getBusinessTaxes(business.id, 'barbershop', settings.tax_rate || 0))
+    window.addEventListener('storage', reload)
+    window.addEventListener('usahaku:custom_taxes_changed', reload)
+    return () => {
+      window.removeEventListener('storage', reload)
+      window.removeEventListener('usahaku:custom_taxes_changed', reload)
+    }
+  }, [business.id, settings.tax_rate])
 
   // Visits filter & pagination
   const [visitStatusFilter, setVisitStatusFilter] = useState<string>('all')
@@ -249,37 +277,34 @@ export default function SalonAppointments({
   // ===============================
   const addServiceToCart = (service: SalonService) => {
     if (!service.active) return
+    const existing = cart.find(item => item.id === service.id && item.kind === 'service')
+    if (existing) {
+      showSuccessToast(`Layanan "${service.name}" sudah ada di keranjang.`)
+      return
+    }
     const discount = serviceDiscounts[service.id]
     const discountedPrice = discount ? discount.discountedPrice : Number(service.price)
 
-    // Find default practitioner who can do this service
     const defaultPractitioner =
       activePractitioners.find(p => p.service_ids.includes(service.id)) ||
       activePractitioners[0]
 
-    setCart(prev => {
-      // If service already in cart, don't duplicate or add another with unique uuid
-      const existing = prev.find(item => item.id === service.id && item.kind === 'service')
-      if (existing) {
-        showSuccessToast(`Layanan "${service.name}" sudah ada di keranjang.`)
-        return prev
-      }
-      return [
-        ...prev,
-        {
-          id: service.id,
-          kind: 'service',
-          name: service.name,
-          price: Number(service.price),
-          discountedPrice,
-          discountInfo: discount,
-          quantity: 1,
-          duration: service.duration_minutes,
-          photo: servicePhotos[service.id],
-          practitionerId: defaultPractitioner?.id,
-        },
-      ]
-    })
+    setCart(prev => [
+      ...prev,
+      {
+        id: service.id,
+        kind: 'service',
+        name: service.name,
+        price: Number(service.price),
+        discountedPrice,
+        discountInfo: discount,
+        quantity: 1,
+        duration: service.duration_minutes,
+        photo: servicePhotos[service.id],
+        practitionerId: defaultPractitioner?.id,
+      },
+    ])
+    showSuccessToast(`Layanan "${service.name}" ditambahkan ke keranjang.`)
   }
 
   const addProductToCart = (prod: CatalogProduct) => {
@@ -287,16 +312,17 @@ export default function SalonAppointments({
       showErrorToast(`Stok "${prod.name}" habis.`)
       return
     }
+    const existing = cart.find(item => item.id === prod.id && item.kind === 'product')
+    if (existing && existing.quantity >= prod.stock) {
+      showErrorToast(`Stok "${prod.name}" tersisa ${prod.stock} ${prod.unit}.`)
+      return
+    }
     const discount = productDiscounts[prod.id]
     const discountedPrice = discount ? discount.discountedPrice : prod.price
 
     setCart(prev => {
-      const existing = prev.find(item => item.id === prod.id && item.kind === 'product')
-      if (existing) {
-        if (existing.quantity >= prod.stock) {
-          showErrorToast(`Stok "${prod.name}" tersisa ${prod.stock} ${prod.unit}.`)
-          return prev
-        }
+      const ex = prev.find(item => item.id === prod.id && item.kind === 'product')
+      if (ex) {
         return prev.map(item =>
           item.id === prod.id && item.kind === 'product'
             ? { ...item, quantity: item.quantity + 1 }
@@ -320,6 +346,7 @@ export default function SalonAppointments({
         },
       ]
     })
+    showSuccessToast(`Produk "${prod.name}" ditambahkan ke keranjang.`)
   }
 
   const updateProductQty = (productId: string, qty: number) => {
@@ -380,8 +407,8 @@ export default function SalonAppointments({
   }
 
   const netBeforeTax = Math.max(0, afterItemDiscountSubtotal - transDiscountReduction)
-  const taxRate = Number(settings.tax_rate) || 0
-  const taxAmount = Math.round((netBeforeTax * taxRate) / 100)
+  const activeTaxes = calculateCustomTaxes(netBeforeTax, customTaxes)
+  const taxAmount = activeTaxes.reduce((sum, t) => sum + t.amount, 0)
   const totalAmount = netBeforeTax + taxAmount
 
   const numCashReceived = Number(cashReceived) || 0
@@ -811,44 +838,43 @@ export default function SalonAppointments({
               const discountedPrice = discount ? discount.discountedPrice : Number(s.price)
 
               return (
-                <button
+                <article
                   key={'service-' + s.id}
-                  type="button"
-                  onClick={() => addServiceToCart(s)}
-                  className="group flex flex-col overflow-hidden rounded-xl border border-[#454d5b] bg-[#1c222e] p-2 text-left transition hover:border-[#24cbc5] focus-visible:outline-2 focus-visible:outline-[#24cbc5] active:scale-98 cursor-pointer"
+                  onClick={() => setDetailModal({ kind: 'service', item: s })}
+                  className="group flex flex-col justify-between overflow-hidden rounded-xl border border-[#454d5b] bg-[#1c222e] p-2 text-left transition hover:border-[#24cbc5] focus-visible:outline-2 focus-visible:outline-[#24cbc5] cursor-pointer"
                 >
-                  <div className="relative mb-2 aspect-[4/3] w-full overflow-hidden rounded-lg bg-[#273242]">
-                    {photo ? (
-                      <img
-                        src={photo}
-                        alt={s.name}
-                        className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="grid size-full place-items-center text-[#a4a7ac]">
-                        <Scissors className="size-6 text-[#24cbc5]/60" />
-                      </div>
-                    )}
-                    <span className="absolute top-1.5 left-1.5 rounded-md bg-[#1835d9]/90 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-xs">
-                      {s.duration_minutes} mnt
-                    </span>
+                  <div>
+                    <div className="relative mb-2 aspect-[4/3] w-full overflow-hidden rounded-lg bg-[#273242]">
+                      {photo ? (
+                        <img
+                          src={photo}
+                          alt={s.name}
+                          className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="grid size-full place-items-center text-[#a4a7ac]">
+                          <Scissors className="size-6 text-[#24cbc5]/60" />
+                        </div>
+                      )}
+                      <span className="absolute top-1.5 left-1.5 rounded-md bg-[#1835d9]/90 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-xs">
+                        {s.duration_minutes} mnt
+                      </span>
+                    </div>
+
+                    <div className="px-1 pb-1">
+                      <span className="line-clamp-2 break-words text-xs sm:text-sm font-medium text-white">
+                        {s.name}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="flex flex-1 flex-col justify-between gap-1 px-1 pb-1">
-                    <span className="line-clamp-2 break-words text-xs sm:text-sm font-medium text-white">
-                      {s.name}
-                    </span>
-                    <div>
+                  <div className="flex items-center justify-between gap-1 px-1 pt-1 border-t border-[#454d5b]/40">
+                    <div className="min-w-0">
                       {discount ? (
-                        <div className="flex flex-wrap items-baseline gap-1.5">
+                        <div className="flex flex-col">
                           <del className="text-[10px] text-[#a4a7ac]">{rupiah(discount.basePrice)}</del>
                           <span className="text-xs sm:text-sm font-semibold text-[#24cbc5]">
                             {rupiah(discountedPrice)}
-                          </span>
-                          <span className="rounded bg-[#24cbc5]/20 px-1 text-[9px] font-medium text-[#24cbc5]">
-                            {discount.kind === 'amount'
-                              ? `-${rupiah(discount.value)}`
-                              : `-${discount.value}%`}
                           </span>
                         </div>
                       ) : (
@@ -857,8 +883,19 @@ export default function SalonAppointments({
                         </span>
                       )}
                     </div>
+                    <button
+                      type="button"
+                      aria-label={`Tambah ${s.name} ke keranjang`}
+                      onClick={e => {
+                        e.stopPropagation()
+                        addServiceToCart(s)
+                      }}
+                      className="grid size-7 sm:size-8 place-items-center rounded-lg bg-[#1835d9] text-white hover:bg-[#132c9e] active:scale-95 transition border-0 shadow-sm shrink-0 cursor-pointer"
+                    >
+                      <Plus className="size-4" />
+                    </button>
                   </div>
-                </button>
+                </article>
               )
             })}
 
@@ -870,51 +907,51 @@ export default function SalonAppointments({
               const outOfStock = p.stock <= 0
 
               return (
-                <button
+                <article
                   key={'product-' + p.id}
-                  type="button"
-                  disabled={outOfStock}
-                  onClick={() => addProductToCart(p)}
-                  className="group flex flex-col overflow-hidden rounded-xl border border-[#454d5b] bg-[#1c222e] p-2 text-left transition hover:border-[#06b6d4] focus-visible:outline-2 focus-visible:outline-[#06b6d4] active:scale-98 disabled:opacity-45 cursor-pointer"
+                  onClick={() => setDetailModal({ kind: 'product', item: p })}
+                  className={`group flex flex-col justify-between overflow-hidden rounded-xl border border-[#454d5b] bg-[#1c222e] p-2 text-left transition hover:border-[#06b6d4] focus-visible:outline-2 focus-visible:outline-[#06b6d4] cursor-pointer ${
+                    outOfStock ? 'opacity-50' : ''
+                  }`}
                 >
-                  <div className="relative mb-2 aspect-[4/3] w-full overflow-hidden rounded-lg bg-[#273242]">
-                    {photo ? (
-                      <img
-                        src={photo}
-                        alt={p.name}
-                        className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="grid size-full place-items-center text-[#a4a7ac]">
-                        <Package className="size-6 text-[#06b6d4]/60" />
-                      </div>
-                    )}
-                    <span
-                      className={`absolute top-1.5 left-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-medium shadow-xs ${
-                        outOfStock
-                          ? 'bg-red-500/90 text-white'
-                          : 'bg-[#273242]/90 text-[#a4a7ac]'
-                      }`}
-                    >
-                      {outOfStock ? 'Habis' : `Stok: ${p.stock} ${p.unit}`}
-                    </span>
+                  <div>
+                    <div className="relative mb-2 aspect-[4/3] w-full overflow-hidden rounded-lg bg-[#273242]">
+                      {photo ? (
+                        <img
+                          src={photo}
+                          alt={p.name}
+                          className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="grid size-full place-items-center text-[#a4a7ac]">
+                          <Package className="size-6 text-[#06b6d4]/60" />
+                        </div>
+                      )}
+                      <span
+                        className={`absolute top-1.5 left-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-medium shadow-xs ${
+                          outOfStock
+                            ? 'bg-red-500/90 text-white'
+                            : 'bg-[#273242]/90 text-[#a4a7ac]'
+                        }`}
+                      >
+                        {outOfStock ? 'Habis' : `Stok: ${p.stock} ${p.unit}`}
+                      </span>
+                    </div>
+
+                    <div className="px-1 pb-1">
+                      <span className="line-clamp-2 break-words text-xs sm:text-sm font-medium text-white">
+                        {p.name}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="flex flex-1 flex-col justify-between gap-1 px-1 pb-1">
-                    <span className="line-clamp-2 break-words text-xs sm:text-sm font-medium text-white">
-                      {p.name}
-                    </span>
-                    <div>
+                  <div className="flex items-center justify-between gap-1 px-1 pt-1 border-t border-[#454d5b]/40">
+                    <div className="min-w-0">
                       {discount ? (
-                        <div className="flex flex-wrap items-baseline gap-1.5">
+                        <div className="flex flex-col">
                           <del className="text-[10px] text-[#a4a7ac]">{rupiah(discount.basePrice)}</del>
                           <span className="text-xs sm:text-sm font-semibold text-[#06b6d4]">
                             {rupiah(discountedPrice)}
-                          </span>
-                          <span className="rounded bg-[#06b6d4]/20 px-1 text-[9px] font-medium text-[#06b6d4]">
-                            {discount.kind === 'amount'
-                              ? `-${rupiah(discount.value)}`
-                              : `-${discount.value}%`}
                           </span>
                         </div>
                       ) : (
@@ -923,8 +960,20 @@ export default function SalonAppointments({
                         </span>
                       )}
                     </div>
+                    <button
+                      type="button"
+                      disabled={outOfStock}
+                      aria-label={`Tambah ${p.name} ke keranjang`}
+                      onClick={e => {
+                        e.stopPropagation()
+                        addProductToCart(p)
+                      }}
+                      className="grid size-7 sm:size-8 place-items-center rounded-lg bg-[#1835d9] text-white hover:bg-[#132c9e] active:scale-95 transition border-0 shadow-sm shrink-0 cursor-pointer disabled:opacity-40"
+                    >
+                      <Plus className="size-4" />
+                    </button>
                   </div>
-                </button>
+                </article>
               )
             })}
           </div>
@@ -1075,10 +1124,10 @@ export default function SalonAppointments({
                           {/* Practitioner selector for service */}
                           {item.kind === 'service' && (
                             <div className="mt-2">
-                              <select
+                              <SelectInput
                                 value={item.practitionerId || ''}
                                 onChange={e => updateServicePractitioner(item.id, e.target.value)}
-                                className="w-full rounded-lg border border-[#454d5b] bg-[#1c222e] px-2 py-1 text-xs text-white outline-none focus:border-[#24cbc5]"
+                                className={input + ' !py-1 !text-xs w-full'}
                               >
                                 <option value="" disabled>
                                   Pilih penata/terapis...
@@ -1089,7 +1138,7 @@ export default function SalonAppointments({
                                     {!p.service_ids.includes(item.id) ? ' (umum)' : ''}
                                   </option>
                                 ))}
-                              </select>
+                              </SelectInput>
                             </div>
                           )}
 
@@ -1197,12 +1246,12 @@ export default function SalonAppointments({
                       <span>-{rupiah(transDiscountReduction)}</span>
                     </div>
                   )}
-                  {taxRate > 0 && (
-                    <div className="flex justify-between text-[#c5cbd5]">
-                      <span>Pajak ({taxRate}%)</span>
-                      <span>{rupiah(taxAmount)}</span>
+                  {activeTaxes.map(t => (
+                    <div key={t.id} className="flex justify-between text-[#c5cbd5]">
+                      <span>{t.name} ({t.rate}%)</span>
+                      <span>+{rupiah(t.amount)}</span>
                     </div>
-                  )}
+                  ))}
                   <div className="flex items-center justify-between border-t border-[#454d5b]/60 pt-2 text-sm font-semibold text-white">
                     <span>Total Tagihan</span>
                     <span className="text-base text-[#24cbc5]">{rupiah(totalAmount)}</span>

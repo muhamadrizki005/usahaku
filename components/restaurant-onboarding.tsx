@@ -9,6 +9,7 @@ import { rupiah } from '@/lib/pos'
 import { BusinessHeader } from './business-header'
 import { BusinessLogo } from './business-logo'
 import BusinessPaymentSettings from './business-payment-settings'
+import BusinessTaxSettings from './business-tax-settings'
 import type { PaymentSettings } from '@/lib/business-payments'
 import { BusinessHoursSettings } from './business-hours'
 import { StaffManagement } from './staff-management'
@@ -84,7 +85,10 @@ export function RestaurantSetup({ business, members, menu, tables, ownerName, ro
             <h2 className="mb-4 text-lg font-normal">Staf & akses</h2>
             <StaffManagement members={members} business={business} initialRoles={roles} roleCounts={roleCounts} />
           </section>
-          {payments && (
+          <div id="restaurant-taxes" className="scroll-mt-24">
+              <BusinessTaxSettings business={business} canManage />
+            </div>
+            {payments && (
             <div id="restaurant-payments" className="scroll-mt-24">
               <BusinessPaymentSettings initial={payments} businessId={business.id} />
             </div>

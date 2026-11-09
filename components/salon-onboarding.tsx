@@ -12,6 +12,7 @@ import { BusinessLogo } from './business-logo'
 import { BusinessHoursSettings } from './business-hours'
 import { StaffManagement } from './staff-management'
 import { SalonResources } from './salon-resources'
+import BusinessTaxSettings from './business-tax-settings'
 import { restaurantPanel as panel, restaurantButton as button, restaurantPrimary as primary } from './restaurant-forms'
 
 type Props = {
@@ -105,6 +106,11 @@ export function SalonSetup({ business, ownerName, data, members, roles, roleCoun
         {/* Business Hours */}
         <div id="salon-hours" className="mt-6 scroll-mt-24">
           <BusinessHoursSettings business={business} />
+        </div>
+
+        {/* Business Taxes */}
+        <div id="salon-taxes" className="mt-6 scroll-mt-24">
+          <BusinessTaxSettings business={business} canManage />
         </div>
 
         {/* Staff & Access */}

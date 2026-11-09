@@ -17,7 +17,7 @@ import { enabledPaymentMethods, type PaymentSettings } from '@/lib/business-paym
 import { restaurantMemberQuote, type RestaurantBilling } from '@/lib/restaurant-billing'
 import DashboardSection from './dashboard-section'
 import { RestaurantDialog, RestaurantField, restaurantPanel, restaurantInput, restaurantButton, restaurantPrimary } from './restaurant-forms'
-import { UtensilsCrossed, ChevronUp, ChevronDown, Trash2 } from 'lucide-react'
+import { UtensilsCrossed, ChevronUp, ChevronDown, Trash2, Plus } from 'lucide-react'
 import { notify, showErrorToast } from '@/lib/notifications'
 
 function useRestaurantRequest() {
@@ -99,6 +99,7 @@ function getMenuDiscountInfo(id: string): MenuDiscountStored | null {
 }
 
 function OrderEditor({ initial, menu, tables, usage, close, saved, reservation, member, checkout }: { reservation?: Reservation | null; initial: RestaurantOrder | null; menu: RestaurantMenu[]; tables: RestaurantTable[]; usage: import('@/lib/restaurant').RestaurantTableUsage[]; close: () => void; saved: (value:NonNullable<RestaurantResult['value']>) => void; member:Member; checkout:ReactNode }) {
+  const [menuDetail, setMenuDetail] = useState<RestaurantMenu | null>(null)
   const [menuDiscounts, setMenuDiscounts] = useState<Record<string, MenuDiscountStored>>({})
   const [menuPhotos, setMenuPhotos] = useState<Record<string, string>>({})
   const menuKey = menu.map(m => m.id + ':' + m.revision).join(',')
@@ -160,30 +161,33 @@ function OrderEditor({ initial, menu, tables, usage, close, saved, reservation, 
     </div>
     <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 2xl:grid-cols-4">
       {visibleMenu.map(m=>(
-        <button
+        <article
           key={m.id}
-          type="button"
-          disabled={!m.available||request.pending||request.locked||Boolean(checkout)}
-          onClick={()=>add(m.id)}
-          aria-label={`Tambah ${m.name}`}
-          className="group flex min-h-36 min-w-0 flex-col overflow-hidden rounded-xl border border-[#454d5b] bg-[#1c222e] p-2.5 text-left text-sm transition hover:border-[#24cbc5] focus-visible:outline-2 focus-visible:outline-[#24cbc5] disabled:opacity-45"
+          onClick={()=>setMenuDetail(m)}
+          className={`group flex min-h-36 min-w-0 flex-col justify-between overflow-hidden rounded-xl border border-[#454d5b] bg-[#1c222e] p-2.5 text-left text-sm transition hover:border-[#24cbc5] focus-visible:outline-2 focus-visible:outline-[#24cbc5] cursor-pointer ${
+            !m.available ? 'opacity-50' : ''
+          }`}
         >
-          <div className="relative mb-2 aspect-[4/3] w-full overflow-hidden rounded-lg bg-[#273242]">
-            {menuPhotos[m.id] ? (
-              <img src={menuPhotos[m.id]} alt={m.name} className="size-full object-cover transition-transform duration-300 group-hover:scale-105" />
-            ) : (
-              <div className="grid size-full place-items-center text-[#a4a7ac]">
-                <UtensilsCrossed className="size-6 text-[#24cbc5]/50" />
-              </div>
-            )}
-            {!m.available && (
-              <div className="absolute inset-0 grid place-items-center bg-black/60 font-medium text-[#ffb4ae]">
-                Habis
-              </div>
-            )}
+          <div>
+            <div className="relative mb-2 aspect-[4/3] w-full overflow-hidden rounded-lg bg-[#273242]">
+              {menuPhotos[m.id] ? (
+                <img src={menuPhotos[m.id]} alt={m.name} className="size-full object-cover transition-transform duration-300 group-hover:scale-105" />
+              ) : (
+                <div className="grid size-full place-items-center text-[#a4a7ac]">
+                  <UtensilsCrossed className="size-6 text-[#24cbc5]/50" />
+                </div>
+              )}
+              {!m.available && (
+                <div className="absolute inset-0 grid place-items-center bg-black/60 font-medium text-[#ffb4ae]">
+                  Habis
+                </div>
+              )}
+            </div>
+            <div className="px-1 pb-1">
+              <span className="line-clamp-2 break-words font-medium text-white">{m.name}</span>
+            </div>
           </div>
-          <div className="flex flex-1 flex-col justify-between gap-1.5 px-1 pb-1">
-            <span className="line-clamp-2 break-words font-medium text-white">{m.name}</span>
+          <div className="flex items-center justify-between gap-1 px-1 pt-1 border-t border-[#454d5b]/40">
             <div>
               <span className="font-semibold text-[#24cbc5]">{rupiah(Number(m.price))}</span>
               {menuDiscounts[m.id] && (
@@ -194,11 +198,82 @@ function OrderEditor({ initial, menu, tables, usage, close, saved, reservation, 
                 </span>
               )}
             </div>
+            <button
+              type="button"
+              disabled={!m.available || request.pending || request.locked || Boolean(checkout)}
+              aria-label={`Tambah ${m.name}`}
+              onClick={(e)=>{
+                e.stopPropagation()
+                add(m.id)
+              }}
+              className="grid size-8 place-items-center rounded-lg bg-[#1835d9] text-white hover:bg-[#132c9e] active:scale-95 transition border-0 shadow-sm shrink-0 cursor-pointer disabled:opacity-40"
+            >
+              <Plus className="size-4" />
+            </button>
           </div>
-        </button>
+        </article>
       ))}
     </div>
     {!visibleMenu.length&&<p className="py-8 text-sm text-[#c5cbd5]">Tidak ada menu yang sesuai.</p>}
+    {menuDetail && (
+      <RestaurantDialog
+        title="Detail Menu"
+        busy={false}
+        close={() => setMenuDetail(null)}
+      >
+        <div className="space-y-4">
+          <div className="aspect-[16/9] w-full overflow-hidden rounded-xl bg-[#1c222e] border border-[#454d5b]/60 flex items-center justify-center">
+            {menuPhotos[menuDetail.id] ? (
+              <img src={menuPhotos[menuDetail.id]} alt={menuDetail.name} className="size-full object-cover" />
+            ) : (
+              <UtensilsCrossed className="size-12 text-[#24cbc5]/60" />
+            )}
+          </div>
+          <div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-medium text-[#24cbc5] uppercase tracking-wider">
+                {menuDetail.category}
+              </span>
+              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${menuDetail.available ? 'bg-[#24cbc5]/15 text-[#24cbc5]' : 'bg-red-500/20 text-[#ffb4ae]'}`}>
+                {menuDetail.available ? 'Tersedia' : 'Habis'}
+              </span>
+            </div>
+            <h3 className="mt-1 text-lg font-bold text-white">{menuDetail.name}</h3>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-lg font-bold text-[#24cbc5]">{rupiah(Number(menuDetail.price))}</span>
+              {menuDiscounts[menuDetail.id] && (
+                <span className="rounded bg-[#24cbc5]/20 px-1.5 py-0.5 text-xs font-semibold text-[#24cbc5]">
+                  {menuDiscounts[menuDetail.id].kind === 'amount'
+                    ? `-${rupiah(menuDiscounts[menuDetail.id].value || menuDiscounts[menuDetail.id].amount || 0)}`
+                    : `-${menuDiscounts[menuDetail.id].value || menuDiscounts[menuDetail.id].percent}%`}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="flex gap-2 pt-2 border-t border-[#454d5b]/60">
+            <button
+              type="button"
+              onClick={() => setMenuDetail(null)}
+              className={restaurantButton + ' flex-1 !py-2.5'}
+            >
+              Tutup
+            </button>
+            <button
+              type="button"
+              disabled={!menuDetail.available || request.pending || request.locked || Boolean(checkout)}
+              onClick={() => {
+                add(menuDetail.id)
+                setMenuDetail(null)
+              }}
+              className={restaurantPrimary + ' flex-1 flex items-center justify-center gap-1.5 border-0 !py-2.5'}
+            >
+              <Plus className="size-4" />
+              <span>Tambah ke Keranjang</span>
+            </button>
+          </div>
+        </div>
+      </RestaurantDialog>
+    )}
    </section>
    <section className={restaurantPanel} aria-label="Keranjang restoran">
     <div className="mb-4 flex items-center justify-between gap-3"><h2 className="text-lg">Keranjang aktif</h2><span className="text-xs text-[#c5cbd5]">{lines.reduce((n,l)=>n+l.quantity,0)} porsi</span></div>

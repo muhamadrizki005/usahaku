@@ -10,6 +10,7 @@ import { CustomerSearch } from './customer-search'
 import { customerSchema, normalizeCustomerPhone, type PosCustomer } from '@/lib/customers'
 import type { Member } from '@/lib/validation'
 import { hasPermission } from '@/lib/auth/rbac'
+import { showSuccessToast, notify } from '@/lib/notifications'
 
 interface PosCustomerPickerProps {
   value: PosCustomer | null
