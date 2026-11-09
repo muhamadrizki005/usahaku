@@ -9,6 +9,7 @@ import type { RestaurantMenu, RestaurantTable } from '@/lib/restaurant'
 import RestaurantTableRefresh from './restaurant-table-refresh'
 import { rupiah } from '@/lib/pos'
 import { discountedPrice } from '@/lib/product-pricing'
+import { notify, showErrorToast } from '@/lib/notifications'
 
 export const restaurantPanel = 'rounded-2xl border border-[#454d5b]/50 bg-[#273242] p-5 sm:p-6'
 export const restaurantInput = 'mt-1 min-h-11 w-full min-w-0 rounded-lg border border-[#454d5b] bg-[#273242] px-3 py-2 text-sm font-normal text-white placeholder:font-normal placeholder:text-[#a4a7ac] outline-none focus:border-[#24cbc5] focus:ring-2 focus:ring-[#24cbc5]/20'
@@ -35,7 +36,7 @@ export function RestaurantDialog({ title, busy, close, children, wide = false }:
     return () => { el.removeEventListener('keydown', trap); el.close(); if (previous instanceof HTMLElement && previous.isConnected) previous.focus() }
   }, [])
   return <dialog ref={dialog} aria-label={title} onCancel={e => { e.preventDefault(); if (!busy) close() }} className={`m-auto max-h-[90dvh] w-[calc(100%_-_2rem)] ${wide ? 'max-w-[900px]' : 'max-w-[640px]'} overflow-y-auto rounded-2xl border border-[#454d5b] bg-[#273242] p-5 text-white backdrop:bg-black/60 sm:p-6`}>
-    <div className="mb-5 flex items-center justify-between gap-4"><h2 className="min-w-0 break-words text-lg font-semibold [overflow-wrap:anywhere]">{title}</h2><button type="button" disabled={busy} onClick={close} aria-label="Tutup dialog" className={restaurantButton + ' shrink-0'}>Tutup</button></div>{children}
+    <div className="mb-5 flex items-center justify-between gap-4"><h2 className="min-w-0 break-words text-lg font-semibold [overflow-wrap:anywhere]">{title}</h2><button type="button" disabled={busy} onClick={close} aria-label="Tutup dialog" className="grid size-9 place-items-center rounded-lg text-[#a4a7ac] hover:bg-[#303640] hover:text-white transition-colors focus-visible:outline-2 focus-visible:outline-[#24cbc5] shrink-0"><X aria-hidden="true" className="size-5" /></button></div>{children}
   </dialog>
 }
 
@@ -47,18 +48,66 @@ export function RestaurantResources({ resource, menu = [], tables = [], usage = 
   const [viewing, setViewing] = useState<string | null>(null)
   const [deleting,setDeleting]=useState<RestaurantTable|null>(null),[deletePending,setDeletePending]=useState(false),[deleteError,setDeleteError]=useState('')
   const deletePacket=useRef<{id:string;revision:number;request:string}|null>(null),deleteBusy=useRef(false)
-  async function removeTable(){if(!deleting||deleteBusy.current)return;deleteBusy.current=true;setDeletePending(true);setDeleteError('');const packet=deletePacket.current||{id:deleting.id,revision:deleting.revision,request:crypto.randomUUID()};deletePacket.current=packet;try{const result=await deleteRestaurantTable(packet);if(result.value){setDeleting(null);deletePacket.current=null;setNotice('Meja dihapus dari daftar. Riwayat tetap tersimpan.');refreshView()}else{setDeleteError(result.error||'Meja belum dihapus.');if(!result.uncertain)deletePacket.current=null}}catch{setDeleteError('Hasil belum pasti. Ulangi permintaan yang sama atau muat ulang.')}finally{deleteBusy.current=false;setDeletePending(false)}}
+  async function removeTable(){
+    if(!deleting||deleteBusy.current)return
+    deleteBusy.current=true
+    setDeletePending(true)
+    setDeleteError('')
+    const packet=deletePacket.current||{id:deleting.id,revision:deleting.revision,request:crypto.randomUUID()}
+    deletePacket.current=packet
+    try{
+      const result=await deleteRestaurantTable(packet)
+      if(result.value){
+        const deletedName = deleting.name
+        const deletedBizId = deleting.business_id
+        setDeleting(null)
+        deletePacket.current=null
+        setNotice('Meja dihapus dari daftar. Riwayat tetap tersimpan.')
+        notify({
+          businessId: deletedBizId,
+          title: 'Meja dihapus',
+          message: `Meja "${deletedName}" berhasil dihapus.`,
+          category: 'table',
+        })
+        refreshView()
+      }else{
+        setDeleteError(result.error||'Meja belum dihapus.')
+        showErrorToast(result.error||'Meja belum dihapus.')
+        if(!result.uncertain)deletePacket.current=null
+      }
+    }catch{
+      setDeleteError('Hasil belum pasti. Ulangi permintaan yang sama atau muat ulang.')
+      showErrorToast('Hasil belum pasti. Ulangi permintaan yang sama atau muat ulang.')
+    }finally{
+      deleteBusy.current=false
+      setDeletePending(false)
+    }
+  }
   const [deletingMenu,setDeletingMenu]=useState<RestaurantMenu|null>(null),[menuDeletePending,setMenuDeletePending]=useState(false)
   const occupiedHint = useId()
   // Track menu photos from persistent browser storage
   const [menuPhotos, setMenuPhotos] = useState<Record<string, string>>({})
   // Track menu discounts from persistent browser storage
-  const [menuDiscounts, setMenuDiscounts] = useState<Record<string, { percent: number; basePrice: number }>>({})
+  const [menuDiscounts, setMenuDiscounts] = useState<Record<string, { kind?: 'percent' | 'amount'; value?: number; percent: number; amount?: number; basePrice: number }>>({})
+  // Track table descriptions from persistent browser storage
+  const [tableDescriptions, setTableDescriptions] = useState<Record<string, string>>({})
 
   useEffect(() => {
-    if (resource !== 'menu' || typeof window === 'undefined') return
+    if (typeof window === 'undefined') return
+    if (resource === 'table') {
+      const descs: Record<string, string> = {}
+      tables.forEach(t => {
+        try {
+          const d = localStorage.getItem('usahaku_table_desc_' + t.id) || t.description || ''
+          if (d) descs[t.id] = d
+        } catch {}
+      })
+      setTableDescriptions(descs)
+      return
+    }
+    if (resource !== 'menu') return
     const photos: Record<string, string> = {}
-    const discounts: Record<string, { percent: number; basePrice: number }> = {}
+    const discounts: Record<string, { kind?: 'percent' | 'amount'; value?: number; percent: number; amount?: number; basePrice: number }> = {}
     menu.forEach((item) => {
       try {
         const savedPhoto = localStorage.getItem('usahaku_menu_photo_' + item.id)
@@ -74,7 +123,7 @@ export function RestaurantResources({ resource, menu = [], tables = [], usage = 
     })
     setMenuPhotos(photos)
     setMenuDiscounts(discounts)
-  }, [resource, menu])
+  }, [resource, menu, tables])
 
   const selectedTable = tables.find(table => table.id === viewing)
   const occupied = Boolean(selectedTable && usage.some(item => item.id === selectedTable.id && item.occupied))
@@ -98,18 +147,29 @@ export function RestaurantResources({ resource, menu = [], tables = [], usage = 
         }
       )
       if (result.value) {
+        const deletedName = deletingMenu.name
+        const deletedBizId = deletingMenu.business_id
         try {
           localStorage.removeItem('usahaku_menu_photo_' + deletingMenu.id)
+          localStorage.removeItem('usahaku_menu_discount_' + deletingMenu.id)
         } catch {}
-        setNotice(`Menu "${deletingMenu.name}" berhasil dihapus.`)
+        setNotice(`Menu "${deletedName}" berhasil dihapus.`)
+        notify({
+          businessId: deletedBizId,
+          title: 'Menu dinonaktifkan',
+          message: `Menu "${deletedName}" berhasil dinonaktifkan.`,
+          category: 'product',
+        })
         setDeletingMenu(null)
         refreshView()
       } else {
         setNotice(result.error || 'Gagal menghapus menu.')
+        showErrorToast(result.error || 'Gagal menghapus menu.')
         setDeletingMenu(null)
       }
     } catch {
       setNotice('Gagal menghapus menu. Periksa koneksi dan coba lagi.')
+      showErrorToast('Gagal menghapus menu. Periksa koneksi dan coba lagi.')
       setDeletingMenu(null)
     } finally {
       setMenuDeletePending(false)
@@ -126,11 +186,21 @@ export function RestaurantResources({ resource, menu = [], tables = [], usage = 
         {visible.slice(page * 25, page * 25 + 25).map(item => {
           const taken = usage.some(table => table.id === item.id && (table.occupied || table.reserved))
           const state=usage.find(t=>t.id===item.id),label=!item.active?'Tidak tersedia':state?.occupied&&state.reserved?'Terpakai / reservasi':state?.reserved?'Reservasi':(item as RestaurantTable).occupied_until_released?'Tidak tersedia':state?.occupied?'Terpakai':'Tersedia'
+          const desc = tableDescriptions[item.id] || (item as RestaurantTable).description
           return <div key={item.id} role="group" aria-label={`Kartu ${item.name}`} className="relative min-w-0">
-            <button type="button" aria-label={item.name} aria-describedby={taken ? occupiedHint : undefined} aria-haspopup="dialog" title={`${item.name}: ${label}`} onClick={() => setViewing(item.id)} className={'flex aspect-square w-full min-w-0 items-center justify-center rounded-xl border border-[#454d5b] bg-[#1c222e] px-4 pb-8 pt-20 text-center text-sm text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5] ' + (taken || !item.active ? 'opacity-60' : 'hover:border-[#24cbc5] hover:bg-[#303640]')}><span className="line-clamp-3 [overflow-wrap:anywhere]">{item.name}</span></button>
-            {canManage&&<button type="button" aria-label={`Edit meja ${item.name}`} title="Edit meja" className="absolute left-3 top-3 grid size-11 place-items-center rounded-lg text-white hover:bg-[#303640] focus-visible:outline-2 focus-visible:outline-[#24cbc5]" onClick={()=>setEditing(item)}><Pencil aria-hidden="true" className="size-4"/></button>}
+            <button type="button" aria-label={item.name} aria-describedby={taken ? occupiedHint : undefined} aria-haspopup="dialog" title={`${item.name}: ${label}`} onClick={() => setViewing(item.id)} className={'flex aspect-square w-full min-w-0 items-center justify-center rounded-xl border border-[#454d5b] bg-[#1c222e] px-4 pb-8 pt-20 text-center text-sm text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5] ' + (taken || !item.active ? 'opacity-60' : 'hover:border-[#24cbc5] hover:bg-[#303640]')}>
+              <div className="flex flex-col items-center justify-center text-center px-1">
+                <span className="line-clamp-2 font-medium text-white [overflow-wrap:anywhere]">{item.name}</span>
+                {desc ? (
+                  <p className="mt-1 line-clamp-2 text-xs text-[#a4a7ac] leading-relaxed [overflow-wrap:anywhere]">
+                    {desc}
+                  </p>
+                ) : null}
+              </div>
+            </button>
+            {canManage&&<button type="button" aria-label={`Edit meja ${item.name}`} title="Edit meja" className="absolute left-3 top-3 grid size-9 place-items-center rounded-full bg-[#1835d9] text-white hover:bg-[#132c9e] active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-[#24cbc5] border-0 shadow-sm" onClick={()=>setEditing(item)}><Pencil aria-hidden="true" className="size-4"/></button>}
             <TableAvailability draft={draft} refreshing={refreshing} table={item as RestaurantTable} occupied={taken} label={label} saved={()=>{setNotice('Status meja tersimpan.');refreshView()}}/>
-            {canManage&&<button type="button" aria-label={`Hapus meja ${item.name}`} className="absolute right-3 top-3 grid size-11 place-items-center rounded-lg text-[#ffb4ae] hover:bg-[#303640] focus-visible:outline-2 focus-visible:outline-[#24cbc5]" onClick={()=>{deletePacket.current=null;setDeleteError('');setDeleting(item as RestaurantTable)}}><X aria-hidden="true" className="size-4"/></button>}
+            {canManage&&<button type="button" aria-label={`Hapus meja ${item.name}`} title="Hapus meja" className="absolute right-3 top-3 grid size-9 place-items-center rounded-full bg-red-500 text-white hover:bg-red-600 active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-[#24cbc5] border-0 shadow-sm" onClick={()=>{deletePacket.current=null;setDeleteError('');setDeleting(item as RestaurantTable)}}><X aria-hidden="true" className="size-4"/></button>}
           </div>
         })}
       </div>
@@ -179,7 +249,9 @@ export function RestaurantResources({ resource, menu = [], tables = [], usage = 
                             <div className="flex items-center gap-1.5 text-[11px] text-[#a4a7ac]">
                               <span className="line-through">{rupiah(Number(menuDiscounts[item.id].basePrice))}</span>
                               <span className="rounded bg-[#24cbc5]/15 px-1 py-0.2 text-[10px] font-medium text-[#24cbc5]">
-                                -{menuDiscounts[item.id].percent}%
+                                {menuDiscounts[item.id].kind === 'amount'
+                                  ? `-${rupiah(menuDiscounts[item.id].value || menuDiscounts[item.id].amount || 0)}`
+                                  : `-${menuDiscounts[item.id].value || menuDiscounts[item.id].percent}%`}
                               </span>
                             </div>
                           </div>
@@ -231,7 +303,12 @@ export function RestaurantResources({ resource, menu = [], tables = [], usage = 
       )}
     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-[#c5cbd5]"><span>{visible.length} {title}</span><div className="flex gap-2"><button disabled={!page} onClick={() => setPage(v => v - 1)} className={restaurantButton}>Sebelumnya</button><button disabled={(page + 1) * 25 >= visible.length} onClick={() => setPage(v => v + 1)} className={restaurantButton}>Berikutnya</button></div></div>
     {resource === 'table' && selectedTable && <RestaurantDialog title={`Detail ${selectedTable.name}`} busy={false} close={() => setViewing(null)}>
-      <dl className="space-y-4 text-sm"><div><dt className="text-[#c5cbd5]">Nama / nomor meja</dt><dd className="mt-1 break-words text-white [overflow-wrap:anywhere]">{selectedTable.name}</dd></div><div><dt className="text-[#c5cbd5]">Kapasitas</dt><dd className="mt-1 text-white">{selectedTable.capacity} orang</dd></div><div><dt className="text-[#c5cbd5]">Status</dt><dd className="mt-1 text-white">{!selectedTable.active ? 'Tidak tersedia' : occupied && reserved ? 'Masih terpakai menjelang reservasi' : occupied ? 'Terpakai' : reserved ? 'Dikunci untuk reservasi' : 'Tersedia'}</dd></div></dl>
+      <dl className="space-y-4 text-sm">
+        <div><dt className="text-[#c5cbd5]">Nama / nomor meja</dt><dd className="mt-1 break-words text-white [overflow-wrap:anywhere]">{selectedTable.name}</dd></div>
+        <div><dt className="text-[#c5cbd5]">Kapasitas</dt><dd className="mt-1 text-white">{selectedTable.capacity} orang</dd></div>
+        {tableDescriptions[selectedTable.id] && <div><dt className="text-[#c5cbd5]">Deskripsi meja</dt><dd className="mt-1 break-words text-[#a4a7ac] leading-relaxed [overflow-wrap:anywhere]">{tableDescriptions[selectedTable.id]}</dd></div>}
+        <div><dt className="text-[#c5cbd5]">Status</dt><dd className="mt-1 text-white">{!selectedTable.active ? 'Tidak tersedia' : occupied && reserved ? 'Masih terpakai menjelang reservasi' : occupied ? 'Terpakai' : reserved ? 'Dikunci untuk reservasi' : 'Tersedia'}</dd></div>
+      </dl>
       <p className="mt-5 text-sm leading-6 text-[#c5cbd5]">{!selectedTable.active ? 'Meja dinonaktifkan oleh pengelola dan tidak dapat dipilih untuk pesanan baru.' : occupied ? 'Meja ini masih terpakai. Pembayaran tidak otomatis melepas meja; pilih Tersedia setelah pelanggan pergi.' : reserved ? 'Meja ini dikunci sesuai waktu penguncian yang diatur owner. Periksa halaman Reservasi sebelum menerima tamu.' : 'Belum ada pesanan terbuka pada meja ini.'}</p>
     </RestaurantDialog>}
       {deletingMenu && (
@@ -284,17 +361,47 @@ function TableAvailability({table,occupied,label,saved,refreshing,draft}:{draft:
     if(busy.current)return
     const packet=retry.current||{input:{id:current.id,revision:current.revision,request:crypto.randomUUID()},available}
     busy.current=true;setPending(true);setError('')
-    try{const result=draft?await saveRestaurantResource('table',packet.input,{name:current.name,capacity:current.capacity,active:packet.available}):await setRestaurantTableAvailability(packet.input,packet.available);if(result.value){retry.current=null;setCurrent(result.value as RestaurantTable);saved()}else{setError(result.error||'Status belum tersimpan.');retry.current=result.uncertain?packet:null}}
-    catch{retry.current=packet;setError('Hasil belum pasti. Ulangi permintaan yang sama atau muat ulang.')}
+    try{
+      const result=draft?await saveRestaurantResource('table',packet.input,{name:current.name,capacity:current.capacity,active:packet.available}):await setRestaurantTableAvailability(packet.input,packet.available);
+      if(result.value){
+        retry.current=null;
+        setCurrent(result.value as RestaurantTable);
+        notify({
+          businessId: current.business_id,
+          title: 'Status meja diperbarui',
+          message: `Status meja "${current.name}" diubah menjadi ${available ? 'Tersedia' : 'Tidak tersedia'}.`,
+          category: 'table'
+        })
+        saved()
+      }else{
+        setError(result.error||'Status belum tersimpan.');
+        showErrorToast(result.error||'Status belum tersimpan.')
+        retry.current=result.uncertain?packet:null
+      }
+    }
+    catch{
+      retry.current=packet;
+      setError('Hasil belum pasti. Ulangi permintaan yang sama atau muat ulang.')
+      showErrorToast('Hasil belum pasti. Ulangi permintaan yang sama atau muat ulang.')
+    }
     finally{busy.current=false;setPending(false)}
   }
+  const isAvailable = Boolean(current.active && !occupied && !(current as any).occupied_until_released)
   return <>
-    <div className="absolute left-16 right-16 top-3">
-      <SelectInput aria-label={`Status meja ${table.name}`} value={occupied?'busy':current.active?'available':'unavailable'} disabled={pending||refreshing||Boolean(retry.current)} onChange={e=>void change(e.target.value==='available')} className={'!min-h-11 !h-11 !gap-1 !rounded-lg !px-2 !py-2 !text-[11px] [&>span]:flex [&>span]:items-center [&>span]:gap-1.5 [&>span]:!whitespace-normal [&>span]:!overflow-visible [&>span]:break-words [&>span]:before:size-1.5 [&>span]:before:shrink-0 [&>span]:before:rounded-full [&>svg]:!size-3 '+(!occupied&&current.active?'[&>span]:before:bg-[#4ade80]':'[&>span]:before:bg-[#f87171]')}>
-        {occupied&&<option value="busy" disabled>{label}</option>}<option value="available">Tersedia</option><option value="unavailable">Tidak tersedia</option>
+    <div className="absolute left-14 right-14 top-3">
+      <SelectInput
+        aria-label={`Status meja ${table.name}`}
+        contentAlign="center"
+        value={isAvailable ? 'available' : 'unavailable'}
+        disabled={pending||refreshing||Boolean(retry.current)}
+        onChange={e=>void change(e.target.value==='available')}
+        className={'!min-h-9 !h-9 !gap-1 !rounded-lg !px-1.5 !py-1 !text-xs justify-center text-center [&>span]:flex [&>span]:items-center [&>span]:justify-center [&>span]:text-center [&>span]:gap-1.5 [&>span]:!whitespace-normal [&>span]:!overflow-visible [&>span]:break-words [&>span]:before:size-1.5 [&>span]:before:shrink-0 [&>span]:before:rounded-full [&>svg]:!size-3 '+ (isAvailable ? '[&>span]:before:bg-[#4ade80]' : '[&>span]:before:bg-[#f87171]')}
+      >
+        <option value="available">Tersedia</option>
+        <option value="unavailable">Tidak tersedia</option>
       </SelectInput>
     </div>
-    {pending&&<p role="status" className="mt-2 text-xs text-[#c5cbd5]">Menyimpan status...</p>}
+    {pending&&<p role="status" className="mt-2 text-xs text-center text-[#c5cbd5]">Menyimpan status...</p>}
     {error&&<div role="alert" className="mt-2 text-xs leading-5 text-[#ffb4ae]">{error}{retry.current&&<button type="button" disabled={pending} onClick={()=>void change(retry.current!.available)} className={restaurantButton+' mt-2 w-full'}>Ulangi permintaan yang sama</button>}</div>}
   </>
 }
@@ -319,7 +426,15 @@ function ResourceEditor({
   const [custom, setCustom] = useState(initialCategory)
 
   // Discount state for menu
-  const initialDiscount = useRef<{ enabled: boolean; percent: number; basePrice: number } | null>(null)
+  const initialDiscount = useRef<{
+    enabled: boolean
+    kind?: 'percent' | 'amount'
+    value?: number
+    percent?: number
+    amount?: number
+    basePrice: number
+    discountedPrice?: number
+  } | null>(null)
   if (initialDiscount.current === null && resource === 'menu' && initial?.id && typeof window !== 'undefined') {
     try {
       const saved = localStorage.getItem('usahaku_menu_discount_' + initial.id)
@@ -331,9 +446,30 @@ function ResourceEditor({
   }
 
   const [hasDiscount, setHasDiscount] = useState<boolean>(() => Boolean(initialDiscount.current?.enabled))
-  const [discountPercent, setDiscountPercent] = useState<string>(() =>
-    initialDiscount.current ? String(initialDiscount.current.percent) : ''
-  )
+  const [discountKind, setDiscountKind] = useState<'percent' | 'amount'>(() => {
+    if (initialDiscount.current?.kind === 'amount') return 'amount'
+    return 'percent'
+  })
+  const [discountPercent, setDiscountPercent] = useState<string>(() => {
+    if (initialDiscount.current) {
+      return String(initialDiscount.current.percent || initialDiscount.current.value || '')
+    }
+    return ''
+  })
+  const [discountAmount, setDiscountAmount] = useState<string>(() => {
+    if (initialDiscount.current?.kind === 'amount') {
+      return String(initialDiscount.current.amount || initialDiscount.current.value || '')
+    }
+    return ''
+  })
+  const [tableDescription, setTableDescription] = useState<string>(() => {
+    if (resource === 'table' && initial?.id && typeof window !== 'undefined') {
+      try {
+        return localStorage.getItem('usahaku_table_desc_' + initial.id) || (initial as RestaurantTable).description || ''
+      } catch {}
+    }
+    return ''
+  })
   const [price, setPrice] = useState<string>(() => {
     if (initialDiscount.current && initialDiscount.current.basePrice) {
       return String(initialDiscount.current.basePrice)
@@ -349,10 +485,48 @@ function ResourceEditor({
 
   const numericBasePrice = Number(price) || 0
   const numericDiscountPercent = Number(discountPercent.replace(',', '.')) || 0
-  const simulatedPrice =
-    hasDiscount && numericBasePrice >= 0 && numericDiscountPercent > 0 && numericDiscountPercent <= 100
-      ? discountedPrice({ price: numericBasePrice, discountKind: 'percent', discountValue: numericDiscountPercent })
-      : null
+  const numericDiscountAmount = Number(discountAmount.replace(/\D/g, '')) || 0
+
+  let simulatedPrice: number | null = null
+  let discountValidationError = ''
+
+  if (hasDiscount && numericBasePrice >= 0) {
+    if (discountKind === 'percent') {
+      if (discountPercent.trim()) {
+        if (isNaN(numericDiscountPercent) || numericDiscountPercent <= 0 || numericDiscountPercent > 100) {
+          discountValidationError = 'Persentase diskon harus lebih dari 0% dan maksimal 100%.'
+        } else {
+          try {
+            simulatedPrice = discountedPrice({
+              price: numericBasePrice,
+              discountKind: 'percent',
+              discountValue: numericDiscountPercent,
+            })
+          } catch {
+            discountValidationError = 'Diskon tidak valid.'
+          }
+        }
+      }
+    } else if (discountKind === 'amount') {
+      if (discountAmount.trim()) {
+        if (isNaN(numericDiscountAmount) || numericDiscountAmount <= 0) {
+          discountValidationError = 'Nominal diskon harus lebih dari Rp0.'
+        } else if (numericDiscountAmount > numericBasePrice) {
+          discountValidationError = 'Diskon tidak boleh melebihi harga menu.'
+        } else {
+          try {
+            simulatedPrice = discountedPrice({
+              price: numericBasePrice,
+              discountKind: 'amount',
+              discountValue: numericDiscountAmount,
+            })
+          } catch {
+            discountValidationError = 'Diskon tidak valid.'
+          }
+        }
+      }
+    }
+  }
 
   // Photo state for menu (Requirement 2)
   const [photo, setPhoto] = useState<string>(() => {
@@ -400,12 +574,31 @@ function ResourceEditor({
     if (busy.current) return
 
     if (resource === 'menu' && hasDiscount) {
-      if (!discountPercent.trim()) {
-        setError('Isi persentase diskon menu.')
-        return
+      if (discountKind === 'percent') {
+        if (!discountPercent.trim()) {
+          setError('Isi persentase diskon menu.')
+          return
+        }
+        if (isNaN(numericDiscountPercent) || numericDiscountPercent <= 0 || numericDiscountPercent > 100) {
+          setError('Persentase diskon harus lebih dari 0% dan maksimal 100%.')
+          return
+        }
+      } else {
+        if (!discountAmount.trim()) {
+          setError('Isi nominal diskon menu.')
+          return
+        }
+        if (isNaN(numericDiscountAmount) || numericDiscountAmount <= 0) {
+          setError('Nominal diskon harus lebih dari Rp0.')
+          return
+        }
+        if (numericDiscountAmount > numericBasePrice) {
+          setError('Diskon tidak boleh melebihi harga menu.')
+          return
+        }
       }
-      if (isNaN(numericDiscountPercent) || numericDiscountPercent <= 0 || numericDiscountPercent > 100) {
-        setError('Persentase diskon harus lebih dari 0% dan maksimal 100%.')
+      if (discountValidationError) {
+        setError(discountValidationError)
         return
       }
     }
@@ -439,7 +632,10 @@ function ResourceEditor({
                 'usahaku_menu_discount_' + id.current,
                 JSON.stringify({
                   enabled: true,
-                  percent: numericDiscountPercent,
+                  kind: discountKind,
+                  value: discountKind === 'percent' ? numericDiscountPercent : numericDiscountAmount,
+                  percent: discountKind === 'percent' ? numericDiscountPercent : Math.round(((numericBasePrice - simulatedPrice) / numericBasePrice) * 100),
+                  amount: discountKind === 'amount' ? numericDiscountAmount : numericBasePrice - simulatedPrice,
                   basePrice: numericBasePrice,
                   discountedPrice: simulatedPrice,
                 })
@@ -449,16 +645,35 @@ function ResourceEditor({
             }
           } catch {}
         }
+        if (resource === 'table' && typeof window !== 'undefined') {
+          try {
+            if (tableDescription.trim()) {
+              localStorage.setItem('usahaku_table_desc_' + id.current, tableDescription.trim())
+            } else {
+              localStorage.removeItem('usahaku_table_desc_' + id.current)
+            }
+          } catch {}
+        }
+        notify({
+          businessId: (result.value as any)?.business_id || (initial as any)?.business_id,
+          title: initial
+            ? `${resource === 'menu' ? 'Menu' : 'Meja'} diperbarui`
+            : `${resource === 'menu' ? 'Menu' : 'Meja'} ditambahkan`,
+          message: `${resource === 'menu' ? 'Menu' : 'Meja'} "${name}" berhasil disimpan.`,
+          category: resource === 'menu' ? 'product' : 'table',
+        })
         saved()
         return
       }
       setError(result.error || 'Belum tersimpan.')
+      showErrorToast(result.error || 'Belum tersimpan.')
       retry.current = result.uncertain ? packet : null
       setLocked(Boolean(result.uncertain))
     } catch {
       retry.current = packet
       setLocked(true)
       setError('Hasil belum pasti. Coba ulang permintaan yang sama atau muat ulang untuk memeriksa.')
+      showErrorToast('Hasil belum pasti. Coba ulang permintaan yang sama atau muat ulang untuk memeriksa.')
     } finally {
       busy.current = false
       setPending(false)
@@ -478,6 +693,19 @@ function ResourceEditor({
               className={restaurantInput}
             />
           </RestaurantField>
+
+          {resource === 'table' && (
+            <RestaurantField label="Deskripsi meja (opsional)">
+              <textarea
+                rows={3}
+                maxLength={250}
+                value={tableDescription}
+                onChange={(e) => setTableDescription(e.target.value)}
+                placeholder="Contoh: Kursinya sofa atau view-nya menghadap ke kota, dll."
+                className={restaurantInput + ' resize-none'}
+              />
+            </RestaurantField>
+          )}
 
           {/* Photo upload field for menu (Requirement 2) */}
           {resource === 'menu' && (
@@ -579,33 +807,89 @@ function ResourceEditor({
                 </label>
                 {hasDiscount && (
                   <div className="space-y-3 pt-1">
-                    <RestaurantField label="Persentase diskon (%)">
-                      <NumericInput
-                        aria-label="Persentase diskon menu"
-                        type="number"
-                        min="0.01"
-                        max="100"
-                        step="0.01"
-                        placeholder="Contoh: 10"
-                        value={discountPercent}
-                        onChange={(e) => setDiscountPercent(e.target.value)}
-                        className={restaurantInput}
-                      />
-                    </RestaurantField>
-                    {simulatedPrice !== null && (
+                    {/* Discount Type Selector */}
+                    <div>
+                      <span className="block text-xs font-medium text-[#c5cbd5] mb-1.5">Jenis diskon:</span>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setDiscountKind('percent')}
+                          className={`rounded-full px-3 py-1.5 text-xs font-medium border-0 transition-all cursor-pointer ${
+                            discountKind === 'percent'
+                              ? 'bg-[#1835d9] text-white shadow-sm'
+                              : 'bg-[#303640] text-[#c5cbd5] hover:bg-[#3d4653]'
+                          }`}
+                        >
+                          Persentase (%)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDiscountKind('amount')}
+                          className={`rounded-full px-3 py-1.5 text-xs font-medium border-0 transition-all cursor-pointer ${
+                            discountKind === 'amount'
+                              ? 'bg-[#1835d9] text-white shadow-sm'
+                              : 'bg-[#303640] text-[#c5cbd5] hover:bg-[#3d4653]'
+                          }`}
+                        >
+                          Nominal Rupiah (Rp)
+                        </button>
+                      </div>
+                    </div>
+
+                    {discountKind === 'percent' ? (
+                      <RestaurantField label="Persentase diskon (%)">
+                        <NumericInput
+                          aria-label="Persentase diskon menu"
+                          type="number"
+                          min="0.01"
+                          max="100"
+                          step="0.01"
+                          placeholder="Contoh: 10"
+                          value={discountPercent}
+                          onChange={(e) => setDiscountPercent(e.target.value)}
+                          className={restaurantInput}
+                        />
+                      </RestaurantField>
+                    ) : (
+                      <RestaurantField label="Nominal diskon (Rp)">
+                        <NumericInput
+                          aria-label="Nominal diskon menu"
+                          type="number"
+                          min="1"
+                          max={numericBasePrice || 999999999}
+                          step="1"
+                          placeholder="Contoh: 5000"
+                          value={discountAmount}
+                          onChange={(e) => setDiscountAmount(e.target.value)}
+                          className={restaurantInput}
+                        />
+                      </RestaurantField>
+                    )}
+
+                    {discountValidationError && (
+                      <p role="alert" className="text-xs text-[#ffb4ae]">
+                        {discountValidationError}
+                      </p>
+                    )}
+
+                    {simulatedPrice !== null && !discountValidationError && (
                       <div className="rounded-lg bg-[#24cbc5]/10 border border-[#24cbc5]/20 p-2.5 text-xs">
                         <div className="flex justify-between text-[#c5cbd5]">
                           <span>Harga asli:</span>
                           <span className="line-through">{rupiah(numericBasePrice)}</span>
                         </div>
                         <div className="mt-1 flex justify-between font-medium text-[#24cbc5]">
-                          <span>Harga setelah diskon ({numericDiscountPercent}%):</span>
+                          <span>
+                            Harga setelah diskon ({discountKind === 'percent' ? `${numericDiscountPercent}%` : rupiah(numericDiscountAmount)}):
+                          </span>
                           <span className="text-sm font-semibold">{rupiah(simulatedPrice)}</span>
                         </div>
                       </div>
                     )}
                     <p className="text-[11px] text-[#a4a7ac]">
-                      Potongan berlaku per porsi; harga dibulatkan ke rupiah terdekat.
+                      {discountKind === 'percent'
+                        ? 'Potongan berlaku per porsi; harga dibulatkan ke rupiah terdekat.'
+                        : 'Potongan berupa pengurangan harga tetap per porsi.'}
                     </p>
                   </div>
                 )}

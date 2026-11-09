@@ -17,6 +17,8 @@ import { enabledPaymentMethods, type PaymentSettings } from '@/lib/business-paym
 import { restaurantMemberQuote, type RestaurantBilling } from '@/lib/restaurant-billing'
 import DashboardSection from './dashboard-section'
 import { RestaurantDialog, RestaurantField, restaurantPanel, restaurantInput, restaurantButton, restaurantPrimary } from './restaurant-forms'
+import { UtensilsCrossed } from 'lucide-react'
+import { notify, showErrorToast } from '@/lib/notifications'
 
 function useRestaurantRequest() {
   const busy = useRef(false), retry = useRef<(() => Promise<RestaurantResult>) | null>(null)
