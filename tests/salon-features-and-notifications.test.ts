@@ -174,3 +174,4 @@ test('salon benefits and discount calculations', () => {
   // Discount: none
   assert.equal(calculateDiscountedPrice(100000, 'none', 20), 100000)
 })
+

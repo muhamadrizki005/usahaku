@@ -331,7 +331,7 @@ export function setActiveBusinessId(id: string) {
   if (typeof window === 'undefined') return
   try {
     localStorage.setItem('usahaku_active_business_id', id)
-  } catch {}
+  } catch { }
 }
 
 export function loadAppNotifications(businessId: string): AppNotification[] {
@@ -350,7 +350,7 @@ export function saveAppNotifications(businessId: string, items: AppNotification[
   if (typeof window === 'undefined') return
   try {
     localStorage.setItem(getNotificationsStorageKey(businessId), JSON.stringify(items.slice(0, 100)))
-  } catch {}
+  } catch { }
 }
 
 export function emitAppNotification(item: {
