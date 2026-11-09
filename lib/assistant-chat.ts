@@ -22,8 +22,8 @@ export const chatDraftSchema = z.object({
 }).strict()
 export type ChatDraft = z.infer<typeof chatDraftSchema>
 export type Estimate = { items: (ChatDraft['items'][number] & { total: string })[]; total: string; budget: string | null; remaining: string | null; adjusted: boolean; originalTotal: string; removedItems: number }
-export type ChatAnswer = AssistantAnswer & { message: string; mode: ChatDraft['mode']; basis: ChatDraft['basis']; assumptions: string[]; estimate: Estimate | null; dataWarning?: string }
-export const chatBasisLabels = { general: 'Saran umum AI', store_data: 'Berdasarkan ringkasan data toko', estimate: 'Estimasi dan asumsi, bukan harga pasar terverifikasi' }
+export type ChatAnswer = AssistantAnswer & { message: string; mode: ChatDraft['mode']; basis: ChatDraft['basis']; assumptions: string[]; estimate: Estimate | null; dataWarning?: string; dataScopes?: string[] }
+export const chatBasisLabels = { general: 'Saran umum AI', store_data: 'Berdasarkan data usaha', estimate: 'Estimasi dan asumsi, bukan harga pasar terverifikasi' }
 
 export function inferBudget(question: string, fallback: number | null = null, allowBareMoney = false): number | null {
   const words: Record<string, string> = { satu: '1', dua: '2', tiga: '3', empat: '4', lima: '5', enam: '6', tujuh: '7', delapan: '8', sembilan: '9', sepuluh: '10', setengah: '0,5' }
@@ -82,8 +82,10 @@ export function renderChatAnswer(draft: ChatDraft, context: AssistantContext, bu
   const used = new Set<string>()
   const message = draft.message.replace(/\{\{fact:([a-z0-9_]+)\}\}/g, (_match, id: string) => { used.add(id); return context.facts.find(f => f.id === id)!.text })
   const facts = draft.factIds.filter(id => !used.has(id)).map(id => context.facts.find(f => f.id === id)!.text)
-  const sources = [...new Set(draft.factIds.map(id => /^(stock_|empty_stock)/.test(id) ? 'Inventori saat ini' : 'Laporan penjualan periode pilihan'))]
-  return { title: '', message, mode: draft.mode, basis: draft.basis, assumptions: draft.assumptions, estimate, facts, suggestions: [], from: context.filter.from, to: context.filter.to, generatedAt: context.generatedAt, stockAt: context.stockAt, sources, dataWarning }
+  const dataSources = new Set(draft.factIds.map(id => context.facts.find(f => f.id === id)?.source).filter(Boolean))
+  const dataScopes = context.facts.filter(fact => fact.id.endsWith('_scope') && fact.source && dataSources.has(fact.source)).map(fact => fact.text)
+  const sources = [...new Set(draft.factIds.map(id => context.facts.find(f => f.id === id)?.source || (/^(stock_|empty_stock)/.test(id) ? 'Inventori saat ini' : 'Laporan penjualan periode pilihan')))]
+  return { title: '', message, mode: draft.mode, basis: draft.basis, assumptions: draft.assumptions, estimate, facts, suggestions: [], from: context.filter.from, to: context.filter.to, generatedAt: context.generatedAt, stockAt: context.stockAt, sources, dataWarning, dataScopes }
 }
 
 export const chatMoney = (value: string) => reportMoney(BigInt(value))

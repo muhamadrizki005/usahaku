@@ -1,9 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
-import { assistantFilter } from '@/lib/assistant'
 import { chatRequest, inferBudget, renderChatAnswer } from '@/lib/assistant-chat'
 import { advanceConversation, ConversationError, openConversation } from '@/lib/assistant-conversation'
 import { chatWithGemini } from '@/lib/assistant-chat-gemini'
-import { assistantLimit, geminiConfig, readAssistantContext } from '@/lib/assistant-server'
+import { assistantLimit, geminiConfig } from '@/lib/assistant-server'
+import { planAssistantData } from '@/lib/assistant-data-gemini'
+import { readAssistantData } from '@/lib/assistant-data-reader'
 import { GeminiError } from '@/lib/assistant-gemini'
 import { ReportError } from '@/lib/reports-server'
 
@@ -13,6 +14,7 @@ import type { Member } from '@/lib/validation'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
+export const maxDuration = 90
 const headers = { 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff', Vary: 'Cookie' }
 const fail = (error: string, status: number, retryAfter = 0) => Response.json({ error, retryAfter }, { status, headers: { ...headers, ...(retryAfter ? { 'Retry-After': String(retryAfter) } : {}) } })
 
@@ -54,14 +56,8 @@ export async function POST(request: Request) {
   const release = assistantLimit.acquire(member.business_id, user.id)
   if (!release) return fail('Batas permintaan sementara tercapai atau pertanyaan sebelumnya masih diproses. Coba lagi dalam satu menit.', 429, 60)
   try {
-    let context, dataWarning: string | undefined
-    try { context = await readAssistantContext(client, member.business_id, parsed.data.period, business.category) }
-    catch (e) {
-      if (e instanceof ReportError && e.status === 403) throw e
-      dataWarning = 'Ringkasan data usaha belum dapat dibaca. Jawaban ini tidak memakai angka usaha yang terverifikasi.'
-      const now = new Date().toISOString()
-      context = { filter: assistantFilter(parsed.data.period), generatedAt: now, stockAt: now, facts: [], advice: {} }
-    }
+    const reads = await planAssistantData(parsed.data.question, conversation, config)
+    const { context, dataWarning } = await readAssistantData(client, member.business_id, member.role, business.category, parsed.data.period, reads)
     const budget = inferBudget(parsed.data.question, conversation.budget, conversation.lastMode === 'clarification')
     const draft = await chatWithGemini(parsed.data.question, context, conversation, { ...config, budget, dataWarning })
     const answer = renderChatAnswer(draft, context, budget, dataWarning)

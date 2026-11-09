@@ -10,6 +10,15 @@ import { chatBasisLabels, chatMoney, type ChatAnswer } from '@/lib/assistant-cha
 const storePrompts = ['Bantu susun ide barang baru dan rencana belanja.', 'Buatkan caption promosi toko.', 'Ringkas penjualan pada periode ini.', 'Stok apa yang perlu saya periksa?']
 const focus = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5]'
 const time = (s: string) => new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Jakarta' }).format(new Date(s)) + ' WIB'
+const assistantSourceUrl = (source: string, category: 'store' | 'restaurant', from: string, to: string) => ({
+  'Profil dan jam usaha': '/dashboard/settings', 'Staf dan akses': '/dashboard/settings/staff',
+  'Katalog usaha': category === 'restaurant' ? '/dashboard/products?category=restoran' : '/dashboard/products',
+  'Inventori saat ini': '/dashboard/inventory', 'Riwayat stok': '/dashboard/inventory',
+  'Pelanggan dan poin': '/dashboard/customers', 'Metode pembayaran aktif': '/dashboard/settings',
+  'Pajak, layanan, dan poin restoran': '/dashboard/settings',
+  'Riwayat transaksi': '/dashboard/transactions', 'Meja restoran': '/dashboard/restaurant/tables',
+  'Pesanan restoran': '/dashboard/pos', 'Reservasi restoran': '/dashboard/restaurant/reservations',
+}[source] || `/dashboard/reports?from=${from}&to=${to}&payment=all`)
 type Turn = { id: string; question: string; period: AssistantRequest['period']; status: 'pending' | 'failed' | 'done'; answer?: ChatAnswer }
 
 export default function BusinessAssistant({ configured, variant = 'page', active = true, category = 'store' }: { configured: boolean; variant?: 'page' | 'floating'; active?: boolean; category?: 'store' | 'restaurant' }) {
@@ -95,7 +104,7 @@ export default function BusinessAssistant({ configured, variant = 'page', active
         <div ref={log} role="log" aria-label="Percakapan Asisten" aria-live="polite" aria-relevant="additions text" tabIndex={0} onScroll={() => { const el = log.current; if (el) { nearBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80; setAway(!nearBottom.current) } }} className={'min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-5 sm:px-6 bg-[#273242] ' + focus}>
           {!turns.length && <div className="mx-auto flex min-h-full max-w-[600px] flex-col justify-center py-4">
             <p className="text-xs font-medium text-[#24cbc5]">Mulai percakapan</p><h3 className="mt-2 text-xl font-semibold sm:text-2xl text-white">Apa yang ingin kamu kerjakan hari ini?</h3>
-            <p className="mt-3 text-sm leading-6 text-[#c5cbd5]">{category === 'restaurant' ? 'Cari ide menu, susun promosi, rencanakan belanja, atau bahas penjualan dan pelayanan. Ringkasan belum mencakup stok bahan baku dan DP yang belum dilunasi.' : 'Cari ide barang, susun promosi, rencanakan belanja, atau bahas penjualan dan stok. Ceritakan kebutuhanmu; saya bantu menyusun langkahnya.'}</p>
+            <p className="mt-3 text-sm leading-6 text-[#c5cbd5]">{category === 'restaurant' ? 'Bahas menu, meja, pesanan, reservasi, pelanggan, dan penjualan. Saya membaca data usaha sesuai izin akunmu; stok bahan baku belum tersedia.' : 'Bahas produk, stok, pelanggan, dan penjualan, atau susun promosi serta rencana belanja. Saya membaca data usaha sesuai izin akunmu.'}</p>
             <div className="mt-5 grid gap-2 sm:grid-cols-2" aria-label="Contoh pertanyaan">{prompts.map(prompt => <button key={prompt} type="button" disabled={!configured} onClick={() => { setQuestion(prompt); input.current?.focus() }} className={'min-h-11 rounded-xl border border-[#454d5b] bg-[#1c222e] p-3 text-left text-xs leading-5 text-[#c5cbd5] hover:bg-[#303640] hover:text-white disabled:opacity-60 transition-colors ' + focus}>{prompt}</button>)}</div>
           </div>}
           <div className="space-y-6">
@@ -112,8 +121,9 @@ export default function BusinessAssistant({ configured, variant = 'page', active
                   {turn.answer.estimate && <EstimateView estimate={turn.answer.estimate} />}
                   <ul className="mt-2 list-disc space-y-2 pl-4 text-sm leading-6">{turn.answer.facts.map((fact, i) => <li key={i}>{fact}</li>)}</ul>
                   {turn.answer.suggestions.length > 0 && <><p className="mt-4 text-sm font-semibold">Yang bisa kamu pertimbangkan</p><ul className="mt-2 list-disc space-y-2 pl-4 text-sm leading-6 text-[#c5cbd5]">{turn.answer.suggestions.map((s, i) => <li key={i}>{s}</li>)}</ul></>}
-                  {turn.answer.sources.length > 0 && <details className="mt-3 text-xs leading-5 text-[#c5cbd5]"><summary className={'min-h-11 cursor-pointer py-3 ' + focus}>Sumber dan waktu data</summary><p className="mt-1">Penjualan: {turn.answer.from} sampai {turn.answer.to} WIB. Dibaca {time(turn.answer.generatedAt)}. Stok saat ini, dibaca {time(turn.answer.stockAt)}. Data dapat berubah setelah dibaca.</p>
-                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[#24cbc5]">{turn.answer.sources.map(source => <Link key={source} className={'inline-flex min-h-11 items-center underline underline-offset-4 ' + focus} href={source.startsWith('Inventori') ? '/dashboard/inventory' : `/dashboard/reports?from=${turn.answer!.from}&to=${turn.answer!.to}&payment=all`}>{source}</Link>)}</div>
+                  {turn.answer.sources.length > 0 && <details className="mt-3 text-xs leading-5 text-[#c5cbd5]"><summary className={'min-h-11 cursor-pointer py-3 ' + focus}>Sumber dan waktu data</summary><p className="mt-1">Periode transaksi, mutasi stok, pesanan, dan reservasi: {turn.answer.from} sampai {turn.answer.to} WIB. Profil, katalog, staf, pelanggan, dan meja memakai kondisi saat dibaca: {time(turn.answer.generatedAt)}. Data dapat berubah setelah dibaca.</p>
+                    {turn.answer.dataScopes?.map((scope, index) => <p key={index} className="mt-2">{scope}</p>)}
+                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[#24cbc5]">{turn.answer.sources.map(source => <Link key={source} className={'inline-flex min-h-11 items-center underline underline-offset-4 ' + focus} href={assistantSourceUrl(source, category, turn.answer!.from, turn.answer!.to)}>{source}</Link>)}</div>
                   </details>}
                 </div>
               </article>}
@@ -130,7 +140,7 @@ export default function BusinessAssistant({ configured, variant = 'page', active
           <button disabled={pending || seconds > 0 || !configured} type="submit" aria-label={pending ? 'Mengirim pesan' : 'Kirim pesan'} className={'grid size-11 shrink-0 place-items-center rounded-lg bg-[#1835d9] text-white hover:bg-[#132c9e] disabled:opacity-50 transition-colors ' + focus}><ArrowUp className="size-5" aria-hidden="true" /></button>
         </div>
         <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-[11px] leading-5 text-[#c5cbd5]"><span>{seconds ? `Tunggu ${seconds} detik sebelum mengirim lagi.` : 'Enter untuk kirim, Shift+Enter untuk baris baru.'}</span><span>{question.length}/600</span></div>
-        <details className="mt-1 text-[11px] leading-5 text-[#c5cbd5]"><summary className={'min-h-11 w-fit cursor-pointer py-3 ' + focus}>Tentang data percakapan</summary><p id={privacyId}>Pesan dan beberapa balasan terakhir dikirim ke Google Gemini bersama ringkasan angka toko. Jangan tulis data pribadi. Rincian transaksi, nama pelanggan/staf dan kontak tidak disertakan otomatis. Saran umum dan estimasi bukan catatan database atau harga pasar terverifikasi. Asisten hanya membaca data. Satu putaran klarifikasi maksimal dalam satu percakapan; setelah kamu menjawab, Asisten langsung menyusun hasil dengan asumsi jika perlu. Maksimal sepuluh percakapan terakhir tampil selama halaman terbuka; percakapan baru, ganti periode atau reload mereset konteks.</p></details>
+        <details className="mt-1 text-[11px] leading-5 text-[#c5cbd5]"><summary className={'min-h-11 w-fit cursor-pointer py-3 ' + focus}>Tentang data percakapan</summary><p id={privacyId}>Pesan, beberapa balasan terakhir, profil usaha, dan data relevan sesuai pertanyaan serta izin akun dikirim ke Google Gemini. Ini dapat mencakup nama produk/menu, nama pelanggan dan poin, serta nama/role staf khusus owner. Kontak pribadi, catatan pelanggan, password, token, dan nomor rekening tidak diambil oleh Asisten. Jangan masukkan rahasia dalam pesan. Data dibaca per halaman; jumlah dan batasnya dicantumkan pada hasil. Asisten hanya membaca data, tidak menyimpan perubahan. Saran umum dan estimasi bukan harga pasar terverifikasi. Klarifikasi dibatasi satu putaran; setelah kamu menjawab, Asisten langsung menyusun hasil. Maksimal sepuluh percakapan terakhir tampil selama halaman terbuka; percakapan baru, ganti periode atau reload mereset konteks.</p></details>
       </form>
     </div>
   return variant === 'floating' ? chat : <DashboardSection title="Asisten Bisnis AI">{chat}</DashboardSection>
