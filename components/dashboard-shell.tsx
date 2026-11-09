@@ -181,7 +181,7 @@ export function DashboardShell({
     setNotifications(updated)
     setHasUnread(updated.some(n => !n.read))
   }
-  const assistantAllowed = ['store', 'restaurant'].includes(business.category) && (hasPermission(member.role, member.permissions, 'reports:view') && hasPermission(member.role, member.permissions, 'products:view'))
+  const assistantAllowed = ['store', 'restaurant', 'barbershop'].includes(business.category) && (hasPermission(member.role, member.permissions, 'reports:view') && hasPermission(member.role, member.permissions, 'products:view'))
 
   const activity =
     publishedActivity?.businessId === business.id ? publishedActivity : null
@@ -606,7 +606,7 @@ export function DashboardShell({
       </main>
       {assistantAllowed && (
         <FloatingBusinessAssistant
-          category={business.category === 'restaurant' ? 'restaurant' : 'store'}
+          category={business.category as 'store' | 'restaurant' | 'barbershop'}
           visible={assistantVisible}
           configured={assistantConfigured}
           onClose={() => setAssistantVisible(false)}

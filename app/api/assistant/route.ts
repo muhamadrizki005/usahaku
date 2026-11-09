@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   if (!hasPermission(access.role,access.permissions,'reports:view') || !hasPermission(access.role,access.permissions,'products:view')) return fail('Akses Asisten ditolak.', 403)
   const { data: business, error: businessError } = await client.from('businesses').select('category,onboarding_completed_at').eq('id', member.business_id).single()
   if (businessError || !business) return fail('Usaha belum dapat diperiksa.', 502)
-  if (!['store','restaurant'].includes(business.category) || !business.onboarding_completed_at || (business.category === 'restaurant' && !['owner','admin'].includes(member.role))) return fail('Selesaikan pengaturan usaha dengan akses yang sesuai sebelum memakai Asisten.', 403)
+  if (!['store','restaurant','barbershop'].includes(business.category) || !business.onboarding_completed_at || (['restaurant','barbershop'].includes(business.category) && !['owner','admin'].includes(member.role))) return fail('Selesaikan pengaturan usaha dengan akses yang sesuai sebelum memakai Asisten.', 403)
   const reader = request.body?.getReader()
   let body = '', size = 0
   try {

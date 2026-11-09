@@ -18,7 +18,7 @@ const definitions = {
   reservations: ['restaurant_reservations', 'customer,table_name,guests,starts_at,ends_at,status,deposit_amount,deposit_refunded', 'customer'],
 } as const
 
-export async function readAssistantData(client: SupabaseClient, businessId: string, role: string, category: 'store' | 'restaurant', period: AssistantRequest['period'], reads: DataRead[]): Promise<{ context: AssistantContext; dataWarning?: string }> {
+export async function readAssistantData(client: SupabaseClient, businessId: string, role: string, category: 'store' | 'restaurant' | 'barbershop', period: AssistantRequest['period'], reads: DataRead[]): Promise<{ context: AssistantContext; dataWarning?: string }> {
   const now = new Date().toISOString(), filter = assistantFilter(period)
   const { data: permissions, error } = await client.rpc('business_permissions', { target_id: businessId }).abortSignal(AbortSignal.timeout(10000))
   if (error || !Array.isArray(permissions)) throw new GeminiError(403, 'Izin Asisten belum dapat diverifikasi.')
@@ -37,6 +37,7 @@ export async function readAssistantData(client: SupabaseClient, businessId: stri
       }
       let [table, columns, searchColumn]: readonly string[] = definitions[read.source]
       if (read.source === 'catalog' && category === 'restaurant') { table = 'restaurant_menu'; columns = 'name,category,price,available,active' }
+      if (read.source === 'catalog' && category === 'barbershop') { table = 'salon_services'; columns = 'name,price,duration_minutes,active' }
       let query = client.from(table).select(columns, { count: 'exact' }).eq(read.source === 'business' ? 'id' : 'business_id', businessId)
       if (read.source === 'tables') query = query.is('deleted_at', null)
       if (read.search) query = query.ilike(searchColumn, `%${read.search.replace(/[\\%_]/g, '\\$&')}%`)
