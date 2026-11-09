@@ -35,7 +35,7 @@ export const restaurantSidebarNavigationItems = [
 export const salonTopNavigationItems = [
   ['Ringkasan', LayoutDashboard, '/dashboard'],
   ['Janji temu & kasir', CalendarDays, '/dashboard/salon/appointments'],
-  ['Layanan', Scissors, '/dashboard/salon/services'],
+  ['Layanan & Produk', Scissors, '/dashboard/salon/services'],
   ['Penata & terapis', Users, '/dashboard/salon/practitioners'],
   ['Transaksi', CreditCard, '/dashboard/transactions'],
   ['Pelanggan', Users, '/dashboard/customers'],
