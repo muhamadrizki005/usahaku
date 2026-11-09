@@ -8,7 +8,7 @@ export const assistantRequest = z.object({
 }).strict()
 export type AssistantRequest = z.infer<typeof assistantRequest>
 export type StockSnapshot = { id: string; name: string; unit: string; stock: number; minimum_stock: number; active: boolean }
-export type Fact = { id: string; text: string; providerText: string }
+export type Fact = { id: string; text: string; providerText: string; source?: string }
 export type AssistantContext = { filter: ReportFilter; generatedAt: string; stockAt: string; facts: Fact[]; advice: Record<string, string> }
 export type AssistantAnswer = { title: string; facts: string[]; suggestions: string[]; from: string; to: string; generatedAt: string; stockAt: string; sources: string[] }
 export const topics = ['overview', 'sales', 'products', 'stock', 'payments', 'unsupported'] as const
@@ -28,9 +28,9 @@ export function buildAssistantContext(data: ReportData, stock: StockSnapshot[], 
   add('discount', `Diskon pada penjualan selesai: ${reportMoney(s.discount)}.`)
   add('cancelled', `Penjualan dalam periode ini yang berstatus dibatalkan: ${s.cancelled.toLocaleString('id-ID')}. Omzet sudah mengecualikannya.`)
   add('refund', `Refund manual menurut tanggal pembatalan: ${reportMoney(s.refund)}. Ditampilkan terpisah, tidak dikurangi lagi dari omzet.`)
-  for (const method of ['cash', 'qris', 'transfer'] as const) {
+  for (const method of ['cash', 'qris', 'transfer', 'ewallet'] as const) {
     const part = reportSummary({ ...data, sales: data.sales.filter(sale => sale.payment === method), refunds: [] })
-    const label = { cash: 'Tunai', qris: 'QRIS', transfer: 'Transfer' }[method]
+    const label = { cash: 'Tunai', qris: 'QRIS', transfer: 'Transfer', ewallet: 'E-wallet' }[method]
     add(method, `${label}: ${part.count.toLocaleString('id-ID')} transaksi selesai, omzet ${reportMoney(part.net)}. Pembayaran dicatat manual.`)
   }
   const best = [...s.best].sort((a, b) => a.gross === b.gross ? a.id.localeCompare(b.id) : a.gross > b.gross ? -1 : 1).slice(0, 5)
