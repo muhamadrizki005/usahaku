@@ -29,8 +29,8 @@ test('restaurant POS: members, optional table, points, deletion, responsive work
   stage='member search and redemption retry'
   await p.goto('/dashboard/pos');await p.getByRole('button',{name:'Tambah Kopi Member Uji',exact:true}).click()
   await chooseSelect(cart.getByLabel('Pilih kategori pelanggan POS',{exact:true}),'pelanggan')
-  await cart.getByRole('textbox',{name:'Cari pelanggan POS',exact:true}).fill('Member Restoran')
-  await cart.getByRole('button').filter({hasText:'Member Restoran Tersimpan'}).click()
+  await cart.getByRole('combobox',{name:'Cari pelanggan POS',exact:true}).fill('Member Restoran')
+  await cart.getByRole('option').filter({hasText:'Member Restoran Tersimpan'}).click()
   await expect(cart).toContainText('5 poin');await cart.getByRole('button',{name:'Simpan & lanjut pembayaran',exact:true}).click()
   await expect(payment).toBeVisible();await expect(payment).toContainText('Saldo: 5 poin')
   await payment.getByLabel('Poin yang ditukar',{exact:true}).fill('2')

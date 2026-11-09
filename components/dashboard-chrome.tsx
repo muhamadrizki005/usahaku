@@ -3,7 +3,8 @@
 import { canAccessPath } from '@/lib/auth/rbac'
 import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { dashboardHref } from '@/lib/dashboard-href'
 import { motion } from 'motion/react'
 import { Menu, X } from 'lucide-react'
 import {
@@ -25,6 +26,13 @@ export const sidebarItemsForRole = (role: Role, category = 'store', permissions:
 
 export const dashboardItemsForRole = (role: Role, category = 'store', permissions: string[] = []) =>
   (category === 'barbershop' ? [...salonTopNavigationItems, ...restaurantSidebarNavigationItems] : category === 'restaurant' ? [...restaurantTopNavigationItems, ...restaurantSidebarNavigationItems] : dashboardNavigation).filter(([, , path], index, self) => !(category === 'barbershop' && path === '/dashboard/assistant') && (category !== 'store' ? rolesForPath(path).includes(role) : canAccessPath(path, role, permissions)) && self.findIndex(([, , p]) => p === path) === index)
+
+function useNavigationPrefetch(category: string) {
+  const router = useRouter()
+  return (path: string) => {
+    if (path !== '/dashboard/assistant') router.prefetch(dashboardHref(path, category))
+  }
+}
 
 export function DashboardBrand({ onHome }: { onHome: () => void }) {
   return (
@@ -64,6 +72,7 @@ export function DashboardTopNav({
   const currentPath = activePath || pathname
   const reducedMotion = useReducedMotionPreference()
   const items = topItemsForRole(role, category, permissions)
+  const prefetch = useNavigationPrefetch(category)
 
   return (
     <nav
@@ -77,6 +86,7 @@ export function DashboardTopNav({
         return (
           <button
             key={path}
+            onPointerEnter={() => prefetch(path)} onFocus={() => prefetch(path)} onTouchStart={() => prefetch(path)}
             onClick={() => onNavigate(path)}
             aria-current={active ? 'page' : undefined}
             className={`relative rounded-full px-4 py-2 text-xs sm:text-sm font-normal transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5] whitespace-nowrap cursor-pointer ${
@@ -120,6 +130,7 @@ export function DashboardSidebar({
   const pathname = usePathname()
   const currentPath = activePath || pathname
   const items = sidebarItemsForRole(role, category, permissions)
+  const prefetch = useNavigationPrefetch(category)
 
   if (items.length === 0) return null
 
@@ -136,6 +147,7 @@ export function DashboardSidebar({
           return (
             <button
               key={path}
+              onPointerEnter={() => prefetch(path)} onFocus={() => prefetch(path)} onTouchStart={() => prefetch(path)}
               onClick={() => onNavigate(path)}
               aria-current={!assistantToggle && active ? 'page' : undefined}
               aria-pressed={assistantToggle ? assistantVisible : undefined}
@@ -176,6 +188,7 @@ function NavigationItems({
 }) {
   const pathname = usePathname()
   const currentPath = activePath || pathname
+  const prefetch = useNavigationPrefetch(category)
   return dashboardItemsForRole(role, category, permissions).map(([label, Icon, path]) => {
     const assistantToggle = path === '/dashboard/assistant' && assistantVisible !== undefined
     const active =
@@ -183,6 +196,7 @@ function NavigationItems({
     return (
       <button
         key={path}
+        onPointerEnter={() => prefetch(path)} onFocus={() => prefetch(path)} onTouchStart={() => prefetch(path)}
         onClick={() => onNavigate(path)}
         aria-current={!assistantToggle && active ? 'page' : undefined}
         aria-pressed={assistantToggle ? assistantVisible : undefined}

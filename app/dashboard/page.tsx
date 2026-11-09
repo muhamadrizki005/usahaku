@@ -10,7 +10,7 @@ import { readSalonFoundation,readSalonSummary } from '@/lib/salon-server'
 import {wibDate} from '@/lib/reports'
 export default async function DashboardPage() {
   const { business, member, supabase } = await requireBusiness(undefined, false, 'overview:view')
-  if (business.category === 'barbershop') {const day=wibDate(new Date()),from=new Date(day+'T00:00:00+07:00').toISOString(),to=new Date(Date.parse(from)+86400000).toISOString();return <SalonOverview business={business} data={await readSalonFoundation(supabase,business.id)} summary={await readSalonSummary(supabase,business.id,from,to)} day={day}/>}
+  if (business.category === 'barbershop') {const day=wibDate(new Date()),from=new Date(day+'T00:00:00+07:00').toISOString(),to=new Date(Date.parse(from)+86400000).toISOString();const [data,summary]=await Promise.all([readSalonFoundation(supabase,business.id),readSalonSummary(supabase,business.id,from,to)]);return <SalonOverview business={business} data={data} summary={summary} day={day}/>}
   if (business.category === 'restaurant') {
     const [summary, sales, menu, tables, usage] = await Promise.all([
       readRestaurantOverview(supabase, business.id),
@@ -33,7 +33,11 @@ export default async function DashboardPage() {
       />
     )
   }
-  const { data, error } = await supabase.from('business_members').select('*').eq('business_id', business.id)
+  const [{ data, error },products,sales] = await Promise.all([
+    supabase.from('business_members').select('*').eq('business_id', business.id),
+    readProducts(supabase,business.id),
+    readSales(supabase,business.id),
+  ])
   if (error) throw new Error('Data akses belum dapat dimuat.')
-  return <UsahakuDashboard business={business} member={member} members={data as Member[]} initialProducts={await readProducts(supabase,business.id)} sales={await readSales(supabase,business.id)} />
+  return <UsahakuDashboard business={business} member={member} members={data as Member[]} initialProducts={products} sales={sales} />
 }

@@ -5,7 +5,8 @@ import { createPortal } from 'react-dom'
 import { ModalFrame } from './ui/modal-frame'
 import { User, UserPlus, X } from 'lucide-react'
 import { CustomSelect, type CustomSelectOption } from '@/components/ui/custom-select'
-import { saveCustomer, searchPosCustomers } from '@/app/customer-actions'
+import { saveCustomer } from '@/app/customer-actions'
+import { CustomerSearch } from './customer-search'
 import { customerSchema, normalizeCustomerPhone, type PosCustomer } from '@/lib/customers'
 import type { Member } from '@/lib/validation'
 import { hasPermission } from '@/lib/auth/rbac'
@@ -19,10 +20,6 @@ interface PosCustomerPickerProps {
 
 export default function PosCustomerPicker({ value, onChange, member, addLabel = 'Tambah pelanggan' }: PosCustomerPickerProps) {
   const [category, setCategory] = useState<'non-pelanggan' | 'pelanggan'>(value ? 'pelanggan' : 'non-pelanggan')
-  const [query, setQuery] = useState('')
-  const [results, setResults] = useState<PosCustomer[]>([])
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [toast, setToast] = useState('')
 
@@ -31,34 +28,6 @@ export default function PosCustomerPicker({ value, onChange, member, addLabel = 
       setCategory('pelanggan')
     }
   }, [value])
-
-  useEffect(() => {
-    let current = true
-    setResults([])
-    setError('')
-    setLoading(false)
-    if (category !== 'pelanggan' || query.trim().length < 4) return
-
-    setLoading(true)
-    const timer = setTimeout(async () => {
-      try {
-        const response = await searchPosCustomers(query)
-        if (current) {
-          setResults(response.customers)
-          setError(response.error || '')
-        }
-      } catch {
-        if (current) setError('Pencarian belum berhasil. Coba lagi.')
-      } finally {
-        if (current) setLoading(false)
-      }
-    }, 250)
-
-    return () => {
-      current = false
-      clearTimeout(timer)
-    }
-  }, [query, category])
 
   const categoryOptions: CustomSelectOption[] = [
     { value: 'non-pelanggan', label: 'Non pelanggan' },
@@ -69,7 +38,6 @@ export default function PosCustomerPicker({ value, onChange, member, addLabel = 
     if (val === 'non-pelanggan') {
       setCategory('non-pelanggan')
       onChange(null)
-      setQuery('')
     } else {
       setCategory('pelanggan')
     }
@@ -140,70 +108,7 @@ export default function PosCustomerPicker({ value, onChange, member, addLabel = 
             </div>
           ) : null}
 
-          <input
-            aria-label="Cari pelanggan POS"
-            maxLength={100}
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="Cari nama atau telepon member (min. 4 karakter)"
-            className="h-9 w-full rounded-lg border border-[#454d5b] bg-[#273242] px-3 text-sm text-white placeholder-[#a4a7ac] outline-none focus:border-[#24cbc5]"
-          />
-
-          {loading && (
-            <p aria-live="polite" className="text-xs text-[#a4a7ac]">
-              Mencari member…
-            </p>
-          )}
-
-          {error && (
-            <p aria-live="polite" className="text-xs text-[#ffb4ae]">
-              {error}
-            </p>
-          )}
-
-          {results.length > 0 && (
-            <div className="max-h-40 overflow-y-auto rounded-xl border border-[#454d5b] bg-[#1c222e] p-1.5 space-y-1">
-              {results.map(c => (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => {
-                    onChange(c)
-                    setQuery('')
-                  }}
-                  className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs text-[#c5cbd5] hover:bg-[#273242] hover:text-white transition-colors"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-white">{c.name}</p>
-                    <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                      {c.phone ? (
-                        <span className="truncate text-[#24cbc5]">{c.phone}</span>
-                      ) : (
-                        <span className="text-[#a4a7ac]">Tanpa nomor telepon</span>
-                      )}
-                      <span className="text-[#454d5b]">·</span>
-                      <span className="font-medium text-[#24cbc5]">{Number(c.points || 0)} poin</span>
-                    </div>
-                  </div>
-                  <span className="shrink-0 text-[11px] font-medium text-[#24cbc5]">Pilih</span>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {!value && !loading && !error && query.trim().length >= 4 && results.length === 0 && (
-            <p aria-live="polite" className="text-xs text-[#a4a7ac]">
-              Tidak ada member aktif yang cocok.
-            </p>
-          )}
-
-          {!value && !loading && query.trim().length < 4 && (
-            <p aria-live="polite" className="text-xs text-[#a4a7ac]">
-              {query.trim().length > 0
-                ? 'Ketik minimal 4 karakter untuk mencari member.'
-                : member?.role === 'cashier' ? 'Cari pelanggan aktif berdasarkan nama atau nomor telepon.' : 'Cari nama/telepon atau klik Tambah pelanggan untuk mendaftar.'}
-            </p>
-          )}
+          <CustomerSearch initiallyOpen={!value} onSelect={onChange} />
         </div>
       )}
 

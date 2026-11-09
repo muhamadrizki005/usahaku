@@ -50,6 +50,7 @@ import { saleCode, type Sale } from '@/lib/pos'
 import type { CatalogProduct } from '@/lib/catalog'
 import type { Business, Member } from '@/lib/validation'
 import { FloatingBusinessAssistant } from './floating-business-assistant'
+import { dashboardHref } from '@/lib/dashboard-href'
 
 type Activity = {
   businessId: string
@@ -192,13 +193,6 @@ export function DashboardShell({
     .join('')
     .slice(0, 2)
     .toUpperCase()
-  const category =
-    business.category === 'restaurant'
-      ? 'restoran'
-      : business.category === 'barbershop'
-      ? 'barbershop'
-      : 'toko'
-
   const navigate = (path: string) => {
     setShowAccount(false)
     setShowNotifications(false)
@@ -207,7 +201,7 @@ export function DashboardShell({
       return
     }
     setOptimisticPath(path)
-    router.push(path === '/account' ? path : path + '?category=' + category)
+    router.push(dashboardHref(path, business.category))
   }
 
   const nav = (label: string) => {
