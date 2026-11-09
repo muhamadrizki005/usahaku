@@ -229,7 +229,7 @@ function OrderEditor({ initial, menu, tables, usage, close, saved, reservation, 
               )}
             </div>
             <div className="px-1 pb-1">
-              <span className="line-clamp-2 break-words font-medium text-white">{m.name}</span>
+              <span className="line-clamp-2 break-words font-medium text-white">{menuDetail.name}</span>
             </div>
           </div>
           <div className="flex items-center justify-between gap-1 px-1 pt-1">

@@ -22,7 +22,9 @@ test('assistant source permissions preserve owner staff access, restricted custo
   assert.equal(sourceAllowed('tables', 'store', 'owner', ['*']), false)
   assert.equal(sourceAllowed('inventory', 'restaurant', 'owner', ['*']), false)
   assert.equal(sourceAllowed('catalog', 'restaurant', 'cashier', ['*']), false)
-  assert.equal(sourceAllowed('catalog', 'barbershop', 'owner', ['*']), false)
+  assert.equal(sourceAllowed('catalog', 'barbershop', 'owner', ['*']), true)
+  assert.equal(sourceAllowed('catalog', 'barbershop', 'cashier', ['*']), false)
+  assert.equal(sourceAllowed('catalog', 'unknown', 'owner', ['*']), false)
 })
 test('Gemini planner has fixed transport, bounded structured reads, no raw DB context and validates malicious output', async () => {
   const fetcher: typeof fetch = async (url, init) => {

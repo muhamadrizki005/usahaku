@@ -8,7 +8,7 @@ const state = globalThis as typeof globalThis & { usahakuAssistantLimit?: Assist
 export const assistantLimit = state.usahakuAssistantLimit ||= new AssistantLimit()
 export const geminiConfig = () => ({ key: process.env.GEMINI_API_KEY?.trim() || '', model: process.env.GEMINI_MODEL?.trim() || 'gemini-3.5-flash-lite' })
 
-export async function readAssistantContext(client: SupabaseClient, businessId: string, period: AssistantRequest['period'], category: 'store' | 'restaurant' = 'store') {
+export async function readAssistantContext(client: SupabaseClient, businessId: string, period: AssistantRequest['period'], category: 'store' | 'restaurant' | 'barbershop' = 'store') {
   const filter = assistantFilter(period)
   const data = await readReport(client, businessId, filter)
   if (category === 'restaurant') return buildRestaurantAssistantContext(data, filter, new Date().toISOString())

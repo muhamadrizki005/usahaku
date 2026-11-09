@@ -412,9 +412,9 @@ export default function UsahakuDashboard({
                       <div
                         className={`w-full max-w-8 rounded-t-md transition-all duration-300 ${
                           bucket.isCurrent
-                            ? 'bg-[#24cbc5] shadow-[0_0_12px_rgba(36,203,197,0.35)]'
+                            ? 'bg-gradient-to-t from-[#1835d9] to-[#24cbc5] shadow-[0_0_12px_rgba(36,203,197,0.35)] group-hover:brightness-110'
                             : bucket.amount > 0
-                            ? 'bg-[#24cbc5]/45 hover:bg-[#24cbc5]/75'
+                            ? 'bg-gradient-to-t from-[#1835d9] to-[#24cbc5] group-hover:brightness-110'
                             : 'bg-[#454d5b]/30'
                         }`}
                         style={{ height: `${barHeight}px` }}

@@ -16,7 +16,7 @@ export function FloatingBusinessAssistant({
 }: {
   visible: boolean
   configured: boolean
-  category?: 'store' | 'restaurant'
+  category?: 'store' | 'restaurant' | 'barbershop'
   onClose?: () => void
 }) {
   const [mounted, setMounted] = useState(false)
