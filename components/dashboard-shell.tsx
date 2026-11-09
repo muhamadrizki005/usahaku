@@ -18,15 +18,22 @@ import {
   LogOut,
   Package,
   Store,
+  Trash2,
   User,
   Users,
+  UtensilsCrossed,
   X,
 } from 'lucide-react'
 import {
   type AppNotification,
+  type NotificationCategory,
+  NOTIFICATION_CATEGORIES,
   loadAppNotifications,
   markAllAppNotificationsAsRead,
+  markAppNotificationAsRead,
+  deleteAppNotification,
   saveAppNotifications,
+  setActiveBusinessId,
 } from '@/lib/notifications'
 import { ToastNotification, useToast } from '@/components/ui/toast-notification'
 import {
@@ -87,11 +94,13 @@ export function DashboardShell({
   const [publishedActivity, setActivity] = useState<Activity | null>(null)
   const [assistantVisible, setAssistantVisible] = useState(false)
   const [notifications, setNotifications] = useState<AppNotification[]>([])
+  const [activeCategory, setActiveCategory] = useState<'all' | NotificationCategory>('all')
   const [hasUnread, setHasUnread] = useState(false)
-  const { toast, showToast, hideToast } = useToast(4000)
+  const { toast, showToast, hideToast } = useToast(2500)
 
   useEffect(() => {
     if (!business?.id) return
+    setActiveBusinessId(business.id)
     const loaded = loadAppNotifications(business.id)
     setNotifications(loaded)
     setHasUnread(loaded.some(n => !n.read))
@@ -99,6 +108,7 @@ export function DashboardShell({
 
   useEffect(() => {
     if (!business?.id) return
+    setActiveBusinessId(business.id)
     const onNotification = (e: Event) => {
       const customEvent = e as CustomEvent<AppNotification>
       const notif = customEvent.detail
@@ -108,6 +118,12 @@ export function DashboardShell({
         showToast('success', `${notif.title} — ${notif.message}`)
       }
     }
+    const onToast = (e: Event) => {
+      const customEvent = e as CustomEvent<{ type: 'success' | 'error'; message: string }>
+      if (customEvent.detail) {
+        showToast(customEvent.detail.type, customEvent.detail.message)
+      }
+    }
     const onRead = (e: Event) => {
       const customEvent = e as CustomEvent<{ businessId: string }>
       if (customEvent.detail?.businessId === business.id) {
@@ -115,11 +131,30 @@ export function DashboardShell({
         setHasUnread(false)
       }
     }
+    const onDeleted = (e: Event) => {
+      const customEvent = e as CustomEvent<{ businessId: string; id: string }>
+      if (customEvent.detail?.businessId === business.id) {
+        setNotifications(prev => prev.filter(n => n.id !== customEvent.detail.id))
+      }
+    }
+    const onCleared = (e: Event) => {
+      const customEvent = e as CustomEvent<{ businessId: string }>
+      if (customEvent.detail?.businessId === business.id) {
+        setNotifications([])
+        setHasUnread(false)
+      }
+    }
     window.addEventListener('usahaku:notification', onNotification)
+    window.addEventListener('usahaku:toast', onToast)
     window.addEventListener('usahaku:notifications_read', onRead)
+    window.addEventListener('usahaku:notifications_deleted', onDeleted)
+    window.addEventListener('usahaku:notifications_cleared', onCleared)
     return () => {
       window.removeEventListener('usahaku:notification', onNotification)
+      window.removeEventListener('usahaku:toast', onToast)
       window.removeEventListener('usahaku:notifications_read', onRead)
+      window.removeEventListener('usahaku:notifications_deleted', onDeleted)
+      window.removeEventListener('usahaku:notifications_cleared', onCleared)
     }
   }, [business?.id, showToast])
 
@@ -132,8 +167,14 @@ export function DashboardShell({
 
   const handleMarkOneRead = (id: string) => {
     if (!business?.id) return
-    const updated = notifications.map(n => n.id === id ? { ...n, read: true } : n)
-    saveAppNotifications(business.id, updated)
+    const updated = markAppNotificationAsRead(business.id, id)
+    setNotifications(updated)
+    setHasUnread(updated.some(n => !n.read))
+  }
+
+  const handleDeleteOne = (id: string) => {
+    if (!business?.id) return
+    const updated = deleteAppNotification(business.id, id)
     setNotifications(updated)
     setHasUnread(updated.some(n => !n.read))
   }
@@ -252,14 +293,15 @@ export function DashboardShell({
                 </button>
 
                 {showNotifications && (
-                  <div className="fixed left-4 right-4 top-20 z-50 sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-96 rounded-2xl border border-[#454d5b] bg-[#273242] p-4 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150">
+                  <div className="fixed left-4 right-4 top-20 z-50 sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-[420px] rounded-2xl border border-[#454d5b] bg-[#273242] p-4 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150">
+                    {/* Header */}
                     <div className="flex items-center justify-between border-b border-[#454d5b] pb-3">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-sm font-normal text-white">
+                        <span className="text-sm font-semibold text-white">
                           Notifikasi
                         </span>
                         {notifications.filter(n => !n.read).length > 0 ? (
-                          <span className="rounded-full bg-[#24cbc5]/15 px-2 py-0.5 text-[11px] font-normal text-[#24cbc5]">
+                          <span className="rounded-full bg-[#24cbc5]/15 px-2 py-0.5 text-[11px] font-medium text-[#24cbc5]">
                             {notifications.filter(n => !n.read).length} baru
                           </span>
                         ) : (
@@ -279,7 +321,7 @@ export function DashboardShell({
                         </button>
                         <button
                           onClick={() => setShowNotifications(false)}
-                          className="rounded-lg p-1 text-[#a4a7ac] hover:bg-[#1c222e] cursor-pointer"
+                          className="rounded-lg p-1 text-[#a4a7ac] hover:bg-[#1c222e] hover:text-white transition-colors cursor-pointer"
                           aria-label="Tutup notifikasi"
                         >
                           <X className="size-4" />
@@ -287,54 +329,126 @@ export function DashboardShell({
                       </div>
                     </div>
 
-                    <div className="mt-3 space-y-2.5 max-h-80 overflow-y-auto pr-1">
-                      {/* App Notifications (Transaction, Product, Inventory, etc.) */}
-                      {notifications.map(notif => (
-                        <div
-                          key={notif.id}
-                          className={`rounded-xl border p-3 text-xs transition-colors ${
-                            !notif.read
-                              ? 'border-[#24cbc5]/40 bg-[#1c222e]'
-                              : 'border-[#454d5b]/60 bg-[#1c222e]/60 text-[#a4a7ac]'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-1.5 font-medium text-white min-w-0">
-                              {notif.category === 'transaction' && <CheckCircle2 className="size-3.5 text-[#24cbc5] shrink-0" />}
-                              {notif.category === 'product' && <Package className="size-3.5 text-[#349cb8] shrink-0" />}
-                              {notif.category === 'inventory' && <AlertTriangle className="size-3.5 text-amber-400 shrink-0" />}
-                              {notif.category === 'low_stock' && <AlertTriangle className="size-3.5 text-red-400 shrink-0" />}
-                              {notif.category === 'system' && <Bell className="size-3.5 text-[#24cbc5] shrink-0" />}
-                              <span className="truncate">{notif.title}</span>
-                            </div>
-                            {!notif.read && (
-                              <span className="size-1.5 shrink-0 rounded-full bg-[#24cbc5]" />
-                            )}
-                          </div>
-                          <p className="mt-1 text-xs text-[#c5cbd5] leading-relaxed break-words">{notif.message}</p>
-                          <div className="mt-2 flex items-center justify-between gap-2">
-                            <span className="text-[10px] text-[#a4a7ac]">
-                              {new Date(notif.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+                    {/* Category Filter Pills */}
+                    <div className="mt-3 flex flex-wrap gap-1.5 pb-2.5 border-b border-[#454d5b]/60">
+                      {NOTIFICATION_CATEGORIES.map(cat => {
+                        const isActive = activeCategory === cat.key
+                        const count = cat.key === 'all'
+                          ? notifications.length
+                          : notifications.filter(n => {
+                              if (cat.key === 'product') return n.category === 'product' || n.category === 'inventory' || n.category === 'low_stock'
+                              return n.category === cat.key
+                            }).length
+                        return (
+                          <button
+                            key={cat.key}
+                            type="button"
+                            onClick={() => setActiveCategory(cat.key)}
+                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-normal border-0 transition-all ${
+                              isActive ? `${cat.activeBg} ${cat.activeText}` : `${cat.inactiveBg} ${cat.inactiveText}`
+                            }`}
+                          >
+                            <span>{cat.label}</span>
+                            <span
+                              className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                                isActive ? 'bg-black/20 text-inherit' : 'bg-white/10 text-inherit'
+                              }`}
+                            >
+                              {count}
                             </span>
-                            {notif.link && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  handleMarkOneRead(notif.id)
-                                  setShowNotifications(false)
-                                  navigate(notif.link!)
-                                }}
-                                className="btn-action !text-[10px] !py-0.5 !px-2"
-                              >
-                                {notif.linkLabel || 'Lihat detail →'}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                          </button>
+                        )
+                      })}
+                    </div>
 
-                      {/* Low Stock Warning */}
-                      {lowStock.length > 0 && (
+                    {/* Notifications List */}
+                    <div className="mt-3 space-y-2.5 max-h-80 overflow-y-auto pr-1">
+                      {notifications
+                        .filter(n => {
+                          if (activeCategory === 'all') return true
+                          if (activeCategory === 'product') return n.category === 'product' || n.category === 'inventory' || n.category === 'low_stock'
+                          return n.category === activeCategory
+                        })
+                        .map(notif => {
+                          const catDef =
+                            NOTIFICATION_CATEGORIES.find(c => c.key === notif.category) ||
+                            (notif.category === 'inventory' || notif.category === 'low_stock'
+                              ? NOTIFICATION_CATEGORIES.find(c => c.key === 'product')
+                              : NOTIFICATION_CATEGORIES.find(c => c.key === 'system'))
+
+                          return (
+                            <div
+                              key={notif.id}
+                              className={`relative rounded-xl border p-3 text-xs transition-colors ${
+                                !notif.read
+                                  ? 'border-[#24cbc5]/40 bg-[#1c222e]'
+                                  : 'border-[#454d5b]/60 bg-[#1c222e]/60 text-[#a4a7ac]'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                                  {catDef && (
+                                    <span
+                                      className={`rounded-full px-2 py-0.5 text-[10px] font-medium border-0 ${catDef.inactiveBg} ${catDef.inactiveText}`}
+                                    >
+                                      {catDef.label}
+                                    </span>
+                                  )}
+                                  <span className="font-medium text-white truncate max-w-[200px]">
+                                    {notif.title}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  {!notif.read && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleMarkOneRead(notif.id)}
+                                      title="Tandai telah dibaca"
+                                      className="size-2 rounded-full bg-[#24cbc5] hover:ring-2 hover:ring-[#24cbc5]/50 transition-all cursor-pointer"
+                                    />
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteOne(notif.id)}
+                                    title="Hapus notifikasi"
+                                    aria-label="Hapus notifikasi"
+                                    className="rounded-lg p-1 text-[#a4a7ac] hover:bg-red-500/10 hover:text-red-400 transition-colors cursor-pointer"
+                                  >
+                                    <Trash2 className="size-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                              <p className="mt-1.5 text-xs text-[#c5cbd5] leading-relaxed break-words">
+                                {notif.message}
+                              </p>
+                              <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-[#454d5b]/40 pt-2">
+                                <span className="text-[10px] text-[#a4a7ac]">
+                                  {new Date(notif.timestamp).toLocaleTimeString('id-ID', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}{' '}
+                                  WIB
+                                </span>
+                                {notif.link && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      handleMarkOneRead(notif.id)
+                                      setShowNotifications(false)
+                                      navigate(notif.link!)
+                                    }}
+                                    className="btn-action !text-[10px] !py-0.5 !px-2"
+                                  >
+                                    {notif.linkLabel || 'Lihat detail →'}
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })}
+
+                      {/* Low Stock Warning within product/all filter */}
+                      {(activeCategory === 'all' || activeCategory === 'product') && lowStock.length > 0 && (
                         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-[#c5cbd5]">
                           <div className="flex items-center gap-1.5 font-normal text-amber-400">
                             <AlertTriangle className="size-3.5 shrink-0" />
@@ -344,7 +458,7 @@ export function DashboardShell({
                             {lowStock.length} produk mencapai batas minimum:{' '}
                             {lowStock
                               .slice(0, 2)
-                              .map((p) => p.name)
+                              .map(p => p.name)
                               .join(', ')}
                           </p>
                           <button
@@ -360,40 +474,20 @@ export function DashboardShell({
                         </div>
                       )}
 
-                      {/* Latest sale if not in notifications */}
-                      {sales.length > 0 && !notifications.some(n => n.category === 'transaction') && (
-                        <div className="rounded-xl border border-[#454d5b]/60 bg-[#1c222e] p-3 text-xs text-[#c5cbd5]">
-                          <div className="flex items-center gap-1.5 font-normal text-[#24cbc5]">
-                            <CheckCircle2 className="size-3.5 shrink-0" />
-                            <span>Transaksi Terakhir</span>
-                          </div>
-                          <p className="mt-1 text-white font-medium">
-                            {saleCode(sales[0])}
-                          </p>
-                          <p className="text-[11px] text-[#a4a7ac]">
-                            Total {money(Number(sales[0].total))} dicatat oleh{' '}
-                            {sales[0].actor_name}
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShowNotifications(false)
-                              nav('Transaksi')
-                            }}
-                            className="mt-2 btn-action !text-[11px] !py-1 !px-2.5"
-                          >
-                            Lihat riwayat transaksi →
-                          </button>
-                        </div>
-                      )}
-
-                      {!notifications.length && !lowStock.length && !sales.length && (
-                        <div className="py-6 text-center text-xs text-[#a4a7ac]">
-                          <Bell className="mx-auto size-6 text-[#454d5b] mb-1.5" />
+                      {/* Empty state when no notifications in active filter */}
+                      {notifications.filter(n => {
+                        if (activeCategory === 'all') return true
+                        if (activeCategory === 'product') return n.category === 'product' || n.category === 'inventory' || n.category === 'low_stock'
+                        return n.category === activeCategory
+                      }).length === 0 && (!lowStock.length || (activeCategory !== 'all' && activeCategory !== 'product')) && (
+                        <div className="py-8 text-center text-xs text-[#a4a7ac]">
+                          <Bell className="mx-auto size-6 text-[#454d5b] mb-2" />
                           <span>
-                            {activity
-                              ? 'Tidak ada pemberitahuan mendesak.'
-                              : 'Belum ada pemberitahuan baru.'}
+                            {activeCategory === 'all'
+                              ? 'Belum ada notifikasi.'
+                              : `Belum ada notifikasi untuk kategori ${
+                                  NOTIFICATION_CATEGORIES.find(c => c.key === activeCategory)?.label || ''
+                                }.`}
                           </span>
                         </div>
                       )}

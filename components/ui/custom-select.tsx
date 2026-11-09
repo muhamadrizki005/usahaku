@@ -28,6 +28,7 @@ export interface CustomSelectProps {
   triggerClassName?: string
   dropdownClassName?: string
   align?: 'left' | 'right'
+  contentAlign?: 'left' | 'center' | 'right'
   size?: 'sm' | 'md' | 'lg'
   dropdownFooter?: React.ReactNode | ((helpers: { close: () => void }) => React.ReactNode)
 }
@@ -47,6 +48,7 @@ export function CustomSelect({
   triggerClassName = '',
   dropdownClassName = '',
   align = 'left',
+  contentAlign = 'left',
   size = 'md',
   dropdownFooter,
 }: CustomSelectProps) {
@@ -178,7 +180,7 @@ export function CustomSelect({
             : 'border-border hover:border-[#24cbc5]/50 hover:bg-[#303640]'
         } ${triggerClassName}`}
       >
-        <span className="truncate text-left">{displayLabel}</span>
+        <span className={`truncate ${contentAlign === 'center' ? 'text-center flex-1' : contentAlign === 'right' ? 'text-right flex-1' : 'text-left'}`}>{displayLabel}</span>
         <ChevronDown
           className={`size-4 shrink-0 text-[#a4a7ac] transition-transform duration-200 ${
             open ? 'rotate-180 text-white' : ''
@@ -223,7 +225,13 @@ export function CustomSelect({
                   disabled={opt.disabled}
                   onClick={() => handleSelect(opt.value, opt.disabled)}
                   onFocus={event=>event.currentTarget.scrollIntoView({block:'nearest'})}
-                  className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-[#24cbc5] focus-visible:outline-offset-[-2px] ${
+                  className={`relative flex w-full items-center ${
+                    contentAlign === 'center'
+                      ? 'justify-center text-center'
+                      : contentAlign === 'right'
+                      ? 'justify-end text-right'
+                      : 'justify-between text-left'
+                  } gap-2 rounded-xl px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-[#24cbc5] focus-visible:outline-offset-[-2px] ${
                     opt.disabled
                       ? 'cursor-not-allowed opacity-40 text-[#a4a7ac]'
                       : isSelected
@@ -232,7 +240,13 @@ export function CustomSelect({
                   }`}
                 >
                   <span className="break-words [overflow-wrap:anywhere]">{opt.label}</span>
-                  {isSelected && <span className="size-1.5 shrink-0 rounded-full bg-white" />}
+                  {isSelected && (
+                    <span
+                      className={`size-1.5 shrink-0 rounded-full bg-white ${
+                        contentAlign === 'center' ? 'absolute right-3' : ''
+                      }`}
+                    />
+                  )}
                 </button>
               </React.Fragment>
             )
