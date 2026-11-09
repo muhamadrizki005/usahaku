@@ -170,3 +170,4 @@ export function saveProductPhoto(productId: string, photo: string) {
     window.dispatchEvent(new CustomEvent('usahaku:product_photo_changed', { detail: { productId, photo } }))
   } catch {}
 }
+

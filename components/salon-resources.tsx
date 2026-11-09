@@ -30,13 +30,16 @@ import {
   saveProductPhoto,
 } from '@/lib/salon-benefits'
 
+const EMPTY_PRODUCTS: CatalogProduct[] = []
+const EMPTY_STRINGS: string[] = []
+
 export function SalonResources({
   resource,
   data,
   canManage,
-  initialProducts = [],
-  initialCategories = [],
-  initialUnits = [],
+  initialProducts = EMPTY_PRODUCTS,
+  initialCategories = EMPTY_STRINGS,
+  initialUnits = EMPTY_STRINGS,
   defaultTab = 'service',
 }: {
   resource: 'service' | 'practitioner'
@@ -71,16 +74,19 @@ export function SalonResources({
   const [productDiscounts, setProductDiscounts] = useState<Record<string, SalonDiscount | null>>({})
   const [productDescriptions, setProductDescriptions] = useState<Record<string, string>>({})
 
+  const initialProductsKey = (initialProducts || EMPTY_PRODUCTS).map(p => p.id + ':' + p.revision).join(',')
+
   useEffect(() => {
-    setProducts(initialProducts)
-  }, [initialProducts])
+    if (people) return
+    setProducts(initialProducts || EMPTY_PRODUCTS)
+  }, [people, initialProductsKey])
 
   const servicesKey = data.services.map(s => s.id + ':' + s.revision).join(',')
   const productsKey = products.map(p => p.id + ':' + p.revision).join(',')
 
   // Load service metadata
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined' || people) return
     const loadServiceMeta = () => {
       const photos: Record<string, string> = {}
       const benefits: Record<string, string[]> = {}
@@ -109,11 +115,11 @@ export function SalonResources({
       window.removeEventListener('usahaku:service_benefits_changed', loadServiceMeta)
       window.removeEventListener('usahaku:service_discount_changed', loadServiceMeta)
     }
-  }, [servicesKey])
+  }, [people, servicesKey])
 
   // Load product metadata
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined' || people) return
     const loadProductMeta = () => {
       const photos: Record<string, string> = {}
       const discounts: Record<string, SalonDiscount | null> = {}
@@ -147,7 +153,7 @@ export function SalonResources({
       window.removeEventListener('usahaku:product_description_changed', loadProductMeta)
       window.removeEventListener('usahaku:product_photo_changed', loadProductMeta)
     }
-  }, [productsKey])
+  }, [people, productsKey])
 
   // Filter rows
   const serviceRows = data.services.filter(v => v.name.toLocaleLowerCase('id').includes(query.toLocaleLowerCase('id')))
