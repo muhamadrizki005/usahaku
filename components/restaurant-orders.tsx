@@ -17,7 +17,7 @@ import { enabledPaymentMethods, type PaymentSettings } from '@/lib/business-paym
 import { restaurantMemberQuote, type RestaurantBilling } from '@/lib/restaurant-billing'
 import DashboardSection from './dashboard-section'
 import { RestaurantDialog, RestaurantField, restaurantPanel, restaurantInput, restaurantButton, restaurantPrimary } from './restaurant-forms'
-import { UtensilsCrossed } from 'lucide-react'
+import { UtensilsCrossed, ChevronUp, ChevronDown, Trash2 } from 'lucide-react'
 import { notify, showErrorToast } from '@/lib/notifications'
 
 function useRestaurantRequest() {
@@ -131,6 +131,10 @@ function OrderEditor({ initial, menu, tables, usage, close, saved, reservation, 
   useEffect(()=>{let live=true;if(initial?.customer_id)void loadRestaurantMember(initial.customer_id).then(r=>{if(live){if(r.member)setSelectedMember(r.member);else setMemberError(r.error||'Member belum dapat dibaca.')}}).catch(()=>{if(live)setMemberError('Member belum dapat dibaca.')});return()=>{live=false}},[initial?.customer_id])
   const [lines, setLines] = useState((initial?.lines || []).map(l => ({ id: l.id, quantity: l.quantity })))
   const add = (choice:string) => { if (!choice) return; setLines(old => old.some(l => l.id === choice) ? old.map(l => l.id === choice ? { ...l, quantity: Math.min(9999, l.quantity + 1) } : l) : old.length<100?[...old, { id: choice, quantity: 1 }]:old) }
+  const updateQty = (choice: string, qty: number) => {
+    const next = Math.max(1, Math.min(9999, qty))
+    setLines(old => old.map(item => item.id === choice ? { ...item, quantity: next } : item))
+  }
   const preview = lines.map(l => { const old = initial?.lines.find(p => p.id === l.id), current = menu.find(p => p.id === l.id); const price = old && l.quantity <= old.quantity ? Number(old.price) : Number(current?.price || 0); return { ...l, name: old?.name || current?.name || 'Menu tidak tersedia', price } })
   const subtotal = preview.reduce((sum, l) => sum + l.price * l.quantity, 0)
   function submit(e: FormEvent) {
@@ -203,42 +207,94 @@ function OrderEditor({ initial, menu, tables, usage, close, saved, reservation, 
     <RestaurantField label="Jenis pesanan"><SelectInput disabled={Boolean(reservation || initial?.reservation_id)} value={kind} onChange={e => setKind(e.target.value as typeof kind)} className={restaurantInput}><option value="takeaway">Bawa pulang</option><option value="dine_in">Makan di tempat</option></SelectInput></RestaurantField>
     {kind === 'dine_in' && <><RestaurantField label="Meja"><SelectInput disabled={Boolean(reservation || initial?.reservation_id)} value={tableId} onChange={e => setTableId(e.target.value)} className={restaurantInput}><option value="">Belum pilih meja</option>{tables.filter(t => t.active).map(t => { const taken = usage.some(u => u.id === t.id && (u.occupied || u.reserved)) && t.id !== initial?.table_id && t.id !== reservation?.table_id; return <option key={t.id} value={t.id} disabled={taken}>{t.name} / {t.capacity} orang{taken ? (usage.some(u => u.id === t.id && u.reserved) ? ' / Reservasi' : ' / Terpakai') : ''}</option> })}</SelectInput></RestaurantField><RestaurantField label="Jumlah tamu"><NumericInput disabled={Boolean(reservation || initial?.reservation_id)} required type="number" min={1} max={1000} value={guests} onChange={e => setGuests(e.target.value)} className={restaurantInput} /></RestaurantField><p className="text-xs text-[#c5cbd5]">Meja boleh ditentukan nanti. Pesanan tanpa meja tetap dapat dibayar.</p></>}
     {reservation||initial?.reservation_id?<RestaurantField label="Nama pelanggan reservasi"><input readOnly value={customer} className={restaurantInput}/></RestaurantField>:<PosCustomerPicker member={member} addLabel="Tambah member" value={selectedMember} onChange={value=>{setSelectedMember(value);setMemberError('');setCustomer(value?.name||'Pelanggan umum')}}/>}{memberError&&<p role="alert" className="text-sm text-[#ffb4ae]">{memberError}</p>}
-    <ul className="divide-y divide-[#454d5b]">{preview.map(l => (
-      <li key={l.id} className="py-3">
-        <div className="flex items-start gap-3">
-          {menuPhotos[l.id] ? (
-            <img src={menuPhotos[l.id]} alt={l.name} className="size-11 rounded-lg object-cover shrink-0 border border-[#454d5b]/40 bg-[#1c222e]" />
-          ) : (
-            <div className="size-11 rounded-lg bg-[#1c222e] grid place-items-center text-[#a4a7ac] shrink-0 border border-[#454d5b]/30">
-              <UtensilsCrossed className="size-5 text-[#24cbc5]/60" />
-            </div>
-          )}
-          <div className="min-w-0 flex-1">
-            <p className="break-words text-sm font-medium">
-              {l.name} / {rupiah(l.price)} per porsi{' '}
-              {menuDiscounts[l.id] && (
-                <span className="text-xs text-[#24cbc5] font-normal">
-                  ({menuDiscounts[l.id].kind === 'amount'
-                    ? `Diskon ${rupiah(menuDiscounts[l.id].value || menuDiscounts[l.id].amount || 0)}`
-                    : `Diskon ${menuDiscounts[l.id].value || menuDiscounts[l.id].percent}%`})
-                </span>
+    <ul className="divide-y divide-[#454d5b]">{preview.map(l => {
+      const discount = menuDiscounts[l.id]
+      return (
+        <li key={l.id} className="py-3">
+          <div className="flex items-start gap-3">
+            {menuPhotos[l.id] ? (
+              <img src={menuPhotos[l.id]} alt={l.name} className="size-11 rounded-lg object-cover shrink-0 border border-[#454d5b]/40 bg-[#1c222e]" />
+            ) : (
+              <div className="size-11 rounded-lg bg-[#1c222e] grid place-items-center text-[#a4a7ac] shrink-0 border border-[#454d5b]/30">
+                <UtensilsCrossed className="size-5 text-[#24cbc5]/60" />
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="break-words text-sm font-medium text-white">{l.name}</p>
+              {discount ? (
+                <div className="mt-0.5 flex flex-wrap items-baseline gap-2">
+                  <span className="text-xs text-[#a4a7ac] line-through">{rupiah(discount.basePrice)}</span>
+                  <span className="text-sm font-semibold text-[#24cbc5]">{rupiah(l.price)}</span>
+                  <span className="rounded bg-[#24cbc5]/15 px-1.5 py-0.5 text-[10px] font-medium text-[#24cbc5]">
+                    {discount.kind === 'amount'
+                      ? `-${rupiah(discount.value || discount.amount || 0)}`
+                      : `-${discount.value || discount.percent}%`}
+                  </span>
+                </div>
+              ) : (
+                <div className="mt-0.5">
+                  <span className="text-sm font-semibold text-[#24cbc5]">{rupiah(l.price)}</span>
+                </div>
               )}
-            </p>
-            <div className="mt-2 flex flex-wrap items-end gap-3">
-              <RestaurantField label={`Jumlah ${l.name}`}>
-                <NumericInput required type="number" min={1} max={9999} value={l.quantity || ''} onChange={e => setLines(old => old.map(item => item.id === l.id ? { ...item, quantity: Number(e.target.value) } : item))} className={restaurantInput} />
-              </RestaurantField>
-              <button type="button" onClick={() => setLines(old => old.filter(item => item.id !== l.id))} aria-label={`Hapus ${l.name}`} className={restaurantButton}>Hapus</button>
+              <div className="mt-2.5 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => updateQty(l.id, (l.quantity || 1) + 1)}
+                    disabled={l.quantity >= 9999}
+                    aria-label={`Tambah ${l.name}`}
+                    title="Tambah kuantitas"
+                    className="grid size-8 place-items-center rounded-lg bg-[#273242] text-[#c5cbd5] hover:bg-[#303640] hover:text-white active:scale-95 transition-all border border-[#454d5b] shrink-0 disabled:opacity-40"
+                  >
+                    <ChevronUp className="size-4" />
+                  </button>
+                  <input
+                    type="number"
+                    min={1}
+                    max={9999}
+                    value={l.quantity || ''}
+                    onChange={e => {
+                      const val = parseInt(e.target.value, 10)
+                      if (isNaN(val)) {
+                        setLines(old => old.map(item => item.id === l.id ? { ...item, quantity: 1 } : item))
+                      } else {
+                        updateQty(l.id, val)
+                      }
+                    }}
+                    aria-label={`Jumlah ${l.name}`}
+                    className="h-8 w-14 rounded-lg border border-[#454d5b] bg-[#1c222e] text-center text-sm font-medium text-white focus:border-[#24cbc5] focus:outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => updateQty(l.id, (l.quantity || 1) - 1)}
+                    disabled={l.quantity <= 1}
+                    aria-label={`Kurangi ${l.name}`}
+                    title="Kurangi kuantitas"
+                    className="grid size-8 place-items-center rounded-lg bg-[#273242] text-[#c5cbd5] hover:bg-[#303640] hover:text-white active:scale-95 transition-all border border-[#454d5b] shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <ChevronDown className="size-4" />
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setLines(old => old.filter(item => item.id !== l.id))}
+                  aria-label={`Hapus ${l.name}`}
+                  title={`Hapus ${l.name}`}
+                  className="grid size-8 place-items-center rounded-full bg-red-500 text-white hover:bg-red-600 active:scale-95 transition-all border-0 shadow-sm shrink-0"
+                >
+                  <Trash2 className="size-4" />
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      </li>
-    ))}</ul>
+        </li>
+      )
+    })}</ul>
     {!lines.length && <p className="text-sm text-[#c5cbd5]">Tambahkan minimal satu menu.</p>}
     <RestaurantField label="Catatan pesanan"><textarea maxLength={300} value={notes} onChange={e => setNotes(e.target.value)} className={restaurantInput} /></RestaurantField>
     {initial && <RestaurantField label="Proses pesanan"><SelectInput disabled={initial.occupies_table === false} value={stage} onChange={e => setStage(e.target.value as typeof stage)} className={restaurantInput}>{Object.entries(restaurantStages).map(([value, label], index, all) => <option key={value} value={value} disabled={index < all.findIndex(([v]) => v === initial.stage)}>{label}</option>)}</SelectInput></RestaurantField>}
     <p className="text-sm">Subtotal pratinjau: {rupiah(subtotal)}</p><p className="text-xs leading-5 text-[#c5cbd5]">Harga diperiksa server saat disimpan. Menu yang sudah dipesan mempertahankan harga tersimpan jika jumlahnya tetap atau berkurang; penambahan jumlah memakai harga menu saat ini. Periksa hasil tersimpan sebelum menerima pembayaran.</p>
-  </fieldset>{request.error && <p role="alert" className="mt-4 text-sm text-[#ffb4ae]">{request.error}</p>}<div className="mt-5 flex flex-wrap justify-end gap-3"><button type="button" disabled={request.pending} onClick={close} className={restaurantButton}>Pesanan baru</button><button disabled={request.pending || !lines.length || Boolean(memberError)} className={restaurantPrimary}>{request.pending ? 'Menyimpan...' : request.locked ? 'Ulangi permintaan yang sama' : initial?.occupies_table===false?'Simpan pesanan di muka':'Simpan & lanjut pembayaran'}</button></div></form>}</section></section>
+  </fieldset>{request.error && <p role="alert" className="mt-4 text-sm text-[#ffb4ae]">{request.error}</p>}<div className="mt-5 flex flex-wrap justify-end gap-3"><button type="button" disabled={request.pending} onClick={close} className={restaurantButton}>Pesanan baru</button><button disabled={request.pending || !lines.length || Boolean(memberError)} className="min-h-11 inline-flex items-center justify-center rounded-full border-0 bg-[#1835d9] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#132c9e] active:scale-[0.98] transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5] disabled:opacity-50 shadow-sm">{request.pending ? 'Menyimpan...' : request.locked ? 'Ulangi permintaan yang sama' : initial?.occupies_table===false?'Simpan pesanan di muka':'Simpan & lanjut pembayaran'}</button></div></form>}</section></section>
 }
 
 function Payment({ order, member, close, paid, payments, billing, inline = false }: { payments: PaymentSettings; billing: RestaurantBilling; order: RestaurantOrder; member: Member; close: () => void; paid: (sale: Sale) => void; inline?:boolean }) {
@@ -278,7 +334,7 @@ function Payment({ order, member, close, paid, payments, billing, inline = false
     {deposit > 0 && <><p className="text-sm">DP terkonfirmasi: {rupiah(deposit)}</p><p className="text-lg">Sisa pembayaran: {rupiah(balance)}</p></>}<RestaurantPaymentFields settings={payments} method={method} onChange={setMethod}/>
     {method === 'cash' ? <><RestaurantField label="Uang diterima"><input required inputMode="numeric" maxLength={32} aria-invalid={Boolean(cashError)} value={received} onChange={e => setReceived(e.target.value)} className={restaurantInput} /></RestaurantField><p className="text-sm">Kembalian pratinjau: {cashAmount === null ? (received === '' ? rupiah(0) : '-') : rupiah(Math.max(0, cashAmount - balance))}</p></> : <p className="text-sm leading-6 text-[#c5cbd5]">Periksa pembayaran pada rekening/aplikasi usaha. Usahaku tidak memverifikasi QRIS atau transfer secara otomatis.</p>}
     <label className="flex min-h-11 items-center gap-3 text-sm"><input required type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} />{deposit > 0 ? 'Sisa pembayaran sudah diterima dan diperiksa.' : 'Pembayaran sebesar total sudah diterima dan diperiksa.'}</label>
-  </fieldset>{(cashError || request.error || error) && <p role="alert" className="mt-4 text-sm text-[#ffb4ae]">{cashError || request.error || error}</p>}<div className="mt-5 flex flex-wrap justify-end gap-3"><button type="button" disabled={request.pending} onClick={close} className={restaurantButton}>Ubah pesanan</button><button disabled={request.pending || (!request.locked && (memberLoading || Boolean(memberError) || !enabledPaymentMethods(payments).includes(method) || !confirmed || Boolean(error) || (method === 'cash' && cashAmount === null)))} className={restaurantPrimary}>{request.pending ? 'Mencatat...' : request.locked ? 'Ulangi permintaan yang sama' : 'Catat pembayaran'}</button></div></form></PaymentFrame>
+  </fieldset>{(cashError || request.error || error) && <p role="alert" className="mt-4 text-sm text-[#ffb4ae]">{cashError || request.error || error}</p>}<div className="mt-5 flex flex-wrap justify-end gap-3"><button type="button" disabled={request.pending} onClick={close} className={restaurantButton}>Ubah pesanan</button><button disabled={request.pending || (!request.locked && (memberLoading || Boolean(memberError) || !enabledPaymentMethods(payments).includes(method) || !confirmed || Boolean(error) || (method === 'cash' && cashAmount === null)))} className="min-h-11 inline-flex items-center justify-center rounded-full border-0 bg-[#1835d9] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#132c9e] active:scale-[0.98] transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24cbc5] disabled:opacity-50 shadow-sm">{request.pending ? 'Mencatat...' : request.locked ? 'Ulangi permintaan yang sama' : 'Catat pembayaran'}</button></div></form></PaymentFrame>
 }
 
 function PaymentFrame({inline,title,busy,close,children}:{inline:boolean;title:string;busy:boolean;close:()=>void;children:ReactNode}){

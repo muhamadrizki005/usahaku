@@ -233,7 +233,7 @@ export function RestaurantResources({
             </button>
             {canManage&&<button type="button" aria-label={`Edit meja ${item.name}`} title="Edit meja" className="absolute left-3 top-3 grid size-9 place-items-center rounded-full bg-[#1835d9] text-white hover:bg-[#132c9e] active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-[#24cbc5] border-0 shadow-sm" onClick={()=>setEditing(item)}><Pencil aria-hidden="true" className="size-4"/></button>}
             <TableAvailability draft={draft} refreshing={refreshing} table={item as RestaurantTable} occupied={taken} label={label} saved={()=>{setNotice('Status meja tersimpan.');refreshView()}}/>
-            {canManage&&<button type="button" aria-label={`Hapus meja ${item.name}`} title="Hapus meja" className="absolute right-3 top-3 grid size-9 place-items-center rounded-full bg-red-500 text-white hover:bg-red-600 active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-[#24cbc5] border-0 shadow-sm" onClick={()=>{deletePacket.current=null;setDeleteError('');setDeleting(item as RestaurantTable)}}><X aria-hidden="true" className="size-4"/></button>}
+            {canManage&&<button type="button" aria-label={`Hapus meja ${item.name}`} title="Hapus meja" className="absolute right-3 top-3 grid size-9 place-items-center rounded-full bg-red-500 text-white hover:bg-red-600 active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-[#24cbc5] border-0 shadow-sm" onClick={()=>{deletePacket.current=null;setDeleteError('');setDeleting(item as RestaurantTable)}}><Trash2 aria-hidden="true" className="size-4"/></button>}
           </div>
         })}
       </div>
@@ -428,7 +428,8 @@ function TableAvailability({table,occupied,label,saved,refreshing,draft}:{draft:
         value={isAvailable ? 'available' : 'unavailable'}
         disabled={pending||refreshing||Boolean(retry.current)}
         onChange={e=>void change(e.target.value==='available')}
-        className={'!min-h-9 !h-9 !gap-1 !rounded-lg !px-1.5 !py-1 !text-xs justify-center text-center [&>span]:flex [&>span]:items-center [&>span]:justify-center [&>span]:text-center [&>span]:gap-1.5 [&>span]:!whitespace-normal [&>span]:!overflow-visible [&>span]:break-words [&>span]:before:size-1.5 [&>span]:before:shrink-0 [&>span]:before:rounded-full [&>svg]:!size-3 '+ (isAvailable ? '[&>span]:before:bg-[#4ade80]' : '[&>span]:before:bg-[#f87171]')}
+        className={'!min-h-9 !h-9 !gap-1.5 !rounded-full !px-3 !py-1 !text-xs justify-center text-center [&>span]:flex [&>span]:items-center [&>span]:justify-center [&>span]:text-center [&>span]:gap-1.5 [&>span]:!whitespace-nowrap [&>span]:before:size-2 [&>span]:before:shrink-0 [&>span]:before:rounded-full [&>svg]:!size-3.5 '+ (isAvailable ? '[&>span]:before:bg-[#4ade80]' : '[&>span]:before:bg-[#f87171]')}
+        dropdownClassName="!rounded-2xl p-1.5 [&_[role=option]]:!rounded-full"
       >
         <option value="available">Tersedia</option>
         <option value="unavailable">Tidak tersedia</option>

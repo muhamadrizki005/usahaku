@@ -62,15 +62,21 @@ export function CustomSelect({
   const openAt = useRef<'selected' | 'first' | 'last'>('selected')
   const searchRef = useRef({ text: '', at: 0 })
 
-  const normalizedOptions = useMemo(
-    () =>
-      options.map(opt =>
+  const normalizedOptions = useMemo(() => {
+    const seen = new Set<string>()
+    const list: { value: string; label: string; disabled: boolean; group?: string }[] = []
+    for (const opt of options) {
+      const item =
         typeof opt === 'string'
           ? { value: opt, label: opt, disabled: false, group: undefined }
           : { value: opt.value, label: opt.label, disabled: !!opt.disabled, group: opt.group }
-      ),
-    [options]
-  )
+      if (!seen.has(item.value)) {
+        seen.add(item.value)
+        list.push(item)
+      }
+    }
+    return list
+  }, [options])
 
   const isControlled = value !== undefined
   const [uncontrolledValue, setUncontrolledValue] = useState(
