@@ -17,7 +17,10 @@ export function SalonResources({resource,data,canManage}:{resource:'service'|'pr
   const rows=(people?data.practitioners:data.services).filter(v=>v.name.toLocaleLowerCase('id').includes(query.toLocaleLowerCase('id')))
 
   const [servicePhotos, setServicePhotos] = useState<Record<string, string>>({})
+  const servicesKey = data.services.map(s => s.id + ':' + s.revision).join(',')
+
   useEffect(() => {
+    if (typeof window === 'undefined') return
     const loadPhotos = () => {
       const photos: Record<string, string> = {}
       data.services.forEach(s => {
@@ -31,7 +34,7 @@ export function SalonResources({resource,data,canManage}:{resource:'service'|'pr
     loadPhotos()
     window.addEventListener('storage', loadPhotos)
     return () => window.removeEventListener('storage', loadPhotos)
-  }, [data.services])
+  }, [servicesKey])
 
   return <section className={panel}><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg">{people?'Daftar penata & terapis':'Daftar layanan'}</h2>{canManage&&<button type="button" className={primary} onClick={()=>{setNotice('');setEditing('new')}}>Tambah {label}</button>}</div>
     <p className="mt-3 text-sm leading-6 text-[#c5cbd5]">{people?'Penata/terapis adalah tenaga layanan, terpisah dari akun login pada Staf & akses. Jadwal kerja memakai WIB.':'Atur harga rupiah dan durasi layanan. Menonaktifkan layanan mempertahankan data yang sudah tersimpan.'}</p>

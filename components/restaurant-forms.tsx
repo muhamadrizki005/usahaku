@@ -40,7 +40,25 @@ export function RestaurantDialog({ title, busy, close, children, wide = false }:
   </dialog>
 }
 
-export function RestaurantResources({ resource, menu = [], tables = [], usage = [], canManage = true, draft = false }: { resource: 'menu' | 'table'; canManage?: boolean; draft?: boolean; menu?: RestaurantMenu[]; tables?: RestaurantTable[]; usage?: import('@/lib/restaurant').RestaurantTableUsage[] }) {
+const EMPTY_RESTAURANT_MENU: RestaurantMenu[] = []
+const EMPTY_RESTAURANT_TABLES: RestaurantTable[] = []
+const EMPTY_RESTAURANT_USAGE: import('@/lib/restaurant').RestaurantTableUsage[] = []
+
+export function RestaurantResources({
+  resource,
+  menu = EMPTY_RESTAURANT_MENU,
+  tables = EMPTY_RESTAURANT_TABLES,
+  usage = EMPTY_RESTAURANT_USAGE,
+  canManage = true,
+  draft = false
+}: {
+  resource: 'menu' | 'table'
+  canManage?: boolean
+  draft?: boolean
+  menu?: RestaurantMenu[]
+  tables?: RestaurantTable[]
+  usage?: import('@/lib/restaurant').RestaurantTableUsage[]
+}) {
   const router = useRouter()
   const [refreshing, startRefresh] = useTransition()
   const refreshView = () => startRefresh(() => router.refresh())
@@ -92,9 +110,13 @@ export function RestaurantResources({ resource, menu = [], tables = [], usage = 
   // Track table descriptions from persistent browser storage
   const [tableDescriptions, setTableDescriptions] = useState<Record<string, string>>({})
 
+  const menuKey = menu.map(m => m.id + ':' + m.revision).join(',')
+  const tableKey = tables.map(t => t.id + ':' + t.revision).join(',')
+
   useEffect(() => {
     if (typeof window === 'undefined') return
-    if (resource === 'table') {
+    if (resource !== 'table') return
+    const loadDescs = () => {
       const descs: Record<string, string> = {}
       tables.forEach(t => {
         try {
@@ -103,27 +125,38 @@ export function RestaurantResources({ resource, menu = [], tables = [], usage = 
         } catch {}
       })
       setTableDescriptions(descs)
-      return
     }
+    loadDescs()
+    window.addEventListener('storage', loadDescs)
+    return () => window.removeEventListener('storage', loadDescs)
+  }, [resource, tableKey])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
     if (resource !== 'menu') return
-    const photos: Record<string, string> = {}
-    const discounts: Record<string, { kind?: 'percent' | 'amount'; value?: number; percent: number; amount?: number; basePrice: number }> = {}
-    menu.forEach((item) => {
-      try {
-        const savedPhoto = localStorage.getItem('usahaku_menu_photo_' + item.id)
-        if (savedPhoto) photos[item.id] = savedPhoto
-      } catch {}
-      try {
-        const savedDiscount = localStorage.getItem('usahaku_menu_discount_' + item.id)
-        if (savedDiscount) {
-          const parsed = JSON.parse(savedDiscount)
-          if (parsed && parsed.enabled) discounts[item.id] = parsed
-        }
-      } catch {}
-    })
-    setMenuPhotos(photos)
-    setMenuDiscounts(discounts)
-  }, [resource, menu, tables])
+    const loadMenuData = () => {
+      const photos: Record<string, string> = {}
+      const discounts: Record<string, { kind?: 'percent' | 'amount'; value?: number; percent: number; amount?: number; basePrice: number }> = {}
+      menu.forEach(item => {
+        try {
+          const savedPhoto = localStorage.getItem('usahaku_menu_photo_' + item.id)
+          if (savedPhoto) photos[item.id] = savedPhoto
+        } catch {}
+        try {
+          const savedDiscount = localStorage.getItem('usahaku_menu_discount_' + item.id)
+          if (savedDiscount) {
+            const parsed = JSON.parse(savedDiscount)
+            if (parsed && parsed.enabled) discounts[item.id] = parsed
+          }
+        } catch {}
+      })
+      setMenuPhotos(photos)
+      setMenuDiscounts(discounts)
+    }
+    loadMenuData()
+    window.addEventListener('storage', loadMenuData)
+    return () => window.removeEventListener('storage', loadMenuData)
+  }, [resource, menuKey])
 
   const selectedTable = tables.find(table => table.id === viewing)
   const occupied = Boolean(selectedTable && usage.some(item => item.id === selectedTable.id && item.occupied))

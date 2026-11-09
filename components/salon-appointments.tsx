@@ -33,7 +33,10 @@ export default function SalonAppointments({business,member,foundation,visits,bus
  const router=useRouter(),[changing,startTransition]=useTransition(),[dialog,setDialog]=useState<Dialog|null>(null),[notice,setNotice]=useState(''),[operation,setOperation]=useState<{visit:SalonVisit;action:string}|null>(null)
 
  const [servicePhotos, setServicePhotos] = useState<Record<string, string>>({})
+ const servicesKey = foundation.services.map(s => s.id + ':' + s.revision).join(',')
+
  useEffect(() => {
+   if (typeof window === 'undefined') return
    const loadPhotos = () => {
      const photos: Record<string, string> = {}
      foundation.services.forEach(s => {
@@ -47,7 +50,7 @@ export default function SalonAppointments({business,member,foundation,visits,bus
    loadPhotos()
    window.addEventListener('storage', loadPhotos)
    return () => window.removeEventListener('storage', loadPhotos)
- }, [foundation.services])
+ }, [servicesKey])
 
  const request=useVisitRequest(()=>{
    if (operation) {

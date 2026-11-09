@@ -76,7 +76,17 @@ export default function RestaurantOrders({ menu, tables, initialPage, usage, mem
   </DashboardSection>
 }
 
-function getMenuDiscountInfo(id: string): { percent: number; basePrice: number } | null {
+type MenuDiscountStored = {
+  enabled: boolean
+  kind?: 'percent' | 'amount'
+  value?: number
+  percent: number
+  amount?: number
+  basePrice: number
+  discountedPrice?: number
+}
+
+function getMenuDiscountInfo(id: string): MenuDiscountStored | null {
   if (typeof window === 'undefined') return null
   try {
     const s = localStorage.getItem('usahaku_menu_discount_' + id)
@@ -89,8 +99,31 @@ function getMenuDiscountInfo(id: string): { percent: number; basePrice: number }
 }
 
 function OrderEditor({ initial, menu, tables, usage, close, saved, reservation, member, checkout }: { reservation?: Reservation | null; initial: RestaurantOrder | null; menu: RestaurantMenu[]; tables: RestaurantTable[]; usage: import('@/lib/restaurant').RestaurantTableUsage[]; close: () => void; saved: (value:NonNullable<RestaurantResult['value']>) => void; member:Member; checkout:ReactNode }) {
-  const [menuDiscounts,setMenuDiscounts]=useState<Record<string,{percent:number;basePrice:number}>>({})
-  useEffect(()=>{const next:Record<string,{percent:number;basePrice:number}>={};for(const m of menu){const info=getMenuDiscountInfo(m.id);if(info)next[m.id]=info}setMenuDiscounts(next)},[menu])
+  const [menuDiscounts, setMenuDiscounts] = useState<Record<string, MenuDiscountStored>>({})
+  const [menuPhotos, setMenuPhotos] = useState<Record<string, string>>({})
+  const menuKey = menu.map(m => m.id + ':' + m.revision).join(',')
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const loadStored = () => {
+      const nextDiscounts: Record<string, MenuDiscountStored> = {}
+      const nextPhotos: Record<string, string> = {}
+      for (const m of menu) {
+        const info = getMenuDiscountInfo(m.id)
+        if (info) nextDiscounts[m.id] = info
+        try {
+          const photo = localStorage.getItem('usahaku_menu_photo_' + m.id)
+          if (photo) nextPhotos[m.id] = photo
+        } catch {}
+      }
+      setMenuDiscounts(nextDiscounts)
+      setMenuPhotos(nextPhotos)
+    }
+    loadStored()
+    window.addEventListener('storage', loadStored)
+    return () => window.removeEventListener('storage', loadStored)
+  }, [menuKey])
+
   const id = useRef(initial?.id || crypto.randomUUID()), request = useRestaurantRequest()
   const [kind, setKind] = useState<'dine_in' | 'takeaway'>(initial?.kind || (reservation ? 'dine_in' : 'takeaway')), [tableId, setTableId] = useState(initial?.table_id || reservation?.table_id || ''), [guests, setGuests] = useState(String(initial?.guests || reservation?.guests || 1))
   const [customer, setCustomer] = useState(initial?.customer || reservation?.customer || 'Pelanggan umum'), [notes, setNotes] = useState(initial?.notes || reservation?.notes || ''), [stage, setStage] = useState<RestaurantOrder['stage']>(initial?.stage || 'new')
@@ -100,7 +133,19 @@ function OrderEditor({ initial, menu, tables, usage, close, saved, reservation, 
   const add = (choice:string) => { if (!choice) return; setLines(old => old.some(l => l.id === choice) ? old.map(l => l.id === choice ? { ...l, quantity: Math.min(9999, l.quantity + 1) } : l) : old.length<100?[...old, { id: choice, quantity: 1 }]:old) }
   const preview = lines.map(l => { const old = initial?.lines.find(p => p.id === l.id), current = menu.find(p => p.id === l.id); const price = old && l.quantity <= old.quantity ? Number(old.price) : Number(current?.price || 0); return { ...l, name: old?.name || current?.name || 'Menu tidak tersedia', price } })
   const subtotal = preview.reduce((sum, l) => sum + l.price * l.quantity, 0)
-  function submit(e: FormEvent) { e.preventDefault(); const input = { id: id.current, revision: initial?.revision ?? null, request: crypto.randomUUID() }; const details = { kind, tableId: kind === 'dine_in' ? tableId || null : null, guests: Number(guests), customer:selectedMember?.name||customer, customerId:selectedMember?.id||null, notes, stage, lines, ...(reservation ? { reservationId: reservation.id } : {}) }; void request.run(() => saveRestaurantOrder(input, details), saved) }
+  function submit(e: FormEvent) {
+    e.preventDefault()
+    const input = { id: id.current, revision: initial?.revision ?? null, request: crypto.randomUUID() }
+    const details = { kind, tableId: kind === 'dine_in' ? tableId || null : null, guests: Number(guests), customer:selectedMember?.name||customer, customerId:selectedMember?.id||null, notes, stage, lines, ...(reservation ? { reservationId: reservation.id } : {}) }
+    void request.run(() => saveRestaurantOrder(input, details), val => {
+      notify({
+        title: initial ? 'Pesanan diperbarui' : 'Pesanan baru dibuat',
+        message: `Pesanan untuk "${details.customer}" (${lines.reduce((n, l) => n + l.quantity, 0)} porsi) berhasil disimpan.`,
+        category: 'order',
+      })
+      saved(val)
+    })
+  }
   const visibleMenu=menu.filter(m=>m.active&&(category==='Semua'||m.category===category)&&m.name.toLowerCase().includes(search.toLowerCase()))
   return <section id="restaurant-workbench" className="mb-6 grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(360px,440px)]">
    <section className={restaurantPanel} aria-label="Katalog menu">
@@ -109,7 +154,46 @@ function OrderEditor({ initial, menu, tables, usage, close, saved, reservation, 
      <RestaurantField label="Cari menu"><input value={search} onChange={e=>setSearch(e.target.value)} className={restaurantInput} placeholder="Cari nama menu"/></RestaurantField>
      <RestaurantField label="Kategori menu kasir"><SelectInput value={category} onChange={e=>setCategory(e.target.value)} className={restaurantInput}><option>Semua</option>{[...new Set(menu.map(m=>m.category))].sort().map(c=><option key={c}>{c}</option>)}</SelectInput></RestaurantField>
     </div>
-    <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 2xl:grid-cols-4">{visibleMenu.map(m=><button key={m.id} type="button" disabled={!m.available||request.pending||request.locked||Boolean(checkout)} onClick={()=>add(m.id)} aria-label={`Tambah ${m.name}`} className="flex min-h-32 min-w-0 flex-col justify-between gap-3 rounded-xl border border-[#454d5b] bg-[#1c222e] p-4 text-left text-sm hover:border-[#24cbc5] focus-visible:outline-2 focus-visible:outline-[#24cbc5] disabled:opacity-45"><span className="break-words">{m.name}</span><span className="text-[#24cbc5]">{rupiah(Number(m.price))}{menuDiscounts[m.id]&&<span className="ml-2 text-xs">(Diskon {menuDiscounts[m.id].percent}%)</span>}</span>{!m.available&&<span className="text-[#ffb4ae]">Habis</span>}</button>)}</div>
+    <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 2xl:grid-cols-4">
+      {visibleMenu.map(m=>(
+        <button
+          key={m.id}
+          type="button"
+          disabled={!m.available||request.pending||request.locked||Boolean(checkout)}
+          onClick={()=>add(m.id)}
+          aria-label={`Tambah ${m.name}`}
+          className="group flex min-h-36 min-w-0 flex-col overflow-hidden rounded-xl border border-[#454d5b] bg-[#1c222e] p-2.5 text-left text-sm transition hover:border-[#24cbc5] focus-visible:outline-2 focus-visible:outline-[#24cbc5] disabled:opacity-45"
+        >
+          <div className="relative mb-2 aspect-[4/3] w-full overflow-hidden rounded-lg bg-[#273242]">
+            {menuPhotos[m.id] ? (
+              <img src={menuPhotos[m.id]} alt={m.name} className="size-full object-cover transition-transform duration-300 group-hover:scale-105" />
+            ) : (
+              <div className="grid size-full place-items-center text-[#a4a7ac]">
+                <UtensilsCrossed className="size-6 text-[#24cbc5]/50" />
+              </div>
+            )}
+            {!m.available && (
+              <div className="absolute inset-0 grid place-items-center bg-black/60 font-medium text-[#ffb4ae]">
+                Habis
+              </div>
+            )}
+          </div>
+          <div className="flex flex-1 flex-col justify-between gap-1.5 px-1 pb-1">
+            <span className="line-clamp-2 break-words font-medium text-white">{m.name}</span>
+            <div>
+              <span className="font-semibold text-[#24cbc5]">{rupiah(Number(m.price))}</span>
+              {menuDiscounts[m.id] && (
+                <span className="ml-1.5 inline-block rounded bg-[#24cbc5]/15 px-1 py-0.2 text-[10px] font-medium text-[#24cbc5]">
+                  {menuDiscounts[m.id].kind === 'amount'
+                    ? `-${rupiah(menuDiscounts[m.id].value || menuDiscounts[m.id].amount || 0)}`
+                    : `-${menuDiscounts[m.id].value || menuDiscounts[m.id].percent}%`}
+                </span>
+              )}
+            </div>
+          </div>
+        </button>
+      ))}
+    </div>
     {!visibleMenu.length&&<p className="py-8 text-sm text-[#c5cbd5]">Tidak ada menu yang sesuai.</p>}
    </section>
    <section className={restaurantPanel} aria-label="Keranjang restoran">
@@ -119,7 +203,37 @@ function OrderEditor({ initial, menu, tables, usage, close, saved, reservation, 
     <RestaurantField label="Jenis pesanan"><SelectInput disabled={Boolean(reservation || initial?.reservation_id)} value={kind} onChange={e => setKind(e.target.value as typeof kind)} className={restaurantInput}><option value="takeaway">Bawa pulang</option><option value="dine_in">Makan di tempat</option></SelectInput></RestaurantField>
     {kind === 'dine_in' && <><RestaurantField label="Meja"><SelectInput disabled={Boolean(reservation || initial?.reservation_id)} value={tableId} onChange={e => setTableId(e.target.value)} className={restaurantInput}><option value="">Belum pilih meja</option>{tables.filter(t => t.active).map(t => { const taken = usage.some(u => u.id === t.id && (u.occupied || u.reserved)) && t.id !== initial?.table_id && t.id !== reservation?.table_id; return <option key={t.id} value={t.id} disabled={taken}>{t.name} / {t.capacity} orang{taken ? (usage.some(u => u.id === t.id && u.reserved) ? ' / Reservasi' : ' / Terpakai') : ''}</option> })}</SelectInput></RestaurantField><RestaurantField label="Jumlah tamu"><NumericInput disabled={Boolean(reservation || initial?.reservation_id)} required type="number" min={1} max={1000} value={guests} onChange={e => setGuests(e.target.value)} className={restaurantInput} /></RestaurantField><p className="text-xs text-[#c5cbd5]">Meja boleh ditentukan nanti. Pesanan tanpa meja tetap dapat dibayar.</p></>}
     {reservation||initial?.reservation_id?<RestaurantField label="Nama pelanggan reservasi"><input readOnly value={customer} className={restaurantInput}/></RestaurantField>:<PosCustomerPicker member={member} addLabel="Tambah member" value={selectedMember} onChange={value=>{setSelectedMember(value);setMemberError('');setCustomer(value?.name||'Pelanggan umum')}}/>}{memberError&&<p role="alert" className="text-sm text-[#ffb4ae]">{memberError}</p>}
-    <ul className="divide-y divide-[#454d5b]">{preview.map(l => <li key={l.id} className="py-3"><p className="break-words text-sm font-medium">{l.name} / {rupiah(l.price)} per porsi {menuDiscounts[l.id] && <span className="text-xs text-[#24cbc5] font-normal">(Diskon {menuDiscounts[l.id]?.percent}%)</span>}</p><div className="mt-2 flex flex-wrap items-end gap-3"><RestaurantField label={`Jumlah ${l.name}`}><NumericInput required type="number" min={1} max={9999} value={l.quantity || ''} onChange={e => setLines(old => old.map(item => item.id === l.id ? { ...item, quantity: Number(e.target.value) } : item))} className={restaurantInput} /></RestaurantField><button type="button" onClick={() => setLines(old => old.filter(item => item.id !== l.id))} aria-label={`Hapus ${l.name}`} className={restaurantButton}>Hapus</button></div></li>)}</ul>
+    <ul className="divide-y divide-[#454d5b]">{preview.map(l => (
+      <li key={l.id} className="py-3">
+        <div className="flex items-start gap-3">
+          {menuPhotos[l.id] ? (
+            <img src={menuPhotos[l.id]} alt={l.name} className="size-11 rounded-lg object-cover shrink-0 border border-[#454d5b]/40 bg-[#1c222e]" />
+          ) : (
+            <div className="size-11 rounded-lg bg-[#1c222e] grid place-items-center text-[#a4a7ac] shrink-0 border border-[#454d5b]/30">
+              <UtensilsCrossed className="size-5 text-[#24cbc5]/60" />
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="break-words text-sm font-medium">
+              {l.name} / {rupiah(l.price)} per porsi{' '}
+              {menuDiscounts[l.id] && (
+                <span className="text-xs text-[#24cbc5] font-normal">
+                  ({menuDiscounts[l.id].kind === 'amount'
+                    ? `Diskon ${rupiah(menuDiscounts[l.id].value || menuDiscounts[l.id].amount || 0)}`
+                    : `Diskon ${menuDiscounts[l.id].value || menuDiscounts[l.id].percent}%`})
+                </span>
+              )}
+            </p>
+            <div className="mt-2 flex flex-wrap items-end gap-3">
+              <RestaurantField label={`Jumlah ${l.name}`}>
+                <NumericInput required type="number" min={1} max={9999} value={l.quantity || ''} onChange={e => setLines(old => old.map(item => item.id === l.id ? { ...item, quantity: Number(e.target.value) } : item))} className={restaurantInput} />
+              </RestaurantField>
+              <button type="button" onClick={() => setLines(old => old.filter(item => item.id !== l.id))} aria-label={`Hapus ${l.name}`} className={restaurantButton}>Hapus</button>
+            </div>
+          </div>
+        </div>
+      </li>
+    ))}</ul>
     {!lines.length && <p className="text-sm text-[#c5cbd5]">Tambahkan minimal satu menu.</p>}
     <RestaurantField label="Catatan pesanan"><textarea maxLength={300} value={notes} onChange={e => setNotes(e.target.value)} className={restaurantInput} /></RestaurantField>
     {initial && <RestaurantField label="Proses pesanan"><SelectInput disabled={initial.occupies_table === false} value={stage} onChange={e => setStage(e.target.value as typeof stage)} className={restaurantInput}>{Object.entries(restaurantStages).map(([value, label], index, all) => <option key={value} value={value} disabled={index < all.findIndex(([v]) => v === initial.stage)}>{label}</option>)}</SelectInput></RestaurantField>}
@@ -141,7 +255,21 @@ function Payment({ order, member, close, paid, payments, billing, inline = false
   try { balance = reservationBalance(total, deposit) } catch (e) { error = (e as Error).message }
   const cashAmount = restaurantCashAmount(received)
   const cashError = method === 'cash' && received !== '' && cashAmount === null ? 'Masukkan nominal rupiah yang valid, tanpa pemisah ribuan.' : ''
-  function submit(e: FormEvent) { e.preventDefault(); if (!request.locked && (error || memberLoading || memberError || (method === 'cash' && cashAmount === null))) return; const input = { id: order.id, revision: order.revision, request: crypto.randomUUID() }; const details = { payment: method, received: method === 'cash' ? received : String(balance), discountKind: kind, discountValue: value, paymentRevision: payments.revision, billingRevision: billing.revision, redeemPoints:points, confirmed }; void request.run(() => payRestaurantOrder(input, details), v => paid((v as { sale: Sale }).sale)) }
+  function submit(e: FormEvent) {
+    e.preventDefault()
+    if (!request.locked && (error || memberLoading || memberError || (method === 'cash' && cashAmount === null))) return
+    const input = { id: order.id, revision: order.revision, request: crypto.randomUUID() }
+    const details = { payment: method, received: method === 'cash' ? received : String(balance), discountKind: kind, discountValue: value, paymentRevision: payments.revision, billingRevision: billing.revision, redeemPoints:points, confirmed }
+    void request.run(() => payRestaurantOrder(input, details), v => {
+      const sale = (v as { sale: Sale }).sale
+      notify({
+        title: 'Pembayaran pesanan selesai',
+        message: `Pembayaran pesanan ${restaurantOrderCode(order.id)} sebesar ${rupiah(total)} berhasil dicatat.`,
+        category: 'transaction',
+      })
+      paid(sale)
+    })
+  }
   return <PaymentFrame inline={inline} title={`Bayar ${restaurantOrderCode(order.id)}`} busy={request.pending} close={close}><form onSubmit={submit}><fieldset disabled={request.pending || request.locked} className="space-y-4">
     {memberLoading&&<p role="status" className="text-sm text-[#c5cbd5]">Memuat member...</p>}{memberError&&<p role="alert" className="text-sm text-[#ffb4ae]">{memberError}</p>}{customer&&<div className="rounded-xl bg-[#1c222e] p-3 text-sm"><p>{customer.name} · {customer.phone||'Tanpa telepon'}</p><p className="mt-1 text-[#24cbc5]">Saldo: {customer.points||0} poin</p>{billing.redemption_active&&<RestaurantField label="Poin yang ditukar"><NumericInput min={0} max={customer.points||0} value={points} onChange={e=>{setPoints(e.target.value);setConfirmed(false)}} className={restaurantInput}/></RestaurantField>}<p className="mt-2 text-xs text-[#c5cbd5]">{billing.redemption_active?`Nilai 1 poin: ${rupiah(Number(billing.point_value||0))}.`:'Penukaran poin belum aktif.'} Estimasi perolehan: {earnedPoints} poin.</p></div>}
     <ul className="divide-y divide-[#454d5b] text-sm">{order.lines.map(l => <li key={l.id} className="flex justify-between gap-3 py-2"><span>{l.name} / {l.quantity} porsi</span><span>{rupiah(Number(l.total))}</span></li>)}</ul>
@@ -159,5 +287,15 @@ function PaymentFrame({inline,title,busy,close,children}:{inline:boolean;title:s
 
 function CancelOrder({ order, close, saved }: { order: RestaurantOrder; close: () => void; saved: () => void }) {
   const request = useRestaurantRequest(), [reason, setReason] = useState('')
-  return <RestaurantDialog title={`Batalkan ${restaurantOrderCode(order.id)}`} busy={request.pending} close={close}><form onSubmit={e => { e.preventDefault(); void request.run(() => cancelRestaurantOrder(order.id, order.revision, reason), saved) }}><fieldset disabled={request.pending || request.locked}><p className="mb-4 text-sm leading-6 text-[#c5cbd5]">{order.reservation_id && Number(order.deposit_amount) > 0 ? <>Pesanan memiliki DP. <Link className="text-[#24cbc5] underline" href="/dashboard/restaurant/reservations">Batalkan melalui Reservasi dengan refund DP.</Link><br /></> : null}Pesanan ini belum dibayar. Pembatalan dicatat tanpa menghapus riwayat atau membuat refund.</p><RestaurantField label="Alasan pembatalan"><textarea required minLength={3} maxLength={300} value={reason} onChange={e => setReason(e.target.value)} className={restaurantInput} /></RestaurantField></fieldset>{request.error && <p role="alert" className="mt-4 text-sm text-[#ffb4ae]">{request.error}</p>}<div className="mt-5 flex justify-end gap-3"><button type="button" disabled={request.pending} onClick={close} className={restaurantButton}>Kembali</button><button disabled={request.pending} className={restaurantPrimary}>{request.pending ? 'Menyimpan...' : request.locked ? 'Ulangi permintaan yang sama' : 'Batalkan pesanan'}</button></div></form></RestaurantDialog>
+  return <RestaurantDialog title={`Batalkan ${restaurantOrderCode(order.id)}`} busy={request.pending} close={close}><form onSubmit={e => {
+    e.preventDefault()
+    void request.run(() => cancelRestaurantOrder(order.id, order.revision, reason), () => {
+      notify({
+        title: 'Pesanan dibatalkan',
+        message: `Pesanan ${restaurantOrderCode(order.id)} telah dibatalkan.`,
+        category: 'order',
+      })
+      saved()
+    })
+  }}><fieldset disabled={request.pending || request.locked}><p className="mb-4 text-sm leading-6 text-[#c5cbd5]">{order.reservation_id && Number(order.deposit_amount) > 0 ? <>Pesanan memiliki DP. <Link className="text-[#24cbc5] underline" href="/dashboard/restaurant/reservations">Batalkan melalui Reservasi dengan refund DP.</Link><br /></> : null}Pesanan ini belum dibayar. Pembatalan dicatat tanpa menghapus riwayat atau membuat refund.</p><RestaurantField label="Alasan pembatalan"><textarea required minLength={3} maxLength={300} value={reason} onChange={e => setReason(e.target.value)} className={restaurantInput} /></RestaurantField></fieldset>{request.error && <p role="alert" className="mt-4 text-sm text-[#ffb4ae]">{request.error}</p>}<div className="mt-5 flex justify-end gap-3"><button type="button" disabled={request.pending} onClick={close} className={restaurantButton}>Kembali</button><button disabled={request.pending} className={restaurantPrimary}>{request.pending ? 'Menyimpan...' : request.locked ? 'Ulangi permintaan yang sama' : 'Batalkan pesanan'}</button></div></form></RestaurantDialog>
 }
