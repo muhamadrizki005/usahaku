@@ -77,7 +77,7 @@ export function StaffManagement({
   const [filterRole, setFilterRole] = useState<string>('all')
 
   // Toast
-  const { toast, showToast, hideToast } = useToast(3500)
+  const { toasts, toast, showToast, hideToast, removeToast } = useToast(3500)
 
   // Role Modal (Create & Edit)
   const [roleModalOpen, setRoleModalOpen] = useState(false)
@@ -1033,7 +1033,7 @@ export function StaffManagement({
       )}
 
       {/* Toast Notification */}
-      <ToastNotification toast={toast} onClose={hideToast} />
+      <ToastNotification toasts={toasts} onRemove={removeToast} onClose={hideToast} />
     </div>
   )
 }

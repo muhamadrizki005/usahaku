@@ -1,6 +1,6 @@
 "use client";
 import { BusinessHoursSettings } from "@/components/business-hours";
-import { ToastNotification, useToast } from "@/components/ui/toast-notification";
+import { ToastNotification, useToast, type ToastType } from "@/components/ui/toast-notification";
 import { BusinessHeader } from "@/components/business-header";
 import { BusinessLocationFields } from "@/components/business-location-fields";
 import { BusinessLocationMap } from "@/components/business-location-map";
@@ -89,7 +89,15 @@ export default function OriginalIdentity({
     business?.category ? resolveCategory(business.category) : resolveCategory(initialCategory),
   );
   const [current, setCurrent] = useState(business);
-  const { toast, showToast, hideToast } = useToast(3000);
+  const { toasts, toast, showToast: localShowToast, hideToast, removeToast } = useToast(3500);
+
+  const showToast = useCallback((type: ToastType, message: string) => {
+    if (embedded && typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('usahaku:toast', { detail: { type, message } }))
+    } else {
+      localShowToast(type, message)
+    }
+  }, [embedded, localShowToast]);
   const submittedRef = useRef(false);
   const fromBusiness = (b: Business) => ({
     name: b.name,
@@ -960,7 +968,7 @@ export default function OriginalIdentity({
           </div>
         )}
       </div>
-      <ToastNotification toast={toast} onClose={hideToast} />
+      {!embedded && <ToastNotification toasts={toasts} onRemove={removeToast} onClose={hideToast} />}
     </Container>
   );
 }

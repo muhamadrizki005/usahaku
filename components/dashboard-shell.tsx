@@ -99,7 +99,7 @@ export function DashboardShell({
   const [notifications, setNotifications] = useState<AppNotification[]>([])
   const [activeCategory, setActiveCategory] = useState<'all' | NotificationCategory>('all')
   const [hasUnread, setHasUnread] = useState(false)
-  const { toast, showToast, hideToast } = useToast(2500)
+  const { toasts, toast, showToast, hideToast, removeToast } = useToast(3500)
 
   useEffect(() => {
     if (!business?.id) return
@@ -234,7 +234,7 @@ export function DashboardShell({
 
   return (
     <ActivityPublisher.Provider value={setActivity}>
-      <ToastNotification toast={toast} onClose={hideToast} />
+      <ToastNotification toasts={toasts} onRemove={removeToast} onClose={hideToast} />
       <main className="min-h-screen w-full flex flex-col text-white bg-transparent">
         {/* Topbar: 3 parts (Kiri, Tengah, Kanan), outside scroll container, non-sticky, non-fixed */}
         <header className="shrink-0 w-full z-30 print:hidden bg-transparent pt-4 sm:pt-5 pb-4 sm:pb-5">
