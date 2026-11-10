@@ -768,7 +768,9 @@ export default function SalonAppointments({
       const actionMessages: Record<string, string> = {
         arrive: `${operation.visit.customer} telah ditandai tiba di salon.`,
         start: `Pelayanan untuk ${operation.visit.customer} bersama ${operation.visit.practitioner_name} telah dimulai.`,
-        finish: `Pelayanan untuk ${operation.visit.customer} telah selesai dan siap dibayar.`,
+        finish: operation.visit.sale_id
+          ? `Pelayanan untuk ${operation.visit.customer} telah selesai. Pembayaran sudah lunas.`
+          : `Pelayanan untuk ${operation.visit.customer} telah selesai dan siap dibayar.`,
       }
       const actionTitles: Record<string, string> = {
         arrive: 'Pelanggan tiba',
@@ -1987,7 +1989,7 @@ export default function SalonAppointments({
                       {v.sale_id ? (
                         <>
                           <br />
-                          <span className="text-green-400">Transaksi tercatat</span>
+                          <span className="text-green-400">Lunas</span>
                         </>
                       ) : v.status === 'finished' ? (
                         <>
@@ -2008,9 +2010,9 @@ export default function SalonAppointments({
                         Detail
                       </button>
 
-                      {!v.sale_id && !['cancelled', 'no_show'].includes(v.status) && (
+                      {!['cancelled', 'no_show'].includes(v.status) && (
                         <>
-                          {['scheduled', 'waiting'].includes(v.status) && (
+                          {!v.sale_id && ['scheduled', 'waiting'].includes(v.status) && (
                             <button
                               type="button"
                               className={button + ' !text-xs !py-1 !px-2.5'}
@@ -2049,7 +2051,7 @@ export default function SalonAppointments({
                               Selesaikan pelayanan
                             </button>
                           )}
-                          {v.status === 'finished' && (
+                          {!v.sale_id && v.status === 'finished' && (
                             <button
                               type="button"
                               className={primary + ' !text-xs !py-1 !px-3'}
@@ -2058,7 +2060,7 @@ export default function SalonAppointments({
                               Bayar
                             </button>
                           )}
-                          {Number(v.deposit_amount) === 0 && (
+                          {!v.sale_id && Number(v.deposit_amount) === 0 && (
                             <button
                               type="button"
                               className={button + ' !text-xs !py-1 !px-2.5'}
@@ -2067,13 +2069,13 @@ export default function SalonAppointments({
                               Catat DP
                             </button>
                           )}
-                          <button
+                          {!v.sale_id && <button
                             type="button"
                             className={button + ' !text-xs !py-1 !px-2.5 text-red-400 hover:text-red-300'}
                             onClick={() => setDialog({ kind: 'cancel', visit: v })}
                           >
                             Batalkan
-                          </button>
+                          </button>}
                         </>
                       )}
 
