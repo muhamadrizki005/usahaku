@@ -34,9 +34,10 @@ export function formatRupiahCompact(value: number): string {
 export interface RevenueApexChartProps {
   buckets: TrendBucket[]
   height?: number
+  animate?: boolean
 }
 
-export default function RevenueApexChart({ buckets, height = 240 }: RevenueApexChartProps) {
+export default function RevenueApexChart({ buckets, height = 240, animate = true }: RevenueApexChartProps) {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -70,15 +71,15 @@ export default function RevenueApexChart({ buckets, height = 240 }: RevenueApexC
         background: 'transparent',
         parentHeightOffset: 0,
         animations: {
-          enabled: true,
+          enabled: animate,
           easing: 'easeinout',
           speed: 800,
           animateGradually: {
-            enabled: true,
+            enabled: animate,
             delay: 70,
           },
           dynamicAnimation: {
-            enabled: true,
+            enabled: animate,
             speed: 500,
           },
         },
@@ -200,7 +201,7 @@ export default function RevenueApexChart({ buckets, height = 240 }: RevenueApexC
         },
       },
     }),
-    [buckets, columnWidth, height]
+    [buckets, columnWidth, height, animate]
   )
 
   if (!mounted) {
