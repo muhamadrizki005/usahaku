@@ -71,7 +71,7 @@ export function BusinessHoursSettings({
       <h2 className="mb-4 text-lg font-medium text-white">Jam operasional</h2>
       <HoursEditor hours={hours} setHours={setHours} save={save} pending={pending} error={error} cancel={() => {setHours(saved.operating_hours || defaultHours()); setError('')}} />
       {state.success && !error && <p role="status" className="mt-3 text-sm text-[#a4a7ac]">{state.success}</p>}
-      {!onNotify && <ToastNotification toast={fallbackToast.toast} onClose={fallbackToast.hideToast} />}
+      {!onNotify && <ToastNotification toasts={fallbackToast.toasts} onRemove={fallbackToast.removeToast} onClose={fallbackToast.hideToast} />}
     </section>
   )
 }

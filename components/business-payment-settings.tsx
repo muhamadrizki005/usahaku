@@ -183,7 +183,7 @@ export default function BusinessPaymentSettings({
         </Modal>
       )}
 
-      {!onNotify && <ToastNotification toast={fallbackToast.toast} onClose={fallbackToast.hideToast} />}
+      {!onNotify && <ToastNotification toasts={fallbackToast.toasts} onRemove={fallbackToast.removeToast} onClose={fallbackToast.hideToast} />}
     </section>
   )
 }
