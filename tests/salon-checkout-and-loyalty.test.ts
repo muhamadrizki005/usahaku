@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { loyaltySettingsSchema, loyaltySaveError } from '../lib/loyalty'
+import { loyaltySettingsSchema, loyaltySaveError, getLoyaltyRedemptions } from '../lib/loyalty'
 
 test('loyalty settings validation and error messages', () => {
   // Valid settings
@@ -140,6 +140,23 @@ test('cancellation and no_show reason options validation', () => {
   // Selecting a preset fills reason with that preset
   const chosen = cancellationPresets[1]
   assert.equal(chosen.length >= 3, true)
+})
+
+test('getLoyaltyRedemptions fallback logic', () => {
+  const fromDb = [
+    {
+      id: 'db-rule',
+      points_required: 15,
+      reward_type: 'voucher' as const,
+      voucher_amount: 25000,
+    },
+  ]
+  const loaded = getLoyaltyRedemptions('test-biz', fromDb)
+  assert.equal(loaded.length, 1)
+  assert.equal(loaded[0].id, 'db-rule')
+
+  const empty = getLoyaltyRedemptions('test-biz', null)
+  assert.deepEqual(empty, [])
 })
 
 

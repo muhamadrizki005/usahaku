@@ -37,3 +37,4 @@ end $$;
 
 revoke all on function public.save_business_loyalty_settings(uuid,boolean,numeric,jsonb) from public;
 grant execute on function public.save_business_loyalty_settings(uuid,boolean,numeric,jsonb) to authenticated;
+

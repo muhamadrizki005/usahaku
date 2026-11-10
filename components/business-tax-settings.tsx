@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Plus, Trash2, ReceiptText } from 'lucide-react'
 import {
   type CustomTaxItem,
+  getDefaultTaxes,
   getBusinessTaxes,
   saveBusinessTaxes,
   calculateCustomTaxes,
@@ -22,13 +23,15 @@ export default function BusinessTaxSettings({
   canManage = true,
   onSaved,
 }: Props) {
+  const [mounted, setMounted] = useState(false)
   const [taxes, setTaxes] = useState<CustomTaxItem[]>(() =>
-    getBusinessTaxes(business.id, business.category, business.tax_rate || 0)
+    getDefaultTaxes(business.category, business.tax_rate || 0)
   )
   const [saving, setSaving] = useState(false)
   const [notice, setNotice] = useState('')
 
   useEffect(() => {
+    setMounted(true)
     setTaxes(getBusinessTaxes(business.id, business.category, business.tax_rate || 0))
   }, [business.id, business.category, business.tax_rate])
 
@@ -83,7 +86,7 @@ export default function BusinessTaxSettings({
   const simTotal = simSubtotal + totalTax
 
   return (
-    <section className="rounded-xl border border-[#454d5b] bg-[#273242] p-5 shadow-sm transition-all duration-300">
+    <section suppressHydrationWarning className="rounded-xl border border-[#454d5b] bg-[#273242] p-5 shadow-sm transition-all duration-300">
       <div className="flex items-center justify-between gap-3 border-b border-[#454d5b]/60 pb-4">
         <div className="flex items-center gap-2.5">
           <div className="grid size-9 place-items-center rounded-xl bg-[#24cbc5]/15 text-[#24cbc5]">
@@ -208,7 +211,7 @@ export default function BusinessTaxSettings({
         <div className="border-b border-[#454d5b]/80 bg-[#273242]/70 px-3.5 py-2 text-[11px] font-medium uppercase tracking-wider text-[#a4a7ac]">
           Simulasi Penerapan Pajak pada Transaksi Kasir
         </div>
-        <div className="p-3.5 space-y-2 text-xs">
+        <div className="p-3.5 space-y-2 text-xs" suppressHydrationWarning>
           <div className="flex justify-between text-[#c5cbd5]">
             <span>Subtotal Transaksi (Contoh)</span>
             <span className="font-medium text-white">Rp{simSubtotal.toLocaleString('id-ID')}</span>

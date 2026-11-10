@@ -8,7 +8,7 @@ import type { Business, Member } from '@/lib/validation'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Minus, Package, Plus, Printer, Search, ShoppingBag, Sparkles, Trash2 } from 'lucide-react'
-import type { LoyaltyRedemptionRule } from '@/lib/loyalty'
+import { type LoyaltyRedemptionRule, getLoyaltyRedemptions } from '@/lib/loyalty'
 import StoreTaxSettings from './store-tax-settings'
 import { discountedPrice, checkoutQuote } from '@/lib/product-pricing'
 import { CustomSelect } from './ui/custom-select'
@@ -17,16 +17,16 @@ import { checkoutPos } from '@/app/pos-actions'
 import { emitAppNotification } from '@/lib/notifications'
 import { lineAmount, saleCode, saleDate, paymentLabel, type Sale } from '@/lib/pos'
 import PosCustomerPicker from './pos-customer-picker'
-import type {PosCustomer} from '@/lib/customers'
+import type { PosCustomer } from '@/lib/customers'
 
 type Category = 'toko' | 'restoran' | 'barbershop'
 type Product = CatalogProduct
 type CartLine = { product: Product; quantity: number; draft?: string; quantityError?: string }
 const money = (value: number) => `Rp${value.toLocaleString('id-ID')}`
 const rupiah = money
-function ProductPrice({product}:{product:Product}){const price=discountedPrice(product);return <span className="inline-flex flex-wrap items-center gap-x-2">{price<product.price&&<del className="text-xs text-[#a4a7ac]">{money(product.price)}</del>}<span>{money(price)}</span></span>}
-function ProductImage({src}:{src?:string}){const [failed,setFailed]=useState(false);useEffect(()=>setFailed(false),[src]);return src&&!failed?<img src={src} alt="" onError={()=>setFailed(true)} className="size-full rounded-xl object-cover" />:<Package className="size-10" />}
-function ProductThumbnail({src,name}:{src?:string;name?:string}){const [failed,setFailed]=useState(false);useEffect(()=>setFailed(false),[src]);return src&&!failed?<img src={src} alt={name||''} onError={()=>setFailed(true)} className="size-full object-cover" />:<Package className="size-4" />}
+function ProductPrice({ product }: { product: Product }) { const price = discountedPrice(product); return <span className="inline-flex flex-wrap items-center gap-x-2">{price < product.price && <del className="text-xs text-[#a4a7ac]">{money(product.price)}</del>}<span>{money(price)}</span></span> }
+function ProductImage({ src }: { src?: string }) { const [failed, setFailed] = useState(false); useEffect(() => setFailed(false), [src]); return src && !failed ? <img src={src} alt="" onError={() => setFailed(true)} className="size-full rounded-xl object-cover" /> : <Package className="size-10" /> }
+function ProductThumbnail({ src, name }: { src?: string; name?: string }) { const [failed, setFailed] = useState(false); useEffect(() => setFailed(false), [src]); return src && !failed ? <img src={src} alt={name || ''} onError={() => setFailed(true)} className="size-full object-cover" /> : <Package className="size-4" /> }
 
 function QuantityInput({ value, draft, error, name, unit, onChange, onCommit }: {
   value: number; draft?: string; error?: string; name: string; unit: string
@@ -50,16 +50,16 @@ function QuantityInput({ value, draft, error, name, unit, onChange, onCommit }: 
 export default function PosManagement({ initialCategory = 'toko', business, member, initialProducts, initialPayments, renderedAt }: { renderedAt: string; initialPayments: PaymentSettings; initialCategory?: Category; business: Business; member: Member; initialProducts: CatalogProduct[] }) {
   const router = useRouter()
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null)
-  const [products,setProducts] = useState<Product[]>(initialProducts)
-  useEffect(()=>setProducts(initialProducts),[initialProducts])
-  const [pending,setPending]=useState(false)
-  const busy=useRef(false)
-  const request=useRef<{id:string;details:unknown}|null>(null)
-  const [uncertain,setUncertain]=useState(false)
-  const [lastSale,setLastSale]=useState<Sale|null>(null)
-  const [taxRate,setTaxRate]=useState(Number(business.tax_rate||0))
-  const [taxRevision,setTaxRevision]=useState(business.tax_revision||0)
-  useEffect(()=>{setTaxRate(Number(business.tax_rate||0));setTaxRevision(business.tax_revision||0)},[business.tax_rate,business.tax_revision])
+  const [products, setProducts] = useState<Product[]>(initialProducts)
+  useEffect(() => setProducts(initialProducts), [initialProducts])
+  const [pending, setPending] = useState(false)
+  const busy = useRef(false)
+  const request = useRef<{ id: string; details: unknown } | null>(null)
+  const [uncertain, setUncertain] = useState(false)
+  const [lastSale, setLastSale] = useState<Sale | null>(null)
+  const [taxRate, setTaxRate] = useState(Number(business.tax_rate || 0))
+  const [taxRevision, setTaxRevision] = useState(business.tax_revision || 0)
+  useEffect(() => { setTaxRate(Number(business.tax_rate || 0)); setTaxRevision(business.tax_revision || 0) }, [business.tax_rate, business.tax_revision])
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('Semua')
   const [cart, setCart] = useState<CartLine[]>([])
@@ -67,20 +67,30 @@ export default function PosManagement({ initialCategory = 'toko', business, memb
   const canCheckout = hasPermission(member.role, member.permissions, 'pos:create')
   const [orderKind, setOrderKind] = useState<'none' | 'percent' | 'amount'>('none')
   const [orderValue, setOrderValue] = useState('')
-  const [payment, setPayment] = useState(initialPayments.cash?'Tunai':initialPayments.qris?'QRIS usaha':initialPayments.transfer?'Transfer':initialPayments.ewallet?'E-wallet':'')
-  useEffect(()=>{if(!({Tunai:initialPayments.cash,'QRIS usaha':initialPayments.qris,Transfer:initialPayments.transfer,'E-wallet':initialPayments.ewallet}[payment])){setPayment(initialPayments.cash?'Tunai':initialPayments.qris?'QRIS usaha':initialPayments.transfer?'Transfer':initialPayments.ewallet?'E-wallet':'');setAck(false)}},[initialPayments,payment])
-  const paymentEnabled=Boolean({Tunai:initialPayments.cash,'QRIS usaha':initialPayments.qris,Transfer:initialPayments.transfer,'E-wallet':initialPayments.ewallet}[payment])
+  const [payment, setPayment] = useState(initialPayments.cash ? 'Tunai' : initialPayments.qris ? 'QRIS usaha' : initialPayments.transfer ? 'Transfer' : initialPayments.ewallet ? 'E-wallet' : '')
+  useEffect(() => { if (!({ Tunai: initialPayments.cash, 'QRIS usaha': initialPayments.qris, Transfer: initialPayments.transfer, 'E-wallet': initialPayments.ewallet }[payment])) { setPayment(initialPayments.cash ? 'Tunai' : initialPayments.qris ? 'QRIS usaha' : initialPayments.transfer ? 'Transfer' : initialPayments.ewallet ? 'E-wallet' : ''); setAck(false) } }, [initialPayments, payment])
+  const paymentEnabled = Boolean({ Tunai: initialPayments.cash, 'QRIS usaha': initialPayments.qris, Transfer: initialPayments.transfer, 'E-wallet': initialPayments.ewallet }[payment])
   const [cash, setCash] = useState('')
   const [ack, setAck] = useState(false)
-  const [customer, setCustomer] = useState<PosCustomer|null>(null)
+  const [customer, setCustomer] = useState<PosCustomer | null>(null)
   const [selectedRedemption, setSelectedRedemption] = useState<LoyaltyRedemptionRule | null>(null)
+  const [availableRedemptions, setAvailableRedemptions] = useState<LoyaltyRedemptionRule[]>(() =>
+    getLoyaltyRedemptions(business.id, business.loyalty_redemptions)
+  )
+
+  useEffect(() => {
+    const sync = () => setAvailableRedemptions(getLoyaltyRedemptions(business.id, business.loyalty_redemptions))
+    sync()
+    window.addEventListener('usahaku:loyalty_redemptions_changed', sync)
+    return () => window.removeEventListener('usahaku:loyalty_redemptions_changed', sync)
+  }, [business.id, business.loyalty_redemptions])
   const [notice, setNotice] = useState('')
   const businessName = business.name
   const categories = ['Semua', ...Array.from(new Set(products.map(p => p.category === 'Rumah tangga' ? 'Kebutuhan rumah' : p.category)))]
-  const visible = useMemo(() => products.filter(p => p.active && p.stock > 0 && [p.name,p.sku,p.barcode].some(v=>v.toLowerCase().includes(query.toLowerCase())) && (filter === 'Semua' || p.category === filter || (filter === 'Kebutuhan rumah' && p.category === 'Rumah tangga'))), [products, query, filter])
-  let amounts={subtotal:0,discount:0,productDiscount:0,orderDiscount:0,net:0,tax:0,total:0};let quoteError=''
-  try{amounts=checkoutQuote(cart,taxRate,canDiscount?orderKind:'none',canDiscount&&orderKind!=='none'?orderValue:'0')}catch(e){quoteError=(e as Error).message;try{amounts=checkoutQuote(cart,taxRate)}catch{}}
-  const {subtotal,productDiscount,orderDiscount,net,tax,total}=amounts
+  const visible = useMemo(() => products.filter(p => p.active && p.stock > 0 && [p.name, p.sku, p.barcode].some(v => v.toLowerCase().includes(query.toLowerCase())) && (filter === 'Semua' || p.category === filter || (filter === 'Kebutuhan rumah' && p.category === 'Rumah tangga'))), [products, query, filter])
+  let amounts = { subtotal: 0, discount: 0, productDiscount: 0, orderDiscount: 0, net: 0, tax: 0, total: 0 }; let quoteError = ''
+  try { amounts = checkoutQuote(cart, taxRate, canDiscount ? orderKind : 'none', canDiscount && orderKind !== 'none' ? orderValue : '0') } catch (e) { quoteError = (e as Error).message; try { amounts = checkoutQuote(cart, taxRate) } catch { } }
+  const { subtotal, productDiscount, orderDiscount, net, tax, total } = amounts
   let pointDiscount = 0
   if (selectedRedemption) {
     if (selectedRedemption.reward_type === 'voucher') {
@@ -134,12 +144,12 @@ export default function PosManagement({ initialCategory = 'toko', business, memb
       if(!canCheckout||!paymentEnabled||!cart.length||!ack||quoteError||invalidQuantities||(payment==='Tunai'&&(!/^\d{1,12}$/.test(cash)||Number(cash)<finalTotal)))return
       request.current={id:crypto.randomUUID(),details:{lines:cart.map(l=>({id:l.product.id,quantity:String(l.quantity),price:String(l.product.price),revision:l.product.revision})),payment:payment==='Tunai'?'cash':payment==='Transfer'?'transfer':payment==='E-wallet'?'ewallet':'qris',received:payment==='Tunai'?cash:String(finalTotal),discountKind:canDiscount?orderKind:'none',discountValue:canDiscount&&orderKind!=='none'?orderValue:'0',taxRate:String(taxRate),taxRevision,paymentRevision:initialPayments.revision,customer:customer?.name||'Pelanggan umum',...(customer?{customerId:customer.id}:{}),pointsRedeemed:selectedRedemption?selectedRedemption.points_required:0,redemptionReason:selectedRedemption?`Tukar ${selectedRedemption.points_required} poin: ${selectedRedemption.reward_type === 'voucher' ? `Voucher Rp${(selectedRedemption.voucher_amount || 0).toLocaleString('id-ID')}` : (selectedRedemption.product_name || 'Hadiah')}`:undefined,confirmed:true}}
     }
-    busy.current=true;setPending(true)
-    try{
-      const result=await checkoutPos(request.current.id,request.current.details)
-      if(result.sale){
+    busy.current = true; setPending(true)
+    try {
+      const result = await checkoutPos(request.current.id, request.current.details)
+      if (result.sale) {
         setLastSale(result.sale)
-        setNotice('Transaksi '+saleCode(result.sale)+(result.sale.status==='cancelled'?' sudah tercatat dan telah dibatalkan. Periksa detail transaksi.':' berhasil dicatat.'))
+        setNotice('Transaksi ' + saleCode(result.sale) + (result.sale.status === 'cancelled' ? ' sudah tercatat dan telah dibatalkan. Periksa detail transaksi.' : ' berhasil dicatat.'))
         emitAppNotification({
           businessId: business.id,
           title: 'Transaksi Berhasil',
@@ -153,12 +163,12 @@ export default function PosManagement({ initialCategory = 'toko', business, memb
         setAck(false)
         setCustomer(null)
         setUncertain(false)
-        request.current=null
+        request.current = null
         router.refresh()
       }
-      else{setNotice(result.error||'Transaksi belum dapat dicatat.');setUncertain(!!result.uncertain);if(!result.uncertain)request.current=null}
-    }catch{setUncertain(true);setNotice('Hasil penyimpanan belum pasti. Periksa riwayat atau coba ulang permintaan yang sama.')}
-    finally{busy.current=false;setPending(false)}
+      else { setNotice(result.error || 'Transaksi belum dapat dicatat.'); setUncertain(!!result.uncertain); if (!result.uncertain) request.current = null }
+    } catch { setUncertain(true); setNotice('Hasil penyimpanan belum pasti. Periksa riwayat atau coba ulang permintaan yang sama.') }
+    finally { busy.current = false; setPending(false) }
   }
 
   return (
@@ -167,11 +177,11 @@ export default function PosManagement({ initialCategory = 'toko', business, memb
       breadcrumbTitle="Kasir"
       businessName={businessName}
       description="Pilih produk atau pindai barcode yang sudah terdaftar."
-      meta={`${products.length} produk tersedia • ${new Date(renderedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone:'Asia/Jakarta' })} • WIB`}
+      meta={`${products.length} produk tersedia • ${new Date(renderedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' })} • WIB`}
       action={<p className="text-xs text-[#a4a7ac]">Transaksi dan cetak struk</p>}
       role={member.role}
     >
-      {notice && <div role="status" className="mb-4 rounded-xl border border-[#99f6e4] bg-[#24cbc5]/10 p-3 text-sm text-[#24cbc5]">{notice}{uncertain&&<button disabled={pending} onClick={confirm} className="ml-3 underline">Coba ulang permintaan yang sama</button>}</div>}
+      {notice && <div role="status" className="mb-4 rounded-xl border border-[#99f6e4] bg-[#24cbc5]/10 p-3 text-sm text-[#24cbc5]">{notice}{uncertain && <button disabled={pending} onClick={confirm} className="ml-3 underline">Coba ulang permintaan yang sama</button>}</div>}
 
       <fieldset disabled={pending||uncertain} className="m-0 p-0 border-0 contents"><div className="grid min-w-0 grid-cols-[minmax(0,1fr)] items-start gap-5 xl:grid-cols-[minmax(0,1.9fr)_minmax(330px,1fr)]"><section className="min-w-0"><div className="rounded-2xl border border-[#454d5b] bg-[#273242] p-4 shadow-sm"><div className="relative"><Search className="absolute left-3 top-3 size-4 text-[#a4a7ac]" /><input aria-label="Cari produk, SKU, atau pindai barcode" value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();const match=products.find(p=>p.active&&p.stock>0&&(p.barcode===query||p.sku===query));if(match){add(match);setQuery('')}else setNotice('Barcode atau SKU tidak ditemukan.')}}} placeholder="Cari produk, SKU, atau pindai barcode..." className="h-10 w-full rounded-lg border border-[#454d5b] pl-9 pr-3 text-sm outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-[#ccfbf1]" /></div><div className="mt-3 flex gap-2 overflow-x-auto pb-1">{categories.map(item => <button key={item} onClick={() => setFilter(item)} className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-normal ${filter === item ? 'bg-[#1835d9] text-white' : 'bg-[#303640] text-[#c5cbd5] hover:bg-[#24cbc5]/10'}`}>{item}</button>)}</div></div><div className="mt-4 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2 lg:grid-cols-3">{visible.map(product => <article key={product.id} onClick={() => setSelectedProduct(product)} className="min-w-0 rounded-2xl border border-[#454d5b] bg-[#273242] p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md cursor-pointer"><div className="flex aspect-[1.25] items-center justify-center rounded-xl bg-[#24cbc5]/10 text-4xl text-[#24cbc5]"><ProductImage src={product.image} /></div><div className="mt-3 flex items-start justify-between gap-2"><div className="min-w-0"><h2 className="truncate text-sm font-normal">{product.name}</h2><p className="mt-1 text-xs text-[#a4a7ac]">{product.sku} • per {product.unit}</p></div><span className="shrink-0 rounded-full bg-[#24cbc5]/10 px-2 py-1 text-[10px] font-normal text-[#24cbc5]">{product.stock} {product.unit}</span></div><div className="mt-3 flex items-center justify-between"><p className="font-normal"><ProductPrice product={product}/></p><button type="button" onClick={(e) => { e.stopPropagation(); add(product); }} aria-label={`Tambah ${product.name}`} className="grid size-9 place-items-center rounded-lg bg-[#1835d9] text-white transition hover:bg-[#132c9e] active:scale-95 border-0 shadow-sm shrink-0 cursor-pointer"><Plus className="size-4" /></button></div></article>)}{!visible.length && <div className="col-span-full rounded-xl border border-dashed border-[#454d5b] p-8 text-center text-sm text-[#a4a7ac]">Tidak ada produk yang cocok.</div>}</div><div className="mt-4 rounded-xl bg-[#24cbc5]/10 p-3 text-xs leading-5 text-[#24cbc5]">Stok berkurang setelah transaksi valid selesai dicatat. Keranjang ini belum mengubah persediaan. Produk habis atau nonaktif tidak dapat ditambahkan.</div></section>
         <aside className="min-w-0 rounded-2xl border border-[#454d5b] bg-[#273242] p-4 shadow-sm xl:sticky xl:top-20"><div className="flex items-start justify-between"><div><h2 className="font-normal">Keranjang aktif</h2><p className="mt-1 text-xs text-[#a4a7ac]">Draf belum dicatat</p></div><span className="rounded-full bg-[#303640] px-2 py-1 text-xs font-normal">{formatQuantity(units)} unit</span></div>{cart.length>0&&<div className="mt-4"><PosCustomerPicker key={lastSale?.id||'cart'} value={customer} onChange={c => { setCustomer(c); if (!c) setSelectedRedemption(null); }} member={member}/></div>}{cart.length>0 && customer && (
@@ -185,7 +195,7 @@ export default function PosManagement({ initialCategory = 'toko', business, memb
                 {Number(customer.points || 0).toLocaleString('id-ID')} Poin
               </span>
             </div>
-            {((business.loyalty_redemptions as LoyaltyRedemptionRule[]) || []).length === 0 ? (
+            {availableRedemptions.length === 0 ? (
               <p className="text-[11px] text-[#a4a7ac]">
                 Belum ada aturan pertukaran poin aktif.
               </p>
@@ -194,7 +204,7 @@ export default function PosManagement({ initialCategory = 'toko', business, memb
                 <select
                   value={selectedRedemption?.id || ''}
                   onChange={e => {
-                    const rule = ((business.loyalty_redemptions as LoyaltyRedemptionRule[]) || []).find(r => r.id === e.target.value)
+                    const rule = availableRedemptions.find(r => r.id === e.target.value)
                     if (!rule) { setSelectedRedemption(null); return }
                     if ((customer.points || 0) < rule.points_required) { setSelectedRedemption(null); return }
                     setSelectedRedemption(rule)
@@ -202,7 +212,7 @@ export default function PosManagement({ initialCategory = 'toko', business, memb
                   className="w-full rounded-lg border border-[#454d5b] bg-[#273242] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#24cbc5]"
                 >
                   <option value="">-- Tanpa Penukaran Poin --</option>
-                  {((business.loyalty_redemptions as LoyaltyRedemptionRule[]) || []).map(rule => {
+                  {availableRedemptions.map(rule => {
                     const hasEnough = (customer.points || 0) >= rule.points_required
                     const label = rule.reward_type === 'voucher'
                       ? `Tukar ${rule.points_required} Poin → Voucher Rp${(rule.voucher_amount || 0).toLocaleString('id-ID')}`
@@ -276,7 +286,7 @@ export default function PosManagement({ initialCategory = 'toko', business, memb
           </div>
         </div>
       )}
-      <section className="mt-6"><div className="rounded-2xl border border-[#454d5b] bg-[#273242] p-5"><div className="flex items-center justify-between"><span className="rounded-full bg-[#303640] px-2 py-1 text-[11px] font-normal text-[#a4a7ac]">Transaksi terakhir sesi ini</span><span className="rounded-full bg-[#24cbc5]/10 px-2 py-1 text-[11px] font-normal text-[#24cbc5]">{lastSale?(lastSale.status==='cancelled'?'Dibatalkan':'Selesai'):'Belum ada'}</span></div><h2 className="mt-5 font-normal">{lastSale?'Transaksi telah dicatat':'Belum ada transaksi'}</h2>{lastSale&&<><p className="mt-1 break-all text-xs text-[#a4a7ac]">{saleCode(lastSale)} {saleDate(lastSale.created_at)} {lastSale.actor_name}</p><div className="mt-4 rounded-xl bg-[#1c222e] p-3 text-sm"><div className="flex justify-between"><span>{lastSale.lines.length} item</span><strong>{money(Number(lastSale.total))}</strong></div><p className="mt-1 text-xs text-[#a4a7ac]">{paymentLabel[lastSale.payment]} diterima {money(Number(lastSale.received))} / Kembalian {money(Number(lastSale.change))}</p>{!!lastSale.points_earned && <p className="mt-1.5 inline-flex items-center rounded-md bg-[#24cbc5]/10 px-2 py-0.5 text-xs font-medium text-[#24cbc5]">+{lastSale.points_earned} poin member diperoleh</p>}</div><div className="mt-4 flex gap-2"><button onClick={()=>router.push('/dashboard/transactions/'+lastSale.id)} className="flex items-center gap-2 rounded-lg border border-[#454d5b] px-3 py-2 text-sm font-normal"><Printer className="size-4" />Cetak struk</button><button disabled={pending||uncertain} onClick={()=>{setCart([]);setCustomer(null);window.scrollTo({top:0,behavior:'smooth'})}} className="rounded-lg bg-[#1835d9] px-3 py-2 text-sm font-normal text-white">+ Transaksi baru</button></div></>}</div></section>
+      <section className="mt-6"><div className="rounded-2xl border border-[#454d5b] bg-[#273242] p-5"><div className="flex items-center justify-between"><span className="rounded-full bg-[#303640] px-2 py-1 text-[11px] font-normal text-[#a4a7ac]">Transaksi terakhir sesi ini</span><span className="rounded-full bg-[#24cbc5]/10 px-2 py-1 text-[11px] font-normal text-[#24cbc5]">{lastSale ? (lastSale.status === 'cancelled' ? 'Dibatalkan' : 'Selesai') : 'Belum ada'}</span></div><h2 className="mt-5 font-normal">{lastSale ? 'Transaksi telah dicatat' : 'Belum ada transaksi'}</h2>{lastSale && <><p className="mt-1 break-all text-xs text-[#a4a7ac]">{saleCode(lastSale)} {saleDate(lastSale.created_at)} {lastSale.actor_name}</p><div className="mt-4 rounded-xl bg-[#1c222e] p-3 text-sm"><div className="flex justify-between"><span>{lastSale.lines.length} item</span><strong>{money(Number(lastSale.total))}</strong></div><p className="mt-1 text-xs text-[#a4a7ac]">{paymentLabel[lastSale.payment]} diterima {money(Number(lastSale.received))} / Kembalian {money(Number(lastSale.change))}</p>{!!lastSale.points_earned && <p className="mt-1.5 inline-flex items-center rounded-md bg-[#24cbc5]/10 px-2 py-0.5 text-xs font-medium text-[#24cbc5]">+{lastSale.points_earned} poin member diperoleh</p>}</div><div className="mt-4 flex gap-2"><button onClick={() => router.push('/dashboard/transactions/' + lastSale.id)} className="flex items-center gap-2 rounded-lg border border-[#454d5b] px-3 py-2 text-sm font-normal"><Printer className="size-4" />Cetak struk</button><button disabled={pending || uncertain} onClick={() => { setCart([]); setCustomer(null); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="rounded-lg bg-[#1835d9] px-3 py-2 text-sm font-normal text-white">+ Transaksi baru</button></div></>}</div></section>
       <footer className="mt-6 flex flex-wrap justify-between gap-2 text-xs text-[#a4a7ac]"><span>POS memerlukan internet • Pembayaran dicatat manual oleh kasir • Data usaha</span><span>Seluruh waktu dalam WIB</span></footer>
     </DashboardSection>
   )

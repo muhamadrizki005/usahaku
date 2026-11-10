@@ -36,3 +36,30 @@ export function loyaltySaveError(code?: string) {
   if (['PGRST202', '42703', '42P01'].includes(code || '')) return 'Program poin belum siap digunakan. Muat ulang atau hubungi pengelola aplikasi.'
   return 'Penyimpanan pengaturan poin belum dapat dipastikan. Muat ulang untuk memeriksa sebelum mencoba lagi.'
 }
+
+export function getLoyaltyRedemptions(businessId?: string, fallbackFromDb?: any): LoyaltyRedemptionRule[] {
+  if (Array.isArray(fallbackFromDb) && fallbackFromDb.length > 0) {
+    return fallbackFromDb as LoyaltyRedemptionRule[]
+  }
+  if (typeof window === 'undefined' || !businessId) {
+    return Array.isArray(fallbackFromDb) ? (fallbackFromDb as LoyaltyRedemptionRule[]) : []
+  }
+  try {
+    const raw = localStorage.getItem(`usahaku_loyalty_redemptions_${businessId}`)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed as LoyaltyRedemptionRule[]
+      }
+    }
+  } catch {}
+  return Array.isArray(fallbackFromDb) ? (fallbackFromDb as LoyaltyRedemptionRule[]) : []
+}
+
+export function saveLoyaltyRedemptions(businessId: string, redemptions: LoyaltyRedemptionRule[]): void {
+  if (typeof window === 'undefined' || !businessId) return
+  try {
+    localStorage.setItem(`usahaku_loyalty_redemptions_${businessId}`, JSON.stringify(redemptions))
+    window.dispatchEvent(new CustomEvent('usahaku:loyalty_redemptions_changed', { detail: { businessId, redemptions } }))
+  } catch {}
+}

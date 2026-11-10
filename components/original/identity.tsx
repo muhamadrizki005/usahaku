@@ -18,6 +18,7 @@ import {
 } from "react";
 import type { Business } from "@/lib/validation";
 import type { LoyaltyRedemptionRule, LoyaltyRedemptionType } from "@/lib/loyalty";
+import { getLoyaltyRedemptions, saveLoyaltyRedemptions } from "@/lib/loyalty";
 import { notify } from "@/lib/notifications";
 import { createBusiness, saveBusinessProfile, saveLoyaltySettings } from "@/app/actions";
 import RestaurantReservationSettings from "@/components/restaurant-reservation-settings";
@@ -247,6 +248,9 @@ export default function OriginalIdentity({
       return;
     }
     setLoyaltyPending(true);
+    if (business.id) {
+      saveLoyaltyRedemptions(business.id, redemptions);
+    }
     const fd = new FormData();
     fd.set("loyaltyActive", loyaltyActive ? "true" : "false");
     fd.set("loyaltyPointNominal", String(loyaltyPointNominal || 50000));
@@ -274,6 +278,15 @@ export default function OriginalIdentity({
     }
   };
   useEffect(() => {
+    if (business?.id) {
+      const stored = getLoyaltyRedemptions(business.id, business.loyalty_redemptions);
+      if (stored && stored.length > 0) {
+        setRedemptions(stored);
+      }
+    }
+  }, [business?.id, business?.loyalty_redemptions]);
+
+  useEffect(() => {
     if (!business)
       try {
         const saved = JSON.parse(
@@ -293,9 +306,8 @@ export default function OriginalIdentity({
       setLoyaltyActive(Boolean(serverState.business.loyalty_active));
       setLoyaltyPointNominal(Number(serverState.business.loyalty_point_nominal || 50000));
       setNominalInput(Number(serverState.business.loyalty_point_nominal || 50000).toLocaleString("id-ID"));
-      if (serverState.business.loyalty_redemptions) {
-        setRedemptions((serverState.business.loyalty_redemptions as LoyaltyRedemptionRule[]) || []);
-      }
+      const storedRules = getLoyaltyRedemptions(serverState.business.id, serverState.business.loyalty_redemptions);
+      setRedemptions(storedRules);
       if (logoInputRef.current) logoInputRef.current.value = "";
     }
     if (submittedRef.current) {
@@ -385,6 +397,9 @@ export default function OriginalIdentity({
     data.set("loyaltyActive", loyaltyActive ? "true" : "false");
     data.set("loyaltyPointNominal", String(loyaltyPointNominal || 50000));
     data.set("loyaltyRedemptions", JSON.stringify(redemptions));
+    if (business?.id) {
+      saveLoyaltyRedemptions(business.id, redemptions);
+    }
     if (onboarding) data.set("next", "setup");
     data.set("logoOperation", logoOperation);
     if (selectedFile) data.set("logo", selectedFile);

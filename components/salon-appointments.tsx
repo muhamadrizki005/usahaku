@@ -19,7 +19,7 @@ import {
   type SalonBusySlot,
   type SalonSettings,
 } from '@/lib/salon-operations'
-import type { LoyaltyRedemptionRule } from '@/lib/loyalty'
+import { type LoyaltyRedemptionRule, getLoyaltyRedemptions } from '@/lib/loyalty'
 import { enabledPaymentMethods, type PaymentSettings } from '@/lib/business-payments'
 import { rupiah, saleDate, saleCode, paymentLabel, type Sale } from '@/lib/pos'
 import { reservationIso, reservationLocalTime } from '@/lib/restaurant-reservations'
@@ -241,6 +241,16 @@ export default function SalonAppointments({
   const [checkoutPending, setCheckoutPending] = useState(false)
   const [checkoutError, setCheckoutError] = useState('')
   const [selectedRedemption, setSelectedRedemption] = useState<LoyaltyRedemptionRule | null>(null)
+  const [availableRedemptions, setAvailableRedemptions] = useState<LoyaltyRedemptionRule[]>(() =>
+    getLoyaltyRedemptions(business.id, business.loyalty_redemptions)
+  )
+
+  useEffect(() => {
+    const sync = () => setAvailableRedemptions(getLoyaltyRedemptions(business.id, business.loyalty_redemptions))
+    sync()
+    window.addEventListener('usahaku:loyalty_redemptions_changed', sync)
+    return () => window.removeEventListener('usahaku:loyalty_redemptions_changed', sync)
+  }, [business.id, business.loyalty_redemptions])
 
   // Struk / Receipt Modal & Thermal Print
   const [receipt, setReceipt] = useState<CompletedSaleReceipt | null>(null)
@@ -1094,7 +1104,7 @@ export default function SalonAppointments({
                 </span>
               </div>
 
-              {((business.loyalty_redemptions as LoyaltyRedemptionRule[]) || []).length === 0 ? (
+              {availableRedemptions.length === 0 ? (
                 <p className="text-[11px] text-[#a4a7ac]">
                   Belum ada pengaturan pertukaran poin. Atur di menu Pengaturan Usaha.
                 </p>
@@ -1104,7 +1114,7 @@ export default function SalonAppointments({
                   <select
                     value={selectedRedemption?.id || ''}
                     onChange={e => {
-                      const rule = ((business.loyalty_redemptions as LoyaltyRedemptionRule[]) || []).find(r => r.id === e.target.value)
+                      const rule = availableRedemptions.find(r => r.id === e.target.value)
                       if (!rule) {
                         setSelectedRedemption(null)
                         return
@@ -1118,7 +1128,7 @@ export default function SalonAppointments({
                     className="w-full rounded-lg border border-[#454d5b] bg-[#273242] px-3 py-2 text-xs text-white outline-none focus:border-[#24cbc5]"
                   >
                     <option value="">-- Tanpa Penukaran Poin --</option>
-                    {((business.loyalty_redemptions as LoyaltyRedemptionRule[]) || []).map(rule => {
+                    {availableRedemptions.map(rule => {
                       const hasEnough = (selectedCustomer.points || 0) >= rule.points_required
                       const label = rule.reward_type === 'voucher'
                         ? `Tukar ${rule.points_required} Poin → Voucher Rp${(rule.voucher_amount || 0).toLocaleString('id-ID')}`

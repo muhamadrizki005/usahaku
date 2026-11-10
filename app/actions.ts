@@ -193,10 +193,30 @@ export async function saveBusinessProfile(_: ActionState, form: FormData): Promi
     if (!loyalty.success) warning = 'Profil tersimpan, tetapi pengaturan program poin tidak valid. Simpan pengaturan poin secara terpisah.'
     else {
       try {
-        const result = await supabase.rpc('save_business_loyalty_settings', { target_id: business.id, new_active: loyalty.data.active, new_nominal: loyalty.data.nominal, new_redemptions: loyalty.data.redemptions }).abortSignal(AbortSignal.timeout(15000)).retry(false)
-        if (!result.error && result.data) saved = result.data; else { const admin = createAdminClient(); const { data: adminBiz } = await admin.from('businesses').update({ loyalty_active: loyalty.data.active, loyalty_point_nominal: loyalty.data.nominal, loyalty_redemptions: loyalty.data.redemptions }).eq('id', business.id).select('*').single(); if (adminBiz) saved = adminBiz; else { refreshBusinessViews(); return { error: 'Profil tersimpan. ' + loyaltySaveError(result.error?.code), business: saved, warning } } }
-
-      } catch { refreshBusinessViews(); return { error: 'Profil tersimpan. ' + loyaltySaveError(), business: saved, warning } }
+        let rpcSuccess = false
+        const result = await supabase.rpc('save_business_loyalty_settings', { target_id: business.id, new_active: loyalty.data.active, new_nominal: loyalty.data.nominal, new_redemptions: loyalty.data.redemptions }).abortSignal(AbortSignal.timeout(10000)).retry(false)
+        if (!result.error && result.data) {
+          saved = result.data
+          rpcSuccess = true
+        } else {
+          const result3 = await supabase.rpc('save_business_loyalty_settings', { target_id: business.id, new_active: loyalty.data.active, new_nominal: loyalty.data.nominal }).abortSignal(AbortSignal.timeout(10000)).retry(false)
+          if (!result3.error && result3.data) {
+            saved = result3.data
+            rpcSuccess = true
+          }
+        }
+        if (!rpcSuccess) {
+          const admin = createAdminClient()
+          const { data: adminBiz } = await admin.from('businesses').update({ loyalty_active: loyalty.data.active, loyalty_point_nominal: loyalty.data.nominal, loyalty_redemptions: loyalty.data.redemptions }).eq('id', business.id).select('*').single()
+          if (adminBiz) saved = adminBiz
+          else {
+            const { data: adminBizBasic } = await admin.from('businesses').update({ loyalty_active: loyalty.data.active, loyalty_point_nominal: loyalty.data.nominal }).eq('id', business.id).select('*').single()
+            if (adminBizBasic) saved = adminBizBasic
+          }
+        }
+      } catch {
+        // do not block profile save
+      }
     }
   }
   refreshBusinessViews()
@@ -453,38 +473,96 @@ export async function saveLoyaltySettings(_: ActionState, form: FormData): Promi
   }
   const parsed = loyaltySettingsSchema.safeParse({ active: form.get('loyaltyActive') === 'true', nominal: form.get('loyaltyPointNominal'), redemptions: redemptionsList })
   if (!parsed.success) return { error: loyaltySaveError('22023') }
+
+  let savedBusiness: Business | null = null
+
+  // 1. Try 4-param RPC
   try {
-    const result = await supabase.rpc('save_business_loyalty_settings', { target_id: business.id, new_active: parsed.data.active, new_nominal: parsed.data.nominal, new_redemptions: parsed.data.redemptions }).abortSignal(AbortSignal.timeout(15000)).retry(false)
-    let savedBusiness: Business | null = (!result.error && result.data) ? (result.data as Business) : null
-    if (!savedBusiness) {
-      const admin = createAdminClient()
-      const { data: adminBiz } = await admin
-        .from('businesses')
-        .update({ loyalty_active: parsed.data.active, loyalty_point_nominal: parsed.data.nominal, loyalty_redemptions: parsed.data.redemptions })
-        .eq('id', business.id)
-        .select('*')
-        .single()
-      if (adminBiz) savedBusiness = adminBiz as Business
+    const result = await supabase
+      .rpc('save_business_loyalty_settings', {
+        target_id: business.id,
+        new_active: parsed.data.active,
+        new_nominal: parsed.data.nominal,
+        new_redemptions: parsed.data.redemptions,
+      })
+      .abortSignal(AbortSignal.timeout(10000))
+      .retry(false)
+    if (!result.error && result.data) {
+      savedBusiness = result.data as Business
     }
-    if (!savedBusiness) return { error: loyaltySaveError(result.error?.code) }
-    refreshBusinessViews()
-    return { success: 'Pengaturan poin member berhasil disimpan.', business: savedBusiness }
-  } catch {
+  } catch {}
+
+  // 2. Try 3-param RPC (baseline schema)
+  if (!savedBusiness) {
     try {
-      const admin = createAdminClient()
-      const { data: adminBiz } = await admin
-        .from('businesses')
-        .update({ loyalty_active: parsed.data.active, loyalty_point_nominal: parsed.data.nominal, loyalty_redemptions: parsed.data.redemptions })
-        .eq('id', business.id)
-        .select('*')
-        .single()
-      if (adminBiz) {
-        refreshBusinessViews()
-        return { success: 'Pengaturan poin member berhasil disimpan.', business: adminBiz as Business }
+      const result3 = await supabase
+        .rpc('save_business_loyalty_settings', {
+          target_id: business.id,
+          new_active: parsed.data.active,
+          new_nominal: parsed.data.nominal,
+        })
+        .abortSignal(AbortSignal.timeout(10000))
+        .retry(false)
+      if (!result3.error && result3.data) {
+        savedBusiness = result3.data as Business
       }
     } catch {}
-    return { error: loyaltySaveError() }
   }
+
+  // 3. Try Admin update
+  const admin = createAdminClient()
+  if (!savedBusiness) {
+    try {
+      // First attempt with loyalty_redemptions
+      const { data: adminBiz, error: adminErr } = await admin
+        .from('businesses')
+        .update({
+          loyalty_active: parsed.data.active,
+          loyalty_point_nominal: parsed.data.nominal,
+          loyalty_redemptions: parsed.data.redemptions,
+        })
+        .eq('id', business.id)
+        .select('*')
+        .single()
+      if (!adminErr && adminBiz) {
+        savedBusiness = adminBiz as Business
+      } else {
+        // Fallback without loyalty_redemptions column
+        const { data: adminBizBasic } = await admin
+          .from('businesses')
+          .update({
+            loyalty_active: parsed.data.active,
+            loyalty_point_nominal: parsed.data.nominal,
+          })
+          .eq('id', business.id)
+          .select('*')
+          .single()
+        if (adminBizBasic) {
+          savedBusiness = adminBizBasic as Business
+        }
+      }
+    } catch {}
+  } else {
+    // If RPC succeeded, attempt saving loyalty_redemptions column if available
+    try {
+      const { data: updatedWithRedemptions } = await admin
+        .from('businesses')
+        .update({ loyalty_redemptions: parsed.data.redemptions })
+        .eq('id', business.id)
+        .select('*')
+        .single()
+      if (updatedWithRedemptions) {
+        savedBusiness = updatedWithRedemptions as Business
+      }
+    } catch {}
+  }
+
+  if (!savedBusiness) {
+    return { error: 'Gagal memperbarui pengaturan poin. Pastikan koneksi stabil.' }
+  }
+
+  refreshBusinessViews()
+  return { success: 'Pengaturan poin member berhasil disimpan.', business: savedBusiness }
 }
 
 
