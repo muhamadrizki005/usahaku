@@ -1,12 +1,12 @@
 import { z } from 'zod'
 import type { Fact } from './assistant'
 
-export const dataSources = ['business', 'staff', 'catalog', 'inventory', 'stock_history', 'customers', 'payments', 'sales', 'tables', 'orders', 'reservations', 'report', 'billing'] as const
+export const dataSources = ['business', 'staff', 'catalog', 'services', 'inventory', 'stock_history', 'customers', 'payments', 'sales', 'tables', 'orders', 'reservations', 'report', 'billing'] as const
 export type DataSource = typeof dataSources[number]
-export const dataReadSchema = z.object({ source: z.enum(dataSources), search: z.string().trim().max(80), page: z.number().int().min(1).max(1000), order: z.enum(['default', 'price_desc', 'price_asc']).optional() }).strict().refine(read => !read.order || read.order === 'default' || read.source === 'catalog', 'Urutan harga hanya untuk katalog.')
+export const dataReadSchema = z.object({ source: z.enum(dataSources), search: z.string().trim().max(80), page: z.number().int().min(1).max(1000), order: z.enum(['default', 'price_desc', 'price_asc']).optional() }).strict().refine(read => !read.order || read.order === 'default' || read.source === 'catalog' || read.source === 'services', 'Urutan harga hanya untuk katalog atau layanan.')
 export const dataPlanSchema = z.object({ reads: z.array(dataReadSchema).max(3) }).strict()
 export type DataRead = z.infer<typeof dataReadSchema>
-export const sourceLabels: Record<DataSource, string> = { business: 'Profil dan jam usaha', staff: 'Staf dan akses', catalog: 'Katalog usaha', inventory: 'Inventori saat ini', stock_history: 'Riwayat stok', customers: 'Pelanggan dan poin', payments: 'Metode pembayaran aktif', sales: 'Riwayat transaksi', tables: 'Meja restoran', orders: 'Pesanan restoran', reservations: 'Reservasi restoran', report: 'Laporan penjualan periode pilihan', billing: 'Pajak, layanan, dan poin restoran' }
+export const sourceLabels: Record<DataSource, string> = { business: 'Profil dan jam usaha', staff: 'Staf dan akses', catalog: 'Katalog usaha', services: 'Layanan salon', inventory: 'Inventori saat ini', stock_history: 'Riwayat stok', customers: 'Pelanggan dan poin', payments: 'Metode pembayaran aktif', sales: 'Riwayat transaksi', tables: 'Meja restoran', orders: 'Pesanan restoran', reservations: 'Reservasi restoran', report: 'Laporan penjualan periode pilihan', billing: 'Pajak, layanan, dan poin restoran' }
 export function sourceAllowed(source: DataSource, category: string, role: string, permissions: string[]) {
   const has = (permission: string) => permissions.includes('*') || permissions.includes(permission)
   if (!has('reports:view') || !has('products:view') || !['store', 'restaurant', 'barbershop'].includes(category)) return false
@@ -15,6 +15,7 @@ export function sourceAllowed(source: DataSource, category: string, role: string
   if (source === 'customers') return has('customers:view')
   if (source === 'inventory' || source === 'stock_history') return ['store', 'barbershop'].includes(category) && has('inventory:view')
   if (['tables', 'orders', 'reservations', 'billing'].includes(source)) return category === 'restaurant'
+  if (source === 'services') return category === 'barbershop'
   if (source === 'sales') return has('transactions:view')
   if (source === 'payments') return role === 'owner' || has('pos:view')
   return true
@@ -39,10 +40,19 @@ export function dataFacts(read: DataRead, rows: Record<string, unknown>[], total
   const role = (value: unknown) => ({ owner: 'pemilik', admin: 'admin', cashier: 'kasir' }[String(value)] || String(value))
   const when = (value: unknown) => new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Jakarta' }).format(new Date(String(value))) + ' WIB'
   const status = (value: unknown) => ({ open: 'belum dibayar', paid: 'sudah dibayar', completed: 'selesai', cancelled: 'dibatalkan', reserved: 'dijadwalkan', seated: 'pelanggan sudah datang', no_show: 'tidak hadir', new: 'baru masuk', preparing: 'sedang disiapkan', ready: 'siap disajikan', served: 'sudah disajikan' }[String(value)] || String(value))
-  return [fact(`${base}_scope`, metadata), ...rows.flatMap((row, index) => {
+  const baseFacts: Fact[] = [
+    fact(`${base}_scope`, metadata),
+    fact(`${base}_count`, String(total)),
+  ]
+  if (!rows.length) {
+    const emptyUnit = read.source === 'services' ? 'layanan' : read.source === 'catalog' ? 'produk/menu' : read.source === 'staff' ? 'staf' : 'data'
+    baseFacts.push(fact(`${base}_empty`, `Belum ada ${emptyUnit} yang tercatat.`))
+  }
+  return [...baseFacts, ...rows.flatMap((row, index) => {
     const id = `${base}_${index}`, name = String(row.name || '')
     let text = describe(row)
-    if (read.source === 'catalog') text = `${name} harganya ${money(row.price)}.${row.active === false ? ' Saat ini dinonaktifkan.' : ''}${row.available === false ? ' Saat ini sedang habis.' : ''}${row.duration_minutes ? ` Durasi: ${row.duration_minutes} menit.` : ''}`
+    if (read.source === 'catalog') text = `${name} harganya ${money(row.price)}.${row.active === false ? ' Saat ini dinonaktifkan.' : ''}${row.available === false ? ' Saat ini sedang habis.' : ''}${row.category ? ` Kategori: ${row.category}.` : ''}`
+    if (read.source === 'services') text = `${name} tarifnya ${money(row.price)}${row.duration_minutes ? ` (durasi ${number(row.duration_minutes)} menit)` : ''}.${row.active === false ? ' Saat ini dinonaktifkan.' : ''}`
     if (read.source === 'staff') text = `${name} berperan sebagai ${role(row.role)} dan akunnya ${row.active ? 'aktif' : 'nonaktif'}.`
     if (read.source === 'inventory') text = `Stok ${name} saat ini ${number(row.stock)} ${row.unit}, dengan batas minimum ${number(row.minimum_stock)} ${row.unit}.`
     if (read.source === 'customers') text = `${name} memiliki ${number(row.points)} poin dan statusnya ${row.active ? 'aktif' : 'nonaktif'}.`
@@ -65,7 +75,8 @@ export function dataFacts(read: DataRead, rows: Record<string, unknown>[], total
     if (read.source === 'stock_history') text = `Perubahan stok ${row.product_name} pada ${when(row.created_at)}: dari ${number(row.before_stock)} menjadi ${number(row.after_stock)} ${row.unit}.`
     const result = [{ ...fact(id, text), providerText: describe(row) }]
     if (name) result.push(fact(`${id}_name`, name))
-    if (read.source === 'catalog' && row.price != null) result.push(fact(`${id}_price`, money(row.price)))
+    if ((read.source === 'catalog' || read.source === 'services') && row.price != null) result.push(fact(`${id}_price`, money(row.price)))
+    if (read.source === 'services' && row.duration_minutes != null) result.push(fact(`${id}_duration`, `${number(row.duration_minutes)} menit`))
     for (const [key, value] of Object.entries(row)) {
       if (['name', 'price'].includes(key) || value == null || typeof value === 'object') continue
       const rendered = typeof value === 'boolean' ? value ? 'ya' : 'tidak' : typeof value === 'number' ? number(value) : String(value)
