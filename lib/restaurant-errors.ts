@@ -37,6 +37,13 @@ export function restaurantFailure(input: RestaurantError | string, operation: Op
   const error = typeof input === 'string' ? { code: input } : input
   const code = error?.code || '', message = error?.message || ''
   const reservationMessages = [
+    'Pilih member aktif dan hadiah poin yang tersedia.',
+    'Hadiah poin berubah. Muat ulang dan pilih kembali voucher.',
+    'Saldo atau jumlah poin hadiah berubah. Muat ulang member.',
+    'Tambahkan menu hadiah ke keranjang.',
+    'Hadiah tidak berlaku untuk restoran.',
+    'Hadiah tidak berlaku untuk tagihan nol.',
+    'Harga menu berubah. Muat ulang dan periksa tagihan sebelum membayar.',
     'Meja masih memiliki pesanan atau reservasi aktif. Selesaikan atau pindahkan terlebih dahulu.',
     'Member tidak aktif atau tidak ditemukan.',
     'Nominal poin tidak valid.',
@@ -60,7 +67,7 @@ export function restaurantFailure(input: RestaurantError | string, operation: Op
     'Batalkan melalui Reservasi dan konfirmasikan refund DP terlebih dahulu.',
     'Meja memiliki reservasi aktif. Pindahkan atau batalkan reservasi sebelum mengubah kapasitas/status meja.',
   ]
-  if (code === 'P0001' && reservationMessages.includes(message)) return { error: message, uncertain: false }
+  if (['P0001','PT409','22023'].includes(code) && reservationMessages.includes(message)) return { error: message, uncertain: false }
   if (code === '42501') return { error: message === 'Discount access denied' ? 'Diskon hanya dapat diberikan oleh owner atau admin.' : 'Anda tidak memiliki izin untuk melakukan tindakan ini.', uncertain: false }
   const specific = reasonMessage(error)
   if (specific) return { error: specific, uncertain: false }

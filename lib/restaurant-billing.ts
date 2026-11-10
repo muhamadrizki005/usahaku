@@ -1,8 +1,23 @@
 import { z } from 'zod'
+import type { LoyaltyRedemptionRule } from './loyalty'
 
 const rate = z.string().regex(/^(0|[1-9]\d{0,2})(\.\d{1,2})?$/, 'Isi persentase 0–100, maksimal 2 desimal.').refine(v => Number(v) <= 100, 'Persentase maksimal 100%.')
 export const restaurantBillingSchema = z.object({ taxRate: rate, serviceRate: rate, taxBase: z.enum(['net', 'net_service']), serviceScope: z.enum(['dine_in', 'all']) }).strict()
-export type RestaurantBilling = { tax_rate: number; service_rate: number; tax_base: 'net' | 'net_service'; service_scope: 'dine_in' | 'all'; revision: number; loyalty_active?: boolean; earn_nominal?: number; redemption_active?: boolean; point_value?: number }
+export type RestaurantBilling = { tax_rate: number; service_rate: number; tax_base: 'net' | 'net_service'; service_scope: 'dine_in' | 'all'; revision: number; loyalty_active?: boolean; earn_nominal?: number; redemption_active?: boolean; point_value?: number; redemptions?:LoyaltyRedemptionRule[] }
+export function restaurantRewardQuote(subtotal:number,discountKind:string,discountValue:string,kind:'dine_in'|'takeaway',settings:RestaurantBilling,reward:LoyaltyRedemptionRule|null,balance:number,lines:{id:string;price:number}[]){
+ const base=restaurantQuote(subtotal,discountKind,discountValue,kind,settings)
+ let cut=0,redeemed=0
+ if(reward){
+  if(!settings.loyalty_active||!Number.isSafeInteger(reward.points_required)||reward.points_required<1||reward.points_required>balance)throw Error('Saldo poin tidak cukup atau program poin tidak aktif.')
+  redeemed=reward.points_required
+  const value=reward.reward_type==='voucher'?reward.voucher_amount:reward.reward_type==='product'?Number(lines.find(l=>l.id===reward.product_id)?.price):0
+  if(!Number.isSafeInteger(value)||!value||value<1)throw Error('Tambahkan menu hadiah atau pilih voucher yang valid.')
+  cut=Math.min(base.net,value)
+  if(cut<=0)throw Error('Hadiah tidak berlaku untuk tagihan nol.')
+ }
+ const result=restaurantQuote(subtotal,'amount',String(base.discount+cut),kind,settings)
+ return{...result,orderDiscount:base.discount,pointDiscount:cut,pointsRedeemed:redeemed,pointsEarned:settings.loyalty_active?Math.floor(result.total/Number(settings.earn_nominal||10000)):0}
+}
 export const defaultRestaurantBilling: RestaurantBilling = { tax_rate: 0, service_rate: 0, tax_base: 'net', service_scope: 'dine_in', revision: 0 }
 export function restaurantMemberQuote(subtotal:number,discountKind:string,discountValue:string,kind:'dine_in'|'takeaway',settings:RestaurantBilling,points:string,balance:number) {
   const base=restaurantQuote(subtotal,discountKind,discountValue,kind,settings)

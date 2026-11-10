@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { readdir,readFile } from 'node:fs/promises'
 import { PGlite } from '@electric-sql/pglite'
+import { restaurantTestHours } from './fixtures/restaurant-hours'
 
 test('salon operations preserve other businesses, serialize schedules and enforce visit, payment, retry, refund and privacy rules',async()=>{
  const db=new PGlite()
@@ -29,7 +30,7 @@ test('salon operations preserve other businesses, serialize schedules and enforc
   await db.exec(await readFile('supabase/migrations/202611070002_salon_preparation_slots.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/202611070003_salon_walkin_queue.sql','utf8'))
   await as(owner);const bid=await create('barbershop');await rpc('complete_business_onboarding',[bid])
-  const hours=Object.fromEntries(['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu','Minggu'].map(d=>[d,{open:'00:00',close:'23:59',closed:false}]))
+  const hours=restaurantTestHours()
   await rpc('save_business_hours',[bid,0,hours]);const sid=randomUUID(),sid2=randomUUID(),pid=randomUUID(),pid2=randomUUID()
   await rpc('save_salon_resource',[bid,'service',sid,null,randomUUID(),{name:'Potong',price:'50000',duration:'30',active:true}])
   await rpc('save_salon_resource',[bid,'service',sid2,null,randomUUID(),{name:'Keramas',price:'10000',duration:'15',active:true}])

@@ -7,6 +7,7 @@ import { readRestaurantOrdersPage } from '@/lib/restaurant-server'
 import { restaurantFailure as failure } from '@/lib/restaurant-errors'
 
 const ids = z.object({ id: z.uuid(), request: z.uuid(), revision: z.number().int().nonnegative().nullable() }).strict()
+const orderIds=ids.extend({sourceId:z.uuid().optional()})
 export async function loadRestaurantOrders(input: unknown): Promise<{ data?: RestaurantOrderPage; error?: string }> {
   const { supabase, business } = await requireBusiness(['owner', 'admin', 'cashier'])
   if (business.category !== 'restaurant') return { error: 'Akses daftar pesanan ditolak.' }
@@ -29,12 +30,20 @@ export async function saveRestaurantResource(resource: 'menu' | 'table', input: 
 export async function saveRestaurantOrder(input: unknown, details: unknown): Promise<RestaurantResult> {
   const { supabase, business } = await requireBusiness(['owner', 'admin', 'cashier'])
   if (business.category !== 'restaurant') return failure('42501')
-  const parsed = ids.safeParse(input), values = restaurantOrderSchema.safeParse(details)
+  const parsed = orderIds.safeParse(input), values = restaurantOrderSchema.safeParse(details)
   if (!parsed.success || !values.success) return { error: !values.success ? values.error.issues[0].message : 'Permintaan tidak valid.' }
   const p = parsed.data
-  const { data, error } = await supabase.rpc('save_restaurant_order', { target_id: business.id, item_id: p.id, expected_revision: p.revision, operation_id: p.request, details: values.data }).abortSignal(AbortSignal.timeout(15000)).retry(false)
+  const { data, error } = await supabase.rpc(p.sourceId?'save_restaurant_followup':'save_restaurant_order', { target_id: business.id, item_id: p.id, expected_revision: p.revision, operation_id: p.request, details: values.data,...(p.sourceId?{source_id:p.sourceId}:{}) }).abortSignal(AbortSignal.timeout(15000)).retry(false)
   if (error || !data) return failure(error, 'order')
   revalidatePath('/dashboard', 'layout'); return { value: data }
+}
+export async function checkoutRestaurantCart(input:unknown,orderDetails:unknown,paymentDetails:unknown,subtotal:number):Promise<RestaurantResult>{
+ const {supabase,business}=await requireBusiness(['owner','admin','cashier'])
+ const p=orderIds.safeParse(input),o=restaurantOrderSchema.safeParse(orderDetails),pay=restaurantPaymentSchema.safeParse(paymentDetails)
+ if(business.category!=='restaurant'||!p.success||!o.success||!pay.success||!Number.isSafeInteger(subtotal)||subtotal<0)return{error:'Periksa pesanan, member, dan pembayaran.'}
+ const {data,error}=await supabase.rpc('checkout_restaurant_cart',{target_id:business.id,item_id:p.data.id,expected_revision:p.data.revision,operation_id:p.data.request,order_details:o.data,payment_details:pay.data,quoted_subtotal:subtotal,source_id:p.data.sourceId||null}).abortSignal(AbortSignal.timeout(15000)).retry(false)
+ if(error||!data)return failure(error,'payment')
+ revalidatePath('/dashboard','layout');return{value:data}
 }
 export async function payRestaurantOrder(input: unknown, details: unknown): Promise<RestaurantResult> {
   const { supabase, business } = await requireBusiness(['owner', 'admin', 'cashier'])
@@ -67,7 +76,7 @@ export async function deleteRestaurantTable(input:unknown):Promise<RestaurantRes
 export async function loadRestaurantMember(id:string):Promise<{member?:import('@/lib/customers').PosCustomer;error?:string}>{
  const {supabase,business}=await requireBusiness(['owner','admin','cashier'],false,'pos:view')
  if(business.category!=='restaurant'||!z.uuid().safeParse(id).success)return{error:'Member tidak valid.'}
- const {data,error}=await supabase.from('customers').select('id,name,phone,points').eq('business_id',business.id).eq('id',id).eq('active',true).abortSignal(AbortSignal.timeout(10000)).maybeSingle()
+ const {data,error}=await supabase.rpc('read_restaurant_member',{target_id:business.id,customer_id:id}).abortSignal(AbortSignal.timeout(10000)).retry(false)
  if(error||!data)return{error:'Member tidak aktif atau belum dapat dimuat. Muat ulang sebelum pembayaran.'}
  return{member:{...data,points:Number(data.points)}}
 }
