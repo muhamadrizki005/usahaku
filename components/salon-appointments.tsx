@@ -19,6 +19,7 @@ import {
   type SalonBusySlot,
   type SalonSettings,
 } from '@/lib/salon-operations'
+import type { LoyaltyRedemptionRule } from '@/lib/loyalty'
 import { enabledPaymentMethods, type PaymentSettings } from '@/lib/business-payments'
 import { rupiah, saleDate, saleCode, paymentLabel, type Sale } from '@/lib/pos'
 import { reservationIso, reservationLocalTime } from '@/lib/restaurant-reservations'
@@ -126,6 +127,7 @@ type CompletedSaleReceipt = {
   received: number
   change: number
   saleId?: string
+  sale?: Sale
 }
 
 const time = (value: string) =>
@@ -238,6 +240,7 @@ export default function SalonAppointments({
   const [paymentConfirmed, setPaymentConfirmed] = useState(false)
   const [checkoutPending, setCheckoutPending] = useState(false)
   const [checkoutError, setCheckoutError] = useState('')
+  const [selectedRedemption, setSelectedRedemption] = useState<LoyaltyRedemptionRule | null>(null)
 
   // Struk / Receipt Modal & Thermal Print
   const [receipt, setReceipt] = useState<CompletedSaleReceipt | null>(null)
@@ -387,6 +390,7 @@ export default function SalonAppointments({
     setCashReceived('')
     setPaymentConfirmed(false)
     setCheckoutError('')
+    setSelectedRedemption(null)
   }
 
   // ===============================
@@ -409,7 +413,33 @@ export default function SalonAppointments({
     transDiscountReduction = Math.min(afterItemDiscountSubtotal, Math.max(0, numTransDiscount))
   }
 
-  const netBeforeTax = Math.max(0, afterItemDiscountSubtotal - transDiscountReduction)
+  let pointDiscountReduction = 0
+  if (selectedRedemption) {
+    if (selectedRedemption.reward_type === 'voucher') {
+      pointDiscountReduction = Math.min(
+        Math.max(0, afterItemDiscountSubtotal - transDiscountReduction),
+        Number(selectedRedemption.voucher_amount || 0)
+      )
+    } else if (selectedRedemption.reward_type === 'product' && selectedRedemption.product_id) {
+      const match = cart.find(i => i.id === selectedRedemption.product_id)
+      if (match) {
+        pointDiscountReduction = Math.min(
+          Math.max(0, afterItemDiscountSubtotal - transDiscountReduction),
+          match.discountedPrice || match.price
+        )
+      }
+    } else if (selectedRedemption.reward_type === 'service' && selectedRedemption.service_id) {
+      const match = cart.find(i => i.id === selectedRedemption.service_id)
+      if (match) {
+        pointDiscountReduction = Math.min(
+          Math.max(0, afterItemDiscountSubtotal - transDiscountReduction),
+          match.discountedPrice || match.price
+        )
+      }
+    }
+  }
+
+  const netBeforeTax = Math.max(0, afterItemDiscountSubtotal - transDiscountReduction - pointDiscountReduction)
   const activeTaxes = calculateCustomTaxes(netBeforeTax, customTaxes)
   const taxAmount = activeTaxes.reduce((sum, t) => sum + t.amount, 0)
   const totalAmount = netBeforeTax + taxAmount
@@ -465,6 +495,7 @@ export default function SalonAppointments({
 
       let generatedSaleCode = ''
       let saleId: string | undefined
+      let completedSale: Sale | null = null
 
       // Scenario A: Cart has services (with or without products)
       if (servicesInCart.length > 0) {
@@ -565,10 +596,14 @@ export default function SalonAppointments({
           discountKind: transDiscountKind,
           discountValue: numTransDiscount,
           taxes: activeTaxes,
+          pointsRedeemed: selectedRedemption ? selectedRedemption.points_required : 0,
+          redemptionReason: selectedRedemption ? `Tukar ${selectedRedemption.points_required} poin: ${selectedRedemption.reward_type === 'voucher' ? `Voucher Rp${(selectedRedemption.voucher_amount || 0).toLocaleString('id-ID')}` : (selectedRedemption.product_name || selectedRedemption.service_name || 'Hadiah')}` : undefined,
         })
 
         if (res.error) throw new Error(res.error)
         saleId = res.sale?.id
+        completedSale = res.sale || null
+        setReceiptSale(res.sale || null)
         generatedSaleCode = res.sale?.receipt_number || ('SLN-' + (res.sale?.id || '').slice(0, 8).toUpperCase())
 
         // Deduct physical products if bought alongside services
@@ -612,6 +647,8 @@ export default function SalonAppointments({
           confirmed: true,
           discount_kind: transDiscountKind,
           discount_value: numTransDiscount,
+          pointsRedeemed: selectedRedemption ? selectedRedemption.points_required : 0,
+          redemptionReason: selectedRedemption ? `Tukar ${selectedRedemption.points_required} poin: ${selectedRedemption.reward_type === 'voucher' ? `Voucher Rp${(selectedRedemption.voucher_amount || 0).toLocaleString('id-ID')}` : (selectedRedemption.product_name || selectedRedemption.service_name || 'Hadiah')}` : undefined,
         })
 
         if (!result.sale) {
@@ -619,6 +656,8 @@ export default function SalonAppointments({
         }
 
         saleId = result.sale.id
+        completedSale = result.sale || null
+        setReceiptSale(result.sale || null)
         generatedSaleCode = saleCode(result.sale) || 'SLN-' + crypto.randomUUID().slice(0, 8).toUpperCase()
       }
 
@@ -656,6 +695,7 @@ export default function SalonAppointments({
         received: paymentMethod === 'cash' ? numCashReceived : totalAmount,
         change: paymentMethod === 'cash' ? cashChange : 0,
         saleId,
+        sale: (completedSale || receiptSale) as Sale,
       }
 
       setReceipt(receiptData)
@@ -1035,10 +1075,77 @@ export default function SalonAppointments({
                 } else {
                   setCustomCustomerName('Pelanggan Umum')
                   setCustomerPhone('')
+                  setSelectedRedemption(null)
                 }
               }}
             />
           </div>
+
+          {/* Penukaran Poin Member (Hanya untuk member / pelanggan terdaftar) */}
+          {selectedCustomer && (
+            <div className="mt-3.5 rounded-xl border border-[#24cbc5]/40 bg-[#1c222e] p-3.5 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="size-4 text-[#24cbc5]" />
+                  <span className="text-xs font-semibold text-white">Penukaran Poin Member</span>
+                </div>
+                <span className="rounded-full bg-[#24cbc5]/20 px-2.5 py-0.5 text-xs font-bold text-[#24cbc5]">
+                  {Number(selectedCustomer.points || 0).toLocaleString('id-ID')} Poin
+                </span>
+              </div>
+
+              {((business.loyalty_redemptions as LoyaltyRedemptionRule[]) || []).length === 0 ? (
+                <p className="text-[11px] text-[#a4a7ac]">
+                  Belum ada pengaturan pertukaran poin. Atur di menu Pengaturan Usaha.
+                </p>
+              ) : (
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] text-[#c5cbd5]">Pilih Hadiah / Penukaran:</label>
+                  <select
+                    value={selectedRedemption?.id || ''}
+                    onChange={e => {
+                      const rule = ((business.loyalty_redemptions as LoyaltyRedemptionRule[]) || []).find(r => r.id === e.target.value)
+                      if (!rule) {
+                        setSelectedRedemption(null)
+                        return
+                      }
+                      if ((selectedCustomer.points || 0) < rule.points_required) {
+                        setSelectedRedemption(null)
+                        return
+                      }
+                      setSelectedRedemption(rule)
+                    }}
+                    className="w-full rounded-lg border border-[#454d5b] bg-[#273242] px-3 py-2 text-xs text-white outline-none focus:border-[#24cbc5]"
+                  >
+                    <option value="">-- Tanpa Penukaran Poin --</option>
+                    {((business.loyalty_redemptions as LoyaltyRedemptionRule[]) || []).map(rule => {
+                      const hasEnough = (selectedCustomer.points || 0) >= rule.points_required
+                      const label = rule.reward_type === 'voucher'
+                        ? `Tukar ${rule.points_required} Poin → Voucher Rp${(rule.voucher_amount || 0).toLocaleString('id-ID')}`
+                        : rule.reward_type === 'product'
+                          ? `Tukar ${rule.points_required} Poin → Gratis Produk ${rule.product_name}`
+                          : `Tukar ${rule.points_required} Poin → Gratis Layanan ${rule.service_name}`
+                      return (
+                        <option key={rule.id} value={rule.id} disabled={!hasEnough}>
+                          {label} {!hasEnough ? '(Poin Kurang)' : '✓'}
+                        </option>
+                      )
+                    })}
+                  </select>
+                  {selectedRedemption && (
+                    <div className="flex items-center justify-between rounded-lg bg-[#1835d9]/30 px-3 py-2 text-xs text-white">
+                      <span>Gunakan: <b>{selectedRedemption.points_required} Poin</b></span>
+                      <span className="font-semibold text-[#24cbc5]">
+                        {selectedRedemption.reward_type === 'voucher'
+                          ? `-Rp${(selectedRedemption.voucher_amount || 0).toLocaleString('id-ID')}`
+                          : 'Item Gratis'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Transaction Mode: Walk-in vs Scheduled */}
           <div className="mt-3.5">
@@ -1304,6 +1411,12 @@ export default function SalonAppointments({
                       <span>-{rupiah(transDiscountReduction)}</span>
                     </div>
                   )}
+                  {pointDiscountReduction > 0 && (
+                    <div className="flex justify-between text-[#24cbc5]">
+                      <span>Tukar Poin ({selectedRedemption?.points_required} Poin)</span>
+                      <span>-{rupiah(pointDiscountReduction)}</span>
+                    </div>
+                  )}
                   {activeTaxes.map(t => (
                     <div key={t.id} className="flex justify-between text-[#c5cbd5]">
                       <span>{t.name} ({t.rate}%)</span>
@@ -1454,11 +1567,56 @@ export default function SalonAppointments({
       {/* 2. RECEIPT MODAL ON SUCCESSFUL CHECKOUT                  */}
       {/* ======================================================== */}
       {receipt && (
-        <RestaurantDialog
-          title="Struk Transaksi Salon"
-          busy={false}
-          close={() => setReceipt(null)}
-        >
+        <>
+          <style>{`@media print {
+            body { background: white !important; color: black !important; }
+            body > :not(#salon-receipt-print-root) { display: none !important; }
+            #salon-receipt-print-root { display: block !important; position: absolute; left: 0; top: 0; width: 100%; }
+            #salon-receipt-print-root section { border: 0 !important; box-shadow: none !important; }
+          }`}</style>
+          {mounted && createPortal(
+            <div id="salon-receipt-print-root" className="hidden" aria-hidden="true">
+              <SaleReceipt
+                sale={receipt.sale || receiptSale || ({
+                  id: receipt.saleId || crypto.randomUUID(),
+                  business_id: business.id,
+                  actor_id: '',
+                  actor_name: receipt.cashier,
+                  customer_id: null,
+                  customer: receipt.customer,
+                  lines: receipt.items.map((it, idx) => ({
+                    id: String(idx),
+                    product_id: '',
+                    name: it.name,
+                    quantity: it.quantity,
+                    unit: it.unit || 'layanan',
+                    price: it.price,
+                    total: it.total,
+                  })),
+                  subtotal: receipt.subtotal,
+                  discount_kind: receipt.transDiscount > 0 ? 'amount' : 'none',
+                  discount_value: receipt.transDiscount,
+                  discount: receipt.transDiscount,
+                  total: receipt.total,
+                  payment: (receipt.paymentMethod?.toLowerCase().includes('qris') ? 'qris' : receipt.paymentMethod?.toLowerCase().includes('transfer') ? 'transfer' : 'cash') as any,
+                  received: receipt.received,
+                  change: receipt.change,
+                  tax_rate: receipt.tax > 0 ? Number(settings.tax_rate) : 0,
+                  tax_amount: receipt.tax,
+                  created_at: new Date().toISOString(),
+                  status: 'completed',
+                  receipt_number: receipt.code,
+                } as unknown as Sale)}
+                business={business}
+              />
+            </div>,
+            document.body
+          )}
+          <RestaurantDialog
+            title="Struk Transaksi Salon"
+            busy={false}
+            close={() => setReceipt(null)}
+          >
           <div className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
             <div
               id="printable-salon-receipt"
@@ -1584,7 +1742,8 @@ export default function SalonAppointments({
             </div>
           </div>
         </RestaurantDialog>
-      )}
+      </>
+    )}
 
       {/* ======================================================== */}
       {/* 3. PRACTITIONER CALENDAR & SCHEDULE SECTION              */}
@@ -2573,6 +2732,15 @@ function VisitActionDialog({
   const [discount, setDiscount] = useState('0')
   const [reason, setReason] = useState('')
   const [noShow, setNoShow] = useState(false)
+  const [selectedReasonPreset, setSelectedReasonPreset] = useState('')
+  const cancellationPresets = [
+    'Pelanggan meminta reschedule / ganti jadwal',
+    'Pelanggan berhalangan hadir / batal datang',
+    'Penata / terapis berhalangan atau jadwal bentrok',
+    'Antrean terlalu lama / pelanggan membatalkan',
+    'Kesalahan input layanan / data kunjungan',
+    'Lainnya',
+  ]
 
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
@@ -2686,25 +2854,68 @@ function VisitActionDialog({
         <fieldset disabled={pending || locked || blockedRefund} className="space-y-4">
           {kind === 'cancel' ? (
             <>
-              <label className="flex min-h-11 items-center gap-3 text-sm text-white cursor-pointer">
+              <label className="flex min-h-11 items-center gap-3 text-sm text-white cursor-pointer rounded-xl bg-[#1c222e] p-3 border border-[#454d5b]/60">
                 <input
                   type="checkbox"
                   checked={noShow}
                   onChange={e => setNoShow(e.target.checked)}
                   className="size-4 shrink-0 accent-[#1835d9]"
                 />
-                <span>Tandai tidak hadir (setelah terlambat 15 menit dan belum check-in).</span>
+                <span>Tandai tidak hadir (pelanggan tidak datang ke salon)</span>
               </label>
-              <RestaurantField label="Alasan pembatalan kunjungan">
-                <textarea
-                  required
-                  minLength={3}
-                  maxLength={300}
-                  value={reason}
-                  onChange={e => setReason(e.target.value)}
-                  className={input}
-                />
-              </RestaurantField>
+
+              <div className="space-y-2">
+                <label className="block text-xs font-medium text-[#c5cbd5]">
+                  Pilih Alasan Pembatalan:
+                </label>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {cancellationPresets.map(preset => {
+                    const isSelected = selectedReasonPreset === preset
+                    return (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => {
+                          setSelectedReasonPreset(preset)
+                          if (preset !== 'Lainnya') {
+                            setReason(preset)
+                          } else {
+                            setReason('')
+                          }
+                        }}
+                        className={`flex items-center gap-2 rounded-xl p-2.5 text-left text-xs transition border cursor-pointer ${
+                          isSelected
+                            ? 'border-[#24cbc5] bg-[#24cbc5]/15 text-white font-medium'
+                            : 'border-[#454d5b]/60 bg-[#1c222e] text-[#c5cbd5] hover:border-[#454d5b]'
+                        }`}
+                      >
+                        <div
+                          className={`grid size-4 shrink-0 place-items-center rounded-full border ${
+                            isSelected ? 'border-[#24cbc5] bg-[#24cbc5]' : 'border-[#454d5b]'
+                          }`}
+                        >
+                          {isSelected && <div className="size-1.5 rounded-full bg-[#1c222e]" />}
+                        </div>
+                        <span className="leading-snug">{preset}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {(selectedReasonPreset === 'Lainnya' || (!selectedReasonPreset && reason.length > 0) || !selectedReasonPreset) && (
+                <RestaurantField label="Alasan pembatalan kunjungan">
+                  <textarea
+                    required
+                    minLength={3}
+                    maxLength={300}
+                    value={reason}
+                    placeholder={selectedReasonPreset === 'Lainnya' ? 'Tuliskan alasan pembatalan lainnya secara rinci...' : 'Tulis atau pilih alasan pembatalan kunjungan di atas...'}
+                    onChange={e => setReason(e.target.value)}
+                    className={input}
+                  />
+                </RestaurantField>
+              )}
               {Number(visit.deposit_amount) > 0 && (
                 <label className="flex min-h-11 items-center gap-3 text-sm text-white cursor-pointer">
                   <input

@@ -2,6 +2,7 @@
 import { TimeInput } from '@/components/ui/time-input'
 import { useActionState, useEffect, useRef, useState, startTransition } from 'react'
 import { ToastNotification, useToast, type ToastType } from '@/components/ui/toast-notification'
+import { notify as emitSystemNotification } from '@/lib/notifications'
 import { saveBusinessHours } from '@/app/actions'
 import { businessHoursSchema } from '@/lib/business-profile'
 import type { Business } from '@/lib/validation'
@@ -36,6 +37,14 @@ export function BusinessHoursSettings({
         notify('error', state.error)
       } else if (state.success || state.business) {
         notify('success', 'Jam operasional berhasil disimpan')
+        if (business?.id) {
+          emitSystemNotification({
+            businessId: business.id,
+            title: 'Jam Operasional Diperbarui',
+            message: 'Jadwal jam operasional usaha berhasil disimpan.',
+            category: 'system',
+          })
+        }
       }
     }
   }, [state, notify])

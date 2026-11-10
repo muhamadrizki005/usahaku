@@ -8,7 +8,7 @@ import {
   saveBusinessTaxes,
   calculateCustomTaxes,
 } from '@/lib/business-taxes'
-import { showSuccessToast, showErrorToast } from '@/lib/notifications'
+import { showSuccessToast, showErrorToast, notify } from '@/lib/notifications'
 import type { Business } from '@/lib/validation'
 
 interface Props {
@@ -61,6 +61,12 @@ export default function BusinessTaxSettings({
     try {
       saveBusinessTaxes(business.id, taxes)
       showSuccessToast('Pengaturan pajak usaha berhasil disimpan.')
+      notify({
+        businessId: business.id,
+        title: 'Pengaturan Pajak Diperbarui',
+        message: 'Pengaturan pajak usaha berhasil disimpan.',
+        category: 'system',
+      })
       setNotice('Pengaturan pajak berhasil disimpan.')
       onSaved?.(taxes)
     } catch {
@@ -84,9 +90,12 @@ export default function BusinessTaxSettings({
             <ReceiptText className="size-5" />
           </div>
           <div>
-            <h2 className="font-semibold text-white">Pengaturan Pajak Usaha</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="font-semibold text-white">Pengaturan Pajak Usaha</h2>
+              <span className="rounded-full bg-[#454d5b]/40 px-2 py-0.5 text-[11px] font-normal text-[#a4a7ac]">(Opsional)</span>
+            </div>
             <p className="mt-0.5 text-xs text-[#a4a7ac]">
-              Kelola pajak utama, pajak pelayanan, atau pajak kustom yang berlaku pada transaksi kasir.
+              Opsional. Kelola pajak utama, pajak pelayanan, atau pajak kustom yang berlaku pada transaksi kasir.
             </p>
           </div>
         </div>

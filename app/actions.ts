@@ -113,7 +113,11 @@ export async function createBusiness(_: ActionState, form: FormData): Promise<Ac
   if (user.app_metadata.account_type === 'staff') return { error: 'Akun staf tidak dapat membuat usaha. Hubungi owner.' }
   const category = businessCategorySchema.safeParse(form.get('category') || 'store')
   if (!category.success) return { error: 'Kategori usaha belum didukung.' }
-  const loyalty = form.has('loyaltyActive') ? loyaltySettingsSchema.safeParse({ active: form.get('loyaltyActive') === 'true', nominal: form.get('loyaltyPointNominal') }) : null
+  let redemptionsList: any[] = []
+  if (form.has('loyaltyRedemptions')) {
+    try { redemptionsList = JSON.parse(String(form.get('loyaltyRedemptions') || '[]')) } catch {}
+  }
+  const loyalty = form.has('loyaltyActive') ? loyaltySettingsSchema.safeParse({ active: form.get('loyaltyActive') === 'true', nominal: form.get('loyaltyPointNominal'), redemptions: redemptionsList }) : null
   if (loyalty && !loyalty.success) return { error: loyaltySaveError('22023') }
   const parsed = profileSchema.safeParse(fields(form))
   if (!parsed.success) return invalid(parsed.error)
@@ -181,12 +185,16 @@ export async function saveBusinessProfile(_: ActionState, form: FormData): Promi
   }
   try { if (!await cleanupBusinessLogos(business.id)) warning ||= 'Profil tersimpan. Pembersihan logo lama akan dicoba kembali.' } catch { warning ||= 'Profil tersimpan. Pembersihan logo lama akan dicoba kembali.' }
   if (form.has('loyaltyActive')) {
-    const loyalty = loyaltySettingsSchema.safeParse({ active: form.get('loyaltyActive') === 'true', nominal: form.get('loyaltyPointNominal') })
-    if (!loyalty.success) warning = 'Profil tersimpan, tetapi nominal program poin tidak valid. Simpan pengaturan poin secara terpisah.'
+    let redemptionsList: any[] = []
+    if (form.has('loyaltyRedemptions')) {
+      try { redemptionsList = JSON.parse(String(form.get('loyaltyRedemptions') || '[]')) } catch {}
+    }
+    const loyalty = loyaltySettingsSchema.safeParse({ active: form.get('loyaltyActive') === 'true', nominal: form.get('loyaltyPointNominal'), redemptions: redemptionsList })
+    if (!loyalty.success) warning = 'Profil tersimpan, tetapi pengaturan program poin tidak valid. Simpan pengaturan poin secara terpisah.'
     else {
       try {
-        const result = await supabase.rpc('save_business_loyalty_settings', { target_id: business.id, new_active: loyalty.data.active, new_nominal: loyalty.data.nominal }).abortSignal(AbortSignal.timeout(15000)).retry(false)
-        if (!result.error && result.data) saved = result.data; else { const admin = createAdminClient(); const { data: adminBiz } = await admin.from('businesses').update({ loyalty_active: loyalty.data.active, loyalty_point_nominal: loyalty.data.nominal }).eq('id', business.id).select('*').single(); if (adminBiz) saved = adminBiz; else { refreshBusinessViews(); return { error: 'Profil tersimpan. ' + loyaltySaveError(result.error?.code), business: saved, warning } } }
+        const result = await supabase.rpc('save_business_loyalty_settings', { target_id: business.id, new_active: loyalty.data.active, new_nominal: loyalty.data.nominal, new_redemptions: loyalty.data.redemptions }).abortSignal(AbortSignal.timeout(15000)).retry(false)
+        if (!result.error && result.data) saved = result.data; else { const admin = createAdminClient(); const { data: adminBiz } = await admin.from('businesses').update({ loyalty_active: loyalty.data.active, loyalty_point_nominal: loyalty.data.nominal, loyalty_redemptions: loyalty.data.redemptions }).eq('id', business.id).select('*').single(); if (adminBiz) saved = adminBiz; else { refreshBusinessViews(); return { error: 'Profil tersimpan. ' + loyaltySaveError(result.error?.code), business: saved, warning } } }
 
       } catch { refreshBusinessViews(); return { error: 'Profil tersimpan. ' + loyaltySaveError(), business: saved, warning } }
     }
@@ -439,16 +447,20 @@ export async function saveLoyaltySettings(_: ActionState, form: FormData): Promi
   const { supabase, business } = await requireBusiness(['owner'], true)
 
   if (!['true', 'false'].includes(String(form.get('loyaltyActive')))) return { error: 'Pilihan program poin tidak valid.' }
-  const parsed = loyaltySettingsSchema.safeParse({ active: form.get('loyaltyActive') === 'true', nominal: form.get('loyaltyPointNominal') })
+  let redemptionsList: any[] = []
+  if (form.has('loyaltyRedemptions')) {
+    try { redemptionsList = JSON.parse(String(form.get('loyaltyRedemptions') || '[]')) } catch {}
+  }
+  const parsed = loyaltySettingsSchema.safeParse({ active: form.get('loyaltyActive') === 'true', nominal: form.get('loyaltyPointNominal'), redemptions: redemptionsList })
   if (!parsed.success) return { error: loyaltySaveError('22023') }
   try {
-    const result = await supabase.rpc('save_business_loyalty_settings', { target_id: business.id, new_active: parsed.data.active, new_nominal: parsed.data.nominal }).abortSignal(AbortSignal.timeout(15000)).retry(false)
+    const result = await supabase.rpc('save_business_loyalty_settings', { target_id: business.id, new_active: parsed.data.active, new_nominal: parsed.data.nominal, new_redemptions: parsed.data.redemptions }).abortSignal(AbortSignal.timeout(15000)).retry(false)
     let savedBusiness: Business | null = (!result.error && result.data) ? (result.data as Business) : null
     if (!savedBusiness) {
       const admin = createAdminClient()
       const { data: adminBiz } = await admin
         .from('businesses')
-        .update({ loyalty_active: parsed.data.active, loyalty_point_nominal: parsed.data.nominal })
+        .update({ loyalty_active: parsed.data.active, loyalty_point_nominal: parsed.data.nominal, loyalty_redemptions: parsed.data.redemptions })
         .eq('id', business.id)
         .select('*')
         .single()
@@ -456,13 +468,13 @@ export async function saveLoyaltySettings(_: ActionState, form: FormData): Promi
     }
     if (!savedBusiness) return { error: loyaltySaveError(result.error?.code) }
     refreshBusinessViews()
-    return { success: 'Pengaturan poin member berhasil disimpan.', business: result.data as Business }
+    return { success: 'Pengaturan poin member berhasil disimpan.', business: savedBusiness }
   } catch {
     try {
       const admin = createAdminClient()
       const { data: adminBiz } = await admin
         .from('businesses')
-        .update({ loyalty_active: parsed.data.active, loyalty_point_nominal: parsed.data.nominal })
+        .update({ loyalty_active: parsed.data.active, loyalty_point_nominal: parsed.data.nominal, loyalty_redemptions: parsed.data.redemptions })
         .eq('id', business.id)
         .select('*')
         .single()

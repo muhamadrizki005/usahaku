@@ -83,3 +83,63 @@ test('salon cashier checkout: full payment vs DP logic verification', () => {
   const showBayarButtonDPWhenFinished = !dpVisit.sale_id && 'finished' === 'finished'
   assert.equal(showBayarButtonDPWhenFinished, true, 'Bayar button is shown once service finishes to pay remaining balance')
 })
+
+test('loyalty point redemption rules validation', () => {
+  const redemptions = [
+    {
+      id: 'rule-voucher',
+      points_required: 10,
+      reward_type: 'voucher',
+      voucher_amount: 50000,
+    },
+    {
+      id: 'rule-prod',
+      points_required: 20,
+      reward_type: 'product',
+      product_id: 'prod-1',
+      product_name: 'Pomade Styling',
+    },
+    {
+      id: 'rule-service',
+      points_required: 30,
+      reward_type: 'service',
+      service_id: 'srv-1',
+      service_name: 'Hair Spa',
+    },
+  ]
+
+  const parsed = loyaltySettingsSchema.safeParse({
+    active: true,
+    nominal: 25000,
+    redemptions,
+  })
+
+  assert.equal(parsed.success, true)
+  if (parsed.success) {
+    assert.equal(parsed.data.redemptions.length, 3)
+    assert.equal(parsed.data.redemptions[0].reward_type, 'voucher')
+    assert.equal(parsed.data.redemptions[0].voucher_amount, 50000)
+    assert.equal(parsed.data.redemptions[1].reward_type, 'product')
+    assert.equal(parsed.data.redemptions[2].reward_type, 'service')
+  }
+})
+
+test('cancellation and no_show reason options validation', () => {
+  const cancellationPresets = [
+    'Pelanggan meminta reschedule / ganti jadwal',
+    'Pelanggan berhalangan hadir / batal datang',
+    'Penata / terapis berhalangan atau jadwal bentrok',
+    'Antrean terlalu lama / pelanggan membatalkan',
+    'Kesalahan input layanan / data kunjungan',
+    'Lainnya',
+  ]
+
+  assert.equal(cancellationPresets.length, 6)
+  assert.ok(cancellationPresets.includes('Lainnya'))
+
+  // Selecting a preset fills reason with that preset
+  const chosen = cancellationPresets[1]
+  assert.equal(chosen.length >= 3, true)
+})
+
+

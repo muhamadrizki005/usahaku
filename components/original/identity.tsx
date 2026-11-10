@@ -17,6 +17,8 @@ import {
   startTransition,
 } from "react";
 import type { Business } from "@/lib/validation";
+import type { LoyaltyRedemptionRule, LoyaltyRedemptionType } from "@/lib/loyalty";
+import { notify } from "@/lib/notifications";
 import { createBusiness, saveBusinessProfile, saveLoyaltySettings } from "@/app/actions";
 import RestaurantReservationSettings from "@/components/restaurant-reservation-settings";
 import BusinessPaymentSettings from "@/components/business-payment-settings";
@@ -32,7 +34,10 @@ import {
   Check,
   CheckCircle2,
   CircleHelp,
+  Gift,
   ImagePlus,
+  Plus,
+  Trash2,
   X,
 } from "lucide-react";
 type Category = "toko" | "restoran" | "barbershop";
@@ -53,6 +58,8 @@ export default function OriginalIdentity({
   payments,
   paymentSettingsNode,
   restaurantBillingNode,
+  catalogProducts = [],
+  salonServices = [],
 }: {
   ownerName: string;
   userId: string;
@@ -63,6 +70,8 @@ export default function OriginalIdentity({
   payments?: PaymentSettings;
   paymentSettingsNode?: React.ReactNode;
   restaurantBillingNode?: React.ReactNode;
+  catalogProducts?: { id: string; name: string; price: number }[];
+  salonServices?: { id: string; name: string; price: number }[];
 }) {
   const [serverState, dispatchIdentity, pending] = useActionState(
     business ? saveBusinessProfile : createBusiness,
@@ -155,6 +164,82 @@ export default function OriginalIdentity({
     setNominalInput(num.toLocaleString("id-ID"));
   };
   const [loyaltyPending, setLoyaltyPending] = useState(false);
+  const [redemptions, setRedemptions] = useState<LoyaltyRedemptionRule[]>(() => {
+    return (business?.loyalty_redemptions as LoyaltyRedemptionRule[]) || [];
+  });
+  const [showAddRule, setShowAddRule] = useState(false);
+  const [newRulePoints, setNewRulePoints] = useState('10');
+  const [newRuleType, setNewRuleType] = useState<LoyaltyRedemptionType>('voucher');
+  const [newRuleVoucher, setNewRuleVoucher] = useState('50000');
+  const [newRuleProductId, setNewRuleProductId] = useState('');
+  const [newRuleProductName, setNewRuleProductName] = useState('');
+  const [newRuleServiceId, setNewRuleServiceId] = useState('');
+  const [newRuleServiceName, setNewRuleServiceName] = useState('');
+
+  const handleAddRule = () => {
+    const pts = parseInt(newRulePoints, 10);
+    if (!pts || pts <= 0) {
+      showToast('error', 'Isi jumlah poin minimal 1.');
+      return;
+    }
+    if (newRuleType === 'voucher') {
+      const v = parseInt(newRuleVoucher, 10);
+      if (!v || v <= 0) {
+        showToast('error', 'Isi nominal voucher belanja minimal Rp1.000.');
+        return;
+      }
+      setRedemptions((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          points_required: pts,
+          reward_type: 'voucher',
+          voucher_amount: v,
+        },
+      ]);
+    } else if (newRuleType === 'product') {
+      const name = newRuleProductName.trim();
+      if (!name) {
+        showToast('error', 'Pilih atau isi nama produk gratis.');
+        return;
+      }
+      setRedemptions((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          points_required: pts,
+          reward_type: 'product',
+          product_id: newRuleProductId || undefined,
+          product_name: name,
+        },
+      ]);
+    } else if (newRuleType === 'service') {
+      const name = newRuleServiceName.trim();
+      if (!name) {
+        showToast('error', 'Pilih atau isi nama layanan gratis.');
+        return;
+      }
+      setRedemptions((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          points_required: pts,
+          reward_type: 'service',
+          service_id: newRuleServiceId || undefined,
+          service_name: name,
+        },
+      ]);
+    }
+    setShowAddRule(false);
+    setNewRulePoints('10');
+    setNewRuleVoucher('50000');
+    setNewRuleProductId('');
+    setNewRuleProductName('');
+    setNewRuleServiceId('');
+    setNewRuleServiceName('');
+    showToast('success', 'Aturan pertukaran poin ditambahkan. Klik Simpan untuk menerapkan.');
+  };
+
   const handleSaveLoyalty = async () => {
     if (!business) return;
     if (loyaltyActive && (!loyaltyPointNominal || loyaltyPointNominal <= 0)) {
@@ -165,12 +250,21 @@ export default function OriginalIdentity({
     const fd = new FormData();
     fd.set("loyaltyActive", loyaltyActive ? "true" : "false");
     fd.set("loyaltyPointNominal", String(loyaltyPointNominal || 50000));
+    fd.set("loyaltyRedemptions", JSON.stringify(redemptions));
     try {
       const res = await saveLoyaltySettings({}, fd);
       if (res.error) {
         showToast("error", res.error);
       } else {
         showToast("success", res.success || "Pengaturan poin member berhasil disimpan.");
+        if (business?.id) {
+          notify({
+            businessId: business.id,
+            title: "Pengaturan Poin Diperbarui",
+            message: "Pengaturan poin & pertukaran poin member berhasil disimpan.",
+            category: "system",
+          });
+        }
         router.refresh();
       }
     } catch (err: any) {
@@ -199,6 +293,9 @@ export default function OriginalIdentity({
       setLoyaltyActive(Boolean(serverState.business.loyalty_active));
       setLoyaltyPointNominal(Number(serverState.business.loyalty_point_nominal || 50000));
       setNominalInput(Number(serverState.business.loyalty_point_nominal || 50000).toLocaleString("id-ID"));
+      if (serverState.business.loyalty_redemptions) {
+        setRedemptions((serverState.business.loyalty_redemptions as LoyaltyRedemptionRule[]) || []);
+      }
       if (logoInputRef.current) logoInputRef.current.value = "";
     }
     if (submittedRef.current) {
@@ -209,6 +306,14 @@ export default function OriginalIdentity({
         showToast("error", serverState.warning);
       } else if (serverState.success || serverState.business) {
         showToast("success", "Perubahan berhasil disimpan");
+        if (business?.id) {
+          notify({
+            businessId: business.id,
+            title: "Profil Usaha Diperbarui",
+            message: "Perubahan informasi profil usaha berhasil disimpan.",
+            category: "system",
+          });
+        }
       }
     }
   }, [serverState, showToast]);
@@ -279,6 +384,7 @@ export default function OriginalIdentity({
     data.set("ownerName", ownerName);
     data.set("loyaltyActive", loyaltyActive ? "true" : "false");
     data.set("loyaltyPointNominal", String(loyaltyPointNominal || 50000));
+    data.set("loyaltyRedemptions", JSON.stringify(redemptions));
     if (onboarding) data.set("next", "setup");
     data.set("logoOperation", logoOperation);
     if (selectedFile) data.set("logo", selectedFile);
@@ -451,7 +557,12 @@ export default function OriginalIdentity({
             <section className="rounded-xl border border-[#454d5b] bg-[#273242] p-5 shadow-sm transition-all duration-300">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="font-medium text-white">Program Poin Member</h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-medium text-white">Program Poin Member</h2>
+                    <span className="rounded-full bg-[#454d5b]/40 px-2 py-0.5 text-[11px] font-normal text-[#a4a7ac]">
+                      (Opsional)
+                    </span>
+                  </div>
                   <button
                     type="button"
                     role="switch"
@@ -470,7 +581,7 @@ export default function OriginalIdentity({
                   </button>
                 </div>
                 <p className="mt-1 text-xs text-[#a4a7ac] leading-relaxed">
-                  Berikan poin kepada pelanggan setiap kali melakukan transaksi.
+                  Opsional. Berikan poin dan atur pertukaran hadiah untuk pelanggan setiap kali melakukan transaksi.
                 </p>
               </div>
 
@@ -541,6 +652,211 @@ export default function OriginalIdentity({
                         </tbody>
                       </table>
                     </div>
+
+                    {/* Aturan Pertukaran Poin (Redemption Rules) */}
+                    <div className="mt-5 pt-4 border-t border-[#454d5b]/60 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <Gift className="size-4 text-[#24cbc5]" />
+                            <h3 className="text-sm font-semibold text-white">Aturan Pertukaran Poin</h3>
+                          </div>
+                          <p className="mt-0.5 text-xs text-[#a4a7ac]">
+                            Tentukan hadiah voucher diskon, produk gratis, atau layanan gratis.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowAddRule(true)}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-[#24cbc5]/15 px-3 py-1.5 text-xs font-semibold text-[#24cbc5] hover:bg-[#24cbc5]/25 transition cursor-pointer border-0"
+                        >
+                          <Plus className="size-3.5" />
+                          <span>Tambah Hadiah</span>
+                        </button>
+                      </div>
+
+                      {/* List of active rules */}
+                      {redemptions.length === 0 ? (
+                        <div className="rounded-lg border border-dashed border-[#454d5b] bg-[#1c222e]/40 p-4 text-center">
+                          <p className="text-xs text-[#a4a7ac]">
+                            Belum ada aturan pertukaran poin. Klik <b>Tambah Hadiah</b> untuk membuat voucher diskon atau item gratis.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {redemptions.map((rule) => (
+                            <div
+                              key={rule.id}
+                              className="flex items-center justify-between gap-3 rounded-lg border border-[#454d5b] bg-[#1c222e] p-3 text-xs"
+                            >
+                              <div className="flex items-center gap-2.5">
+                                <span className="rounded-md bg-[#1835d9]/40 px-2 py-1 font-bold text-[#24cbc5]">
+                                  {rule.points_required} Poin
+                                </span>
+                                <div>
+                                  <p className="font-medium text-white">
+                                    {rule.reward_type === 'voucher' && `Voucher Diskon Rp ${(rule.voucher_amount || 0).toLocaleString('id-ID')}`}
+                                    {rule.reward_type === 'product' && `Gratis Produk: ${rule.product_name || 'Produk'}`}
+                                    {rule.reward_type === 'service' && `Gratis Layanan: ${rule.service_name || 'Layanan'}`}
+                                  </p>
+                                  <p className="text-[11px] text-[#a4a7ac]">
+                                    {rule.reward_type === 'voucher' ? 'Potongan langsung di kasir' : 'Item gratis di keranjang kasir'}
+                                  </p>
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setRedemptions((prev) => prev.filter((r) => r.id !== rule.id))}
+                                className="rounded-md p-1.5 text-[#a4a7ac] hover:bg-red-500/20 hover:text-red-400 transition cursor-pointer border-0"
+                                aria-label="Hapus aturan"
+                              >
+                                <Trash2 className="size-4" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Form to add rule */}
+                      {showAddRule && (
+                        <div className="rounded-xl border border-[#24cbc5]/40 bg-[#1c222e] p-4 space-y-3">
+                          <div className="flex items-center justify-between border-b border-[#454d5b]/60 pb-2">
+                            <span className="text-xs font-semibold text-white">Tambah Aturan Pertukaran Poin</span>
+                            <button
+                              type="button"
+                              onClick={() => setShowAddRule(false)}
+                              className="text-[#a4a7ac] hover:text-white"
+                            >
+                              <X className="size-4" />
+                            </button>
+                          </div>
+
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <div>
+                              <label className="block text-[11px] text-[#c5cbd5] mb-1">Poin yang Dibutuhkan</label>
+                              <input
+                                type="number"
+                                min="1"
+                                value={newRulePoints}
+                                onChange={(e) => setNewRulePoints(e.target.value)}
+                                placeholder="Contoh: 10"
+                                className={input + ' !h-9 !w-full'}
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] text-[#c5cbd5] mb-1">Bentuk Hadiah</label>
+                              <select
+                                value={newRuleType}
+                                onChange={(e) => setNewRuleType(e.target.value as any)}
+                                className={input + ' !h-9 !w-full'}
+                              >
+                                <option value="voucher">Voucher Belanja (Potongan Nominal)</option>
+                                <option value="product">Produk Gratis</option>
+                                {category === 'barbershop' && <option value="service">Layanan Gratis</option>}
+                              </select>
+                            </div>
+                          </div>
+
+                          {newRuleType === 'voucher' && (
+                            <div>
+                              <label className="block text-[11px] text-[#c5cbd5] mb-1">Nominal Voucher (Rp)</label>
+                              <input
+                                type="number"
+                                min="1000"
+                                step="1000"
+                                value={newRuleVoucher}
+                                onChange={(e) => setNewRuleVoucher(e.target.value)}
+                                placeholder="Contoh: 50000"
+                                className={input + ' !h-9 !w-full'}
+                              />
+                            </div>
+                          )}
+
+                          {newRuleType === 'product' && (
+                            <div>
+                              <label className="block text-[11px] text-[#c5cbd5] mb-1">Pilih Produk Gratis</label>
+                              {catalogProducts && catalogProducts.length > 0 ? (
+                                <select
+                                  value={newRuleProductId}
+                                  onChange={(e) => {
+                                    const prod = catalogProducts.find((p) => p.id === e.target.value);
+                                    setNewRuleProductId(e.target.value);
+                                    setNewRuleProductName(prod?.name || '');
+                                  }}
+                                  className={input + ' !h-9 !w-full'}
+                                >
+                                  <option value="">-- Pilih Produk dari Katalog --</option>
+                                  {catalogProducts.map((p) => (
+                                    <option key={p.id} value={p.id}>
+                                      {p.name} (Rp {p.price.toLocaleString('id-ID')})
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <input
+                                  type="text"
+                                  value={newRuleProductName}
+                                  onChange={(e) => setNewRuleProductName(e.target.value)}
+                                  placeholder="Ketik nama produk gratis..."
+                                  className={input + ' !h-9 !w-full'}
+                                />
+                              )}
+                            </div>
+                          )}
+
+                          {newRuleType === 'service' && (
+                            <div>
+                              <label className="block text-[11px] text-[#c5cbd5] mb-1">Pilih Layanan Gratis</label>
+                              {salonServices && salonServices.length > 0 ? (
+                                <select
+                                  value={newRuleServiceId}
+                                  onChange={(e) => {
+                                    const s = salonServices.find((srv) => srv.id === e.target.value);
+                                    setNewRuleServiceId(e.target.value);
+                                    setNewRuleServiceName(s?.name || '');
+                                  }}
+                                  className={input + ' !h-9 !w-full'}
+                                >
+                                  <option value="">-- Pilih Layanan Salon --</option>
+                                  {salonServices.map((s) => (
+                                    <option key={s.id} value={s.id}>
+                                      {s.name} (Rp {s.price.toLocaleString('id-ID')})
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <input
+                                  type="text"
+                                  value={newRuleServiceName}
+                                  onChange={(e) => setNewRuleServiceName(e.target.value)}
+                                  placeholder="Ketik nama layanan gratis..."
+                                  className={input + ' !h-9 !w-full'}
+                                />
+                              )}
+                            </div>
+                          )}
+
+                          <div className="flex justify-end gap-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => setShowAddRule(false)}
+                              className="rounded-lg bg-[#303640] px-3 py-1.5 text-xs text-[#c5cbd5] hover:bg-[#3d4653]"
+                            >
+                              Batal
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleAddRule}
+                              className="rounded-lg bg-[#1835d9] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#132c9e]"
+                            >
+                              Tambahkan
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
                     {!onboarding && business && (
                       <button
                         type="button"

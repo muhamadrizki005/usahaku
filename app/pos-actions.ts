@@ -13,11 +13,33 @@ export async function checkoutPos(requestId:string,details:unknown):Promise<PosR
   const {data,error}=await supabase.rpc('checkout_pos',{target_id:business.id,operation_id:requestId,details}).abortSignal(AbortSignal.timeout(15000)).retry(false)
   if(error||!data)return failure(error?.code)
   const sale = data as Sale
+  const det = details as any
   if (sale.customer_id) {
     try {
-      const { data: cust } = await supabase.from('customers').select('points').eq('id', sale.customer_id).maybeSingle()
-      if (cust && cust.points != null) {
-        sale.customer_points = Number(cust.points)
+      if (det?.pointsRedeemed && Number(det.pointsRedeemed) > 0) {
+        const { createAdminClient } = await import('@/lib/supabase/admin')
+        const admin = createAdminClient()
+        const { data: cust } = await admin.from('customers').select('points').eq('id', sale.customer_id).single()
+        const cur = Number(cust?.points) || 0
+        const afterRedeem = Math.max(0, cur - Number(det.pointsRedeemed))
+        await admin.from('customers').update({ points: afterRedeem }).eq('id', sale.customer_id)
+        const { user } = await requireBusiness()
+        await admin.from('customer_point_history').insert({
+          business_id: business.id,
+          customer_id: sale.customer_id,
+          actor_id: user.id,
+          transaction_id: sale.id,
+          delta: -Number(det.pointsRedeemed),
+          balance_after: afterRedeem,
+          reason: det.redemptionReason || 'Penukaran poin member',
+        })
+        sale.customer_points = afterRedeem
+        ;(sale as any).points_redeemed = Number(det.pointsRedeemed)
+      } else {
+        const { data: cust } = await supabase.from('customers').select('points').eq('id', sale.customer_id).maybeSingle()
+        if (cust && cust.points != null) {
+          sale.customer_points = Number(cust.points)
+        }
       }
     } catch {}
   }

@@ -5,6 +5,7 @@ import type { PaymentSettings } from '@/lib/business-payments'
 import { useBusinessPayments } from './business-payment-state'
 import { Modal, PaymentsModal } from './original/setup'
 import { ToastNotification, useToast, type ToastType } from '@/components/ui/toast-notification'
+import { notify as emitSystemNotification } from '@/lib/notifications'
 
 export default function BusinessPaymentSettings({
   initial,
@@ -30,6 +31,12 @@ export default function BusinessPaymentSettings({
       const ok = await state.save()
       if (ok) {
         notify('success', 'Metode pembayaran berhasil disimpan.')
+        emitSystemNotification({
+          businessId,
+          title: 'Metode Pembayaran Diperbarui',
+          message: 'Pengaturan metode pembayaran usaha berhasil disimpan.',
+          category: 'system',
+        })
         setOpen(false)
         try { router.refresh() } catch {}
       } else {

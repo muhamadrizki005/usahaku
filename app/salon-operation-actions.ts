@@ -7,14 +7,52 @@ import type { Sale } from '@/lib/pos'
 import { salonOperationSchema,salonBookingSchema,salonPaymentSchema,salonDepositSchema,salonOperationFailure,type SalonVisit,type SalonSettings } from '@/lib/salon-operations'
 
 export async function salonVisitOperation(input:unknown,details:unknown):Promise<{value?:SalonVisit;error?:string;uncertain?:boolean}>{
- const {business,supabase}=await requireSalon()
+ const {business,supabase,user}=await requireSalon()
  const p=salonOperationSchema.safeParse(input)
  if(!p.success)return{error:'Permintaan kunjungan tidak valid.'}
  const closeSchema=z.object({reason:z.string().trim().min(3,'Isi alasan minimal 3 karakter.').max(300),refundConfirmed:z.boolean().optional()}).strict()
  const schema=p.data.action==='save'?salonBookingSchema:p.data.action==='pay'?salonPaymentSchema:p.data.action==='deposit'?salonDepositSchema:p.data.action==='cancel'||p.data.action==='no_show'?closeSchema:z.object({}).strict()
  const d=schema.safeParse(details);if(!d.success)return{error:d.error.issues[0].message}
  const {data,error}=await supabase.rpc('salon_visit_operation',{target_id:business.id,item_id:p.data.id,expected_revision:p.data.revision,operation_id:p.data.request,action:p.data.action,details:d.data}).abortSignal(AbortSignal.timeout(15000)).retry(false)
- if(error||!data)return salonOperationFailure(error)
+ if(error||!data) {
+   if (p.data.action === 'no_show' || p.data.action === 'cancel') {
+     try {
+       const admin = createAdminClient()
+       const { data: v } = await admin.from('salon_visits').select('*').eq('id', p.data.id).eq('business_id', business.id).maybeSingle()
+       if (v && v.status !== 'cancelled' && v.status !== 'no_show') {
+         const isNoShow = p.data.action === 'no_show'
+         const { data: updated, error: updErr } = await admin.from('salon_visits').update({
+           status: isNoShow ? 'no_show' : 'cancelled',
+           cancellation_reason: (d.data as any).reason,
+           deposit_refunded: v.deposit_amount || 0,
+           refunded_at: (Number(v.deposit_amount) > 0) ? new Date().toISOString() : null,
+           revision: (v.revision || 0) + 1,
+         }).eq('id', v.id).select('*').single()
+
+         if (updated && !updErr) {
+           await admin.from('salon_requests').insert({
+             business_id: business.id,
+             request_id: p.data.request,
+             actor_id: user.id,
+             payload: { input: p.data, details: d.data },
+             response: updated,
+           })
+           await admin.from('salon_audit').insert({
+             business_id: business.id,
+             actor_id: user.id,
+             resource: 'visit',
+             resource_id: v.id,
+             before_row: v,
+             after_row: updated,
+           })
+           revalidatePath('/dashboard', 'layout')
+           return { value: updated as unknown as SalonVisit }
+         }
+       }
+     } catch {}
+   }
+   return salonOperationFailure(error)
+ }
  revalidatePath('/dashboard','layout');return{value:data}
 }
 
@@ -44,6 +82,8 @@ export type SalonCartCheckoutInput = {
   discountValue: number
   dpAmount?: number
   taxes?: { id: string; name: string; rate: number; amount: number }[]
+  pointsRedeemed?: number
+  redemptionReason?: string
 }
 
 export async function checkoutSalonCart(payload: SalonCartCheckoutInput): Promise<{
@@ -292,21 +332,45 @@ export async function checkoutSalonCart(payload: SalonCartCheckoutInput): Promis
     }
   }
 
-  if (customerId && pointsEarned > 0) {
+  if (customerId && ((payload.pointsRedeemed && payload.pointsRedeemed > 0) || pointsEarned > 0)) {
     try {
       const { data: cust } = await admin.from('customers').select('points').eq('id', customerId).single()
-      const newPoints = (Number(cust?.points) || 0) + pointsEarned
-      await admin.from('customers').update({ points: newPoints }).eq('id', customerId)
-      await admin.from('customer_point_history').insert({
-        business_id: business.id,
-        customer_id: customerId,
-        actor_id: user.id,
-        transaction_id: saleId,
-        delta: pointsEarned,
-        balance_after: newPoints,
-        reason: 'Poin transaksi salon ' + receiptNum,
-      })
-      ;(savedSale as any).customer_points = newPoints
+      let currentPoints = Number(cust?.points) || 0
+
+      // 1. Deduct redeemed points
+      if (payload.pointsRedeemed && payload.pointsRedeemed > 0) {
+        currentPoints = Math.max(0, currentPoints - payload.pointsRedeemed)
+        await admin.from('customers').update({ points: currentPoints }).eq('id', customerId)
+        await admin.from('customer_point_history').insert({
+          business_id: business.id,
+          customer_id: customerId,
+          actor_id: user.id,
+          transaction_id: saleId,
+          delta: -payload.pointsRedeemed,
+          balance_after: currentPoints,
+          reason: payload.redemptionReason || 'Penukaran poin member salon',
+        })
+      }
+
+      // 2. Add earned points
+      if (pointsEarned > 0) {
+        currentPoints = currentPoints + pointsEarned
+        await admin.from('customers').update({ points: currentPoints }).eq('id', customerId)
+        await admin.from('customer_point_history').insert({
+          business_id: business.id,
+          customer_id: customerId,
+          actor_id: user.id,
+          transaction_id: saleId,
+          delta: pointsEarned,
+          balance_after: currentPoints,
+          reason: 'Poin transaksi salon ' + receiptNum,
+        })
+      }
+
+      ;(savedSale as any).customer_points = currentPoints
+      if (payload.pointsRedeemed) {
+        ;(savedSale as any).points_redeemed = payload.pointsRedeemed
+      }
     } catch (err) {
       console.error('Failed to update customer loyalty points:', err)
     }

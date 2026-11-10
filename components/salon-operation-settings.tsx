@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { saveSalonSettings } from '@/app/salon-operation-actions'
+import { notify } from '@/lib/notifications'
 import type { SalonSettings } from '@/lib/salon-operations'
 import { NumericInput } from './ui/numeric-input'
 import { RestaurantField,restaurantPanel,restaurantInput,restaurantPrimary } from './restaurant-forms'
@@ -32,6 +33,11 @@ export default function SalonOperationSettings({initial}:{initial:SalonSettings}
             if (result.value) {
               setRevision(result.value.revision)
               setNotice('Pengaturan salon tersimpan.')
+              notify({
+                title: 'Pengaturan Kunjungan Salon Diperbarui',
+                message: 'Pengaturan jeda persiapan salon berhasil disimpan.',
+                category: 'system',
+              })
             } else {
               setError(result.error || 'Belum tersimpan.')
             }
