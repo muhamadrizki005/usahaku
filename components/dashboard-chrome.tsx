@@ -27,10 +27,10 @@ export const sidebarItemsForRole = (role: Role, category = 'store', permissions:
 export const dashboardItemsForRole = (role: Role, category = 'store', permissions: string[] = []) =>
   (category === 'barbershop' ? [...salonTopNavigationItems, ...restaurantSidebarNavigationItems] : category === 'restaurant' ? [...restaurantTopNavigationItems, ...restaurantSidebarNavigationItems] : dashboardNavigation).filter(([, , path], index, self) => (category !== 'store' ? rolesForPath(path).includes(role) : canAccessPath(path, role, permissions)) && self.findIndex(([, , p]) => p === path) === index)
 
-function useNavigationPrefetch(category: string) {
+function useNavigationPrefetch(category: string, enabled = true) {
   const router = useRouter()
   return (path: string) => {
-    if (path !== '/dashboard/assistant') router.prefetch(dashboardHref(path, category))
+    if (enabled && path !== '/dashboard/assistant') router.prefetch(dashboardHref(path, category))
   }
 }
 
@@ -61,18 +61,20 @@ export function DashboardTopNav({
   onNavigate,
   activePath,
   category = 'store',
+  prefetchEnabled = true,
 }: {
   role: Role
   permissions?: string[]
   onNavigate: (path: string) => void
   activePath?: string
   category?: string
+  prefetchEnabled?: boolean
 }) {
   const pathname = usePathname()
   const currentPath = activePath || pathname
   const reducedMotion = useReducedMotionPreference()
   const items = topItemsForRole(role, category, permissions)
-  const prefetch = useNavigationPrefetch(category)
+  const prefetch = useNavigationPrefetch(category, prefetchEnabled)
 
   return (
     <nav
@@ -119,6 +121,7 @@ export function DashboardSidebar({
   activePath,
   category = 'store',
   assistantVisible,
+  prefetchEnabled = true,
 }: {
   role: Role
   permissions?: string[]
@@ -126,11 +129,12 @@ export function DashboardSidebar({
   activePath?: string
   category?: string
   assistantVisible?: boolean
+  prefetchEnabled?: boolean
 }) {
   const pathname = usePathname()
   const currentPath = activePath || pathname
   const items = sidebarItemsForRole(role, category, permissions)
-  const prefetch = useNavigationPrefetch(category)
+  const prefetch = useNavigationPrefetch(category, prefetchEnabled)
 
   if (items.length === 0) return null
 
@@ -178,6 +182,7 @@ function NavigationItems({
   activePath,
   category = 'store',
   assistantVisible,
+  prefetchEnabled = true,
 }: {
   role: Role
   permissions?: string[]
@@ -185,10 +190,11 @@ function NavigationItems({
   activePath?: string
   category?: string
   assistantVisible?: boolean
+  prefetchEnabled?: boolean
 }) {
   const pathname = usePathname()
   const currentPath = activePath || pathname
-  const prefetch = useNavigationPrefetch(category)
+  const prefetch = useNavigationPrefetch(category, prefetchEnabled)
   return dashboardItemsForRole(role, category, permissions).map(([label, Icon, path]) => {
     const assistantToggle = path === '/dashboard/assistant' && assistantVisible !== undefined
     const active =
@@ -220,6 +226,8 @@ export function DashboardMobileMenu({
   businessName,
   category = 'store',
   assistantVisible,
+  prefetchEnabled = true,
+  activePath,
 }: {
   role: Role
   permissions?: string[]
@@ -227,6 +235,8 @@ export function DashboardMobileMenu({
   businessName: string
   category?: string
   assistantVisible?: boolean
+  prefetchEnabled?: boolean
+  activePath?: string
 }) {
   const [open, setOpen] = useState(false)
   const id = useId()
@@ -317,6 +327,8 @@ export function DashboardMobileMenu({
                   role={role} permissions={permissions}
                   category={category}
                   assistantVisible={assistantVisible}
+                  prefetchEnabled={prefetchEnabled}
+                  activePath={activePath}
                   onNavigate={(path) => {
                     setOpen(false)
                     onNavigate(path)

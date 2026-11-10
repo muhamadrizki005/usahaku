@@ -12,6 +12,7 @@ import { MenuBars } from '@reui/icons/default/filled/menu-bars'
 import { ShapeGrid } from '@/components/shape-grid'
 import TiltedCard, { TiltedCardLayer } from '@/components/tilted-card'
 import TextType from '@/components/TextType'
+import { ModalFrame } from '@/components/ui/modal-frame'
 
 const categories = [
   { label: 'Toko / Minimarket / Kios', type: 'toko', icon: Store, description: 'Dari kasir ke stok, jaga catatan barang dan penjualan tetap rapi.', features: ['Kasir & transaksi', 'Stok produk & persediaan', 'Laporan penjualan'], link: 'Tentang modul penjualan' },
@@ -618,7 +619,7 @@ export default function LandingPage() {
 
       {/* Demos Modal */}
       {showDemos && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-[#1c222e]/70 p-5 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="demo-title">
+        <ModalFrame onDismiss={() => setShowDemos(false)} aria-labelledby="demo-title" className="bg-transparent"><div className="fixed inset-0 z-50 grid place-items-center bg-[#1c222e]/70 p-5 backdrop-blur-sm">
           <div className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-3xl border border-border bg-background p-6 shadow-2xl sm:p-8">
             <div className="flex items-start justify-between gap-5">
               <div>
@@ -636,14 +637,14 @@ export default function LandingPage() {
                   </div>
                   <h3 className="mt-7 text-xl font-normal">{label}</h3>
                   <p className="mt-3 flex-1 text-sm leading-6 text-muted-foreground">{description}</p>
-                  <Link href={`/dashboard?category=${type}`} className="mt-7 inline-flex items-center gap-2 text-sm font-normal text-accent hover:underline">
+                  <Link href={`/demo/${type}`} className="mt-7 inline-flex items-center gap-2 text-sm font-normal text-accent hover:underline">
                     Lihat demo {type === 'toko' ? 'toko' : type === 'restoran' ? 'restoran' : 'salon'} <ArrowRight aria-hidden="true" />
                   </Link>
                 </article>
               ))}
             </div>
           </div>
-        </div>
+        </div></ModalFrame>
       )}
 
       {/* Footer */}

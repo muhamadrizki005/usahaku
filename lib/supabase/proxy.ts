@@ -4,6 +4,7 @@ import { getSupabaseConfig } from './config'
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })
+  if (request.nextUrl.pathname === '/demo' || request.nextUrl.pathname.startsWith('/demo/')) return response
   const config = getSupabaseConfig()
   if (!config) return response
 
