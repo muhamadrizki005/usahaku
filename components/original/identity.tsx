@@ -59,6 +59,7 @@ export default function OriginalIdentity({
   payments,
   paymentSettingsNode,
   restaurantBillingNode,
+  taxSettingsNode,
   catalogProducts = [],
   salonServices = [],
 }: {
@@ -71,6 +72,7 @@ export default function OriginalIdentity({
   payments?: PaymentSettings;
   paymentSettingsNode?: React.ReactNode;
   restaurantBillingNode?: React.ReactNode;
+  taxSettingsNode?: React.ReactNode;
   catalogProducts?: { id: string; name: string; price: number }[];
   salonServices?: { id: string; name: string; price: number }[];
 }) {
@@ -956,7 +958,7 @@ export default function OriginalIdentity({
                 </div>
               )}
             </div>
-            {business && <div className="lg:col-span-2"><BusinessTaxSettings business={business} canManage={true} /></div>}
+            {business && <div className="lg:col-span-2">{taxSettingsNode || <BusinessTaxSettings business={business} canManage={true} />}</div>}
           </div>
         )}
       </div>
