@@ -19,7 +19,7 @@ export async function salonVisitOperation(input:unknown,details:unknown):Promise
      try {
        const admin = createAdminClient()
        const { data: v } = await admin.from('salon_visits').select('*').eq('id', p.data.id).eq('business_id', business.id).maybeSingle()
-       if (v && v.status !== 'cancelled' && v.status !== 'no_show') {
+       if (v && !v.sale_id && v.status !== 'cancelled' && v.status !== 'no_show') {
          const isNoShow = p.data.action === 'no_show'
          const { data: updated, error: updErr } = await admin.from('salon_visits').update({
            status: isNoShow ? 'no_show' : 'cancelled',
@@ -279,20 +279,10 @@ export async function checkoutSalonCart(payload: SalonCartCheckoutInput): Promis
     order_discount: reduction,
   }
 
-  const { data: savedSale, error: saleErr } = await admin
-    .from('pos_transactions')
-    .insert(transactionData)
-    .select('*')
-    .single()
-
-  if (saleErr || !savedSale) {
-    return { error: 'Gagal memproses transaksi kasir salon: ' + (saleErr?.message || 'DB error') }
-  }
-
-  let savedVisit: SalonVisit | undefined = undefined
+  let visitData = null
   if (services.length > 0) {
     const visitId = crypto.randomUUID()
-    const visitData = {
+    visitData = {
       id: visitId,
       business_id: business.id,
       actor_id: user.id,
@@ -310,27 +300,25 @@ export async function checkoutSalonCart(payload: SalonCartCheckoutInput): Promis
       busy_until: holdUntilDate.toISOString(),
       lines: serviceLines,
       subtotal: servicesSubtotal,
-      status: 'finished',
-      arrived_at: new Date().toISOString(),
-      started_at: startsDate.toISOString(),
-      finished_at: new Date().toISOString(),
+      status: kind === 'appointment' ? 'scheduled' : 'waiting',
+      arrived_at: kind === 'walk_in' ? new Date().toISOString() : null,
+      started_at: null,
+      finished_at: null,
       sale_id: saleId,
       deposit_amount: 0,
       deposit_payment: null,
       deposit_refunded: 0,
       revision: 1,
     }
-
-    const { data: vData } = await admin
-      .from('salon_visits')
-      .insert(visitData)
-      .select('*')
-      .single()
-
-    if (vData) {
-      savedVisit = vData as SalonVisit
-    }
   }
+
+  const { data: checkout, error: checkoutError } = await admin.rpc('commit_salon_cart_checkout', {
+    target_id: business.id, checkout_actor: user.id,
+    sale_details: transactionData, visit_details: visitData,
+  }).abortSignal(AbortSignal.timeout(15000)).retry(false)
+  if (checkoutError || !checkout?.sale) return salonOperationFailure(checkoutError)
+  const savedSale = checkout.sale as Sale
+  const savedVisit = (checkout.visit || undefined) as SalonVisit | undefined
 
   if (customerId && ((payload.pointsRedeemed && payload.pointsRedeemed > 0) || pointsEarned > 0)) {
     try {
