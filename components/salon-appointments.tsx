@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { salonVisitOperation } from '@/app/salon-operation-actions'
+import { salonVisitOperation, checkoutSalonCart } from '@/app/salon-operation-actions'
 import { checkoutPos } from '@/app/pos-actions'
 import { moveCatalogStock } from '@/app/catalog-actions'
 import { CustomerSearch } from './customer-search'
@@ -46,6 +46,7 @@ import {
   ChevronDown,
   Printer,
   CheckCircle2,
+  Banknote,
   Clock,
   User,
   Tag,
@@ -221,6 +222,8 @@ export default function SalonAppointments({
   const [customCustomerName, setCustomCustomerName] = useState('Pelanggan Umum')
   const [customerPhone, setCustomerPhone] = useState('')
   const [txNotes, setTxNotes] = useState('')
+  const [cartPaymentOption, setCartPaymentOption] = useState<'full' | 'dp'>('full')
+  const [dpAmountInput, setDpAmountInput] = useState<string>('')
 
   // Transaction-level discount
   const [transDiscountKind, setTransDiscountKind] = useState<'none' | 'percent' | 'amount'>('none')
@@ -412,7 +415,12 @@ export default function SalonAppointments({
   const totalAmount = netBeforeTax + taxAmount
 
   const numCashReceived = Number(cashReceived) || 0
-  const cashChange = Math.max(0, numCashReceived - totalAmount)
+  const servicesInCart = cart.filter(i => i.kind === 'service')
+  const productsInCart = cart.filter(i => i.kind === 'product')
+  const payableTarget = cartPaymentOption === 'dp' && servicesInCart.length > 0
+    ? (Number(dpAmountInput) || 0)
+    : totalAmount
+  const cashChange = Math.max(0, numCashReceived - payableTarget)
 
   // ===============================
   // Complete Checkout Flow
@@ -431,13 +439,13 @@ export default function SalonAppointments({
       return
     }
 
-    if (paymentMethod === 'cash' && numCashReceived < totalAmount) {
-      setCheckoutError('Nominal uang tunai yang diterima kurang dari total tagihan.')
+    if (paymentMethod === 'cash' && numCashReceived < payableTarget) {
+      setCheckoutError(`Nominal uang tunai yang diterima kurang dari total yang harus dibayar (${rupiah(payableTarget)}).`)
       return
     }
 
-    const servicesInCart = cart.filter(i => i.kind === 'service')
-    const productsInCart = cart.filter(i => i.kind === 'product')
+
+
 
     // If services exist, ensure every service has a practitioner assigned
     if (servicesInCart.length > 0) {
@@ -470,15 +478,20 @@ export default function SalonAppointments({
 
         const startsAtIso = reservationIso(startsAt)
 
-        // 1. Save visit
-        const saveResult = await salonVisitOperation(
-          {
-            id: visitId,
-            revision: null,
-            request: crypto.randomUUID(),
-            action: 'save',
-          },
-          {
+        if (cartPaymentOption === 'dp') {
+          const dpNum = Number(dpAmountInput) || 0
+          if (dpNum <= 0) {
+            setCheckoutError('Masukkan nominal DP yang valid lebih dari Rp0.')
+            return
+          }
+          const maxDp = servicesInCart.reduce((s, i) => s + (i.discountedPrice || i.price), 0)
+          if (dpNum > maxDp) {
+            setCheckoutError('Nominal DP tidak boleh melebihi tagihan layanan (' + rupiah(maxDp) + ').')
+            return
+          }
+
+          const res = await checkoutSalonCart({
+            paymentType: 'dp',
             practitionerId: primaryPractitionerId,
             customerId,
             customer: customerName,
@@ -486,69 +499,79 @@ export default function SalonAppointments({
             notes: txNotes.trim(),
             kind: txMode,
             startsAt: startsAtIso,
-            serviceIds: servicesInCart.map(s => s.id),
-            deposit: null,
-          }
-        )
-
-        if (!saveResult.value) {
-          throw new Error(saveResult.error || 'Gagal menyimpan data kunjungan salon.')
-        }
-
-        let currentVisit = saveResult.value
-
-        // 2. Walk-in or direct checkout transitions: arrive -> start -> finish
-        if (currentVisit.status === 'scheduled') {
-          const arr = await salonVisitOperation(
-            { id: visitId, revision: currentVisit.revision, request: crypto.randomUUID(), action: 'arrive' },
-            {}
-          )
-          if (arr.value) currentVisit = arr.value
-        }
-
-        if (currentVisit.status === 'waiting') {
-          const st = await salonVisitOperation(
-            { id: visitId, revision: currentVisit.revision, request: crypto.randomUUID(), action: 'start' },
-            {}
-          )
-          if (st.value) currentVisit = st.value
-        }
-
-        if (currentVisit.status === 'in_service') {
-          const fn = await salonVisitOperation(
-            { id: visitId, revision: currentVisit.revision, request: crypto.randomUUID(), action: 'finish' },
-            {}
-          )
-          if (fn.value) currentVisit = fn.value
-        }
-
-        // 3. Pay visit
-        const payResult = await salonVisitOperation(
-          {
-            id: visitId,
-            revision: currentVisit.revision,
-            request: crypto.randomUUID(),
-            action: 'pay',
-          },
-          {
-            payment: paymentMethod,
-            received: paymentMethod === 'cash' ? String(numCashReceived) : String(totalAmount),
+            services: servicesInCart.map(s => ({
+              id: s.id,
+              name: s.name,
+              price: s.discountedPrice || s.price,
+              duration: s.duration || 30,
+              practitionerId: s.practitionerId,
+            })),
+            products: productsInCart.map(p => ({
+              id: p.id,
+              name: p.name,
+              price: p.discountedPrice || p.price,
+              quantity: p.quantity,
+              unit: p.unit || 'pcs',
+              productRevision: p.productRevision || 0,
+            })),
+            paymentMethod,
+            cashReceived: numCashReceived,
             discountKind: transDiscountKind,
-            discountValue: String(numTransDiscount),
-            confirmed: true,
-            paymentRevision: payments.revision,
-            settingsRevision: settings.revision,
-          }
-        )
+            discountValue: numTransDiscount,
+            dpAmount: dpNum,
+            taxes: activeTaxes,
+          })
 
-        if (!payResult.value) {
-          throw new Error(payResult.error || 'Gagal memproses pembayaran kunjungan salon.')
+          if (res.error) throw new Error(res.error)
+
+          notify({
+            title: 'DP Kunjungan Berhasil Dicatat',
+            message: 'DP ' + customerName + ' sebesar ' + rupiah(dpNum) + ' (' + (paymentLabel[paymentMethod] || paymentMethod) + ') berhasil dicatat ke daftar kunjungan.',
+            category: 'transaction',
+          })
+
+          clearCart()
+          router.refresh()
+          return
         }
 
-        saleId = payResult.value.sale_id || undefined
-        generatedSaleCode = 'SLN-' + visitId.slice(0, 8).toUpperCase()
+        // Full Payment (Lunas)
+        const res = await checkoutSalonCart({
+          paymentType: 'full',
+          practitionerId: primaryPractitionerId,
+          customerId,
+          customer: customerName,
+          phone: contactPhone,
+          notes: txNotes.trim(),
+          kind: txMode,
+          startsAt: startsAtIso,
+          services: servicesInCart.map(s => ({
+            id: s.id,
+            name: s.name,
+            price: s.discountedPrice || s.price,
+            duration: s.duration || 30,
+            practitionerId: s.practitionerId,
+          })),
+          products: productsInCart.map(p => ({
+            id: p.id,
+            name: p.name,
+            price: p.discountedPrice || p.price,
+            quantity: p.quantity,
+            unit: p.unit || 'pcs',
+            productRevision: p.productRevision || 0,
+          })),
+          paymentMethod,
+          cashReceived: numCashReceived,
+          discountKind: transDiscountKind,
+          discountValue: numTransDiscount,
+          taxes: activeTaxes,
+        })
 
-        // 4. Deduct physical products if bought alongside services
+        if (res.error) throw new Error(res.error)
+        saleId = res.sale?.id
+        generatedSaleCode = res.sale?.receipt_number || ('SLN-' + (res.sale?.id || '').slice(0, 8).toUpperCase())
+
+        // Deduct physical products if bought alongside services
         for (const p of productsInCart) {
           try {
             const form = new FormData()
@@ -557,7 +580,7 @@ export default function SalonAppointments({
             form.append('revision', String(p.productRevision ?? 0))
             form.append('kind', 'out')
             form.append('delta', String(p.quantity))
-            form.append('reason', `Penjualan kasir salon untuk ${customerName}`)
+            form.append('reason', 'Penjualan kasir salon untuk ' + customerName)
             await moveCatalogStock(form)
           } catch { }
         }
@@ -1057,6 +1080,48 @@ export default function SalonAppointments({
                 />
               </div>
             )}
+          
+
+            {/* Opsi Pembayaran: Bayar Semua vs DP */}
+            {servicesInCart.length > 0 && (
+              <div className="mt-3.5 border-t border-[#454d5b]/40 pt-3">
+                <label className="mb-1.5 block text-xs font-medium text-[#c5cbd5]">
+                  Opsi Pembayaran Kunjungan
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCartPaymentOption('full')}
+                    className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-medium transition cursor-pointer border-0 ${
+                      cartPaymentOption === 'full'
+                        ? 'bg-[#1835d9] text-white shadow-xs'
+                        : 'bg-[#1c222e] text-[#c5cbd5] hover:bg-[#1c222e]/80'
+                    }`}
+                  >
+                    <CheckCircle2 className="size-3.5" />
+                    <span>Bayar Semua (Lunas)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCartPaymentOption('dp')
+                      if (!dpAmountInput) {
+                        const defaultDp = Math.round(totalAmount * 0.5) || 20000
+                        setDpAmountInput(String(defaultDp))
+                      }
+                    }}
+                    className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-medium transition cursor-pointer border-0 ${
+                      cartPaymentOption === 'dp'
+                        ? 'bg-[#1835d9] text-white shadow-xs'
+                        : 'bg-[#1c222e] text-[#c5cbd5] hover:bg-[#1c222e]/80'
+                    }`}
+                  >
+                    <Banknote className="size-3.5" />
+                    <span>Uang Muka (DP)</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Cart Item List */}
@@ -1251,6 +1316,53 @@ export default function SalonAppointments({
                   </div>
                 </div>
 
+                {/* DP Amount Input & Balance Preview */}
+                {cartPaymentOption === 'dp' && servicesInCart.length > 0 && (
+                  <div className="rounded-xl border border-[#24cbc5]/30 bg-[#1c222e] p-3 space-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-white font-medium">Nominal Uang Muka (DP)</span>
+                      <span className="text-[10px] text-[#24cbc5]">Bayar sebagian</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        min={1}
+                        max={totalAmount}
+                        value={dpAmountInput}
+                        onChange={e => setDpAmountInput(e.target.value)}
+                        placeholder="Masukkan nominal DP..."
+                        className={input + ' !py-1 !text-sm flex-1'}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const half = Math.round(totalAmount / 2)
+                          setDpAmountInput(String(half))
+                        }}
+                        className="rounded-lg bg-[#273242] px-2.5 py-1 text-xs text-[#c5cbd5] hover:text-white border border-[#454d5b] cursor-pointer"
+                      >
+                        50%
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const quarter = Math.round(totalAmount * 0.2)
+                          setDpAmountInput(String(quarter))
+                        }}
+                        className="rounded-lg bg-[#273242] px-2.5 py-1 text-xs text-[#c5cbd5] hover:text-white border border-[#454d5b] cursor-pointer"
+                      >
+                        20%
+                      </button>
+                    </div>
+                    <div className="flex justify-between items-center pt-1 border-t border-[#454d5b]/40 text-xs">
+                      <span className="text-[#c5cbd5]">Sisa Pelunasan Nanti:</span>
+                      <span className="font-semibold text-amber-400">
+                        {rupiah(Math.max(0, totalAmount - (Number(dpAmountInput) || 0)))}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Payment Methods */}
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-[#c5cbd5]">Metode Pembayaran</label>
@@ -1278,10 +1390,10 @@ export default function SalonAppointments({
                       <span className="text-white font-medium">Uang Tunai Diterima</span>
                       <button
                         type="button"
-                        onClick={() => setCashReceived(String(totalAmount))}
+                        onClick={() => setCashReceived(String(payableTarget))}
                         className="text-[11px] text-[#24cbc5] hover:underline cursor-pointer border-0 bg-transparent"
                       >
-                        Uang Pas ({rupiah(totalAmount)})
+                        Uang Pas ({rupiah(payableTarget)})
                       </button>
                     </div>
                     <input
@@ -1310,7 +1422,7 @@ export default function SalonAppointments({
                     onChange={e => setPaymentConfirmed(e.target.checked)}
                     className="size-4 shrink-0 accent-[#1835d9] cursor-pointer"
                   />
-                  <span>Pembayaran telah diterima dan diperiksa secara manual.</span>
+                  <span>{cartPaymentOption === 'dp' && servicesInCart.length > 0 ? 'Uang Muka (DP) telah diterima dan diperiksa secara manual.' : 'Pembayaran telah diterima dan diperiksa secara manual.'}</span>
                 </label>
 
                 {checkoutError && (
