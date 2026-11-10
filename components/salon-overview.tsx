@@ -32,6 +32,7 @@ import {
 } from '@/lib/dashboard-trends'
 import { CustomSelect } from '@/components/ui/custom-select'
 import { DatePicker } from '@/components/ui/date-picker'
+import RevenueApexChart from '@/components/revenue-apex-chart'
 
 function Card({
   title,
@@ -291,29 +292,35 @@ export default function SalonOverview({
       {/* Row 2: Revenue Trend Chart & Quick Schedule Overview */}
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.5fr_1fr]">
         {/* Trend Omzet Card */}
-        <Card
-          title="Tren Pendapatan Salon"
-          subtitle={getPeriodSubtitle(trendPeriod, trendData.startDate, trendData.endDate)}
-          action={
-            <div className="w-44 sm:w-48">
-              <CustomSelect
-                value={trendPeriod}
-                onChange={val => setTrendPeriod(val as TrendPeriod)}
-                options={[
-                  { value: '7d', label: '7 hari terakhir' },
-                  { value: '30d', label: '30 hari terakhir' },
-                  { value: '1m', label: '1 bulan terakhir' },
-                  { value: '3m', label: '3 bulan terakhir' },
-                  { value: '6m', label: '6 bulan terakhir' },
-                  { value: '1y', label: '1 tahun terakhir' },
-                  { value: 'custom', label: 'Periode kustom' },
-                ]}
-                size="sm"
-                ariaLabel="Filter periode tren pendapatan"
-              />
+        <section className="min-w-0 rounded-2xl border border-[#454d5b] bg-[#273242] p-5 sm:p-6 shadow-sm">
+          <div className="mb-4 border-b border-[#454d5b]/60 pb-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="text-base sm:text-lg font-semibold tracking-tight text-white">
+                Tren Pendapatan Salon
+              </h2>
+              <div className="w-40 sm:w-44">
+                <CustomSelect
+                  value={trendPeriod}
+                  onChange={val => setTrendPeriod(val as TrendPeriod)}
+                  options={[
+                    { value: '7d', label: '7 hari terakhir' },
+                    { value: '30d', label: '30 hari terakhir' },
+                    { value: '1m', label: '1 bulan terakhir' },
+                    { value: '3m', label: '3 bulan terakhir' },
+                    { value: '6m', label: '6 bulan terakhir' },
+                    { value: '1y', label: '1 tahun terakhir' },
+                    { value: 'custom', label: 'Periode kustom' },
+                  ]}
+                  size="sm"
+                  ariaLabel="Filter periode tren pendapatan"
+                />
+              </div>
             </div>
-          }
-        >
+            <p className="mt-1 text-xs text-[#a4a7ac]">
+              {getPeriodSubtitle(trendPeriod, trendData.startDate, trendData.endDate)}
+            </p>
+          </div>
+
           {trendPeriod === 'custom' && (
             <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-[#1c222e] p-3 text-xs">
               <div className="flex items-center gap-2">
@@ -373,47 +380,8 @@ export default function SalonOverview({
               </p>
             </div>
           ) : (
-            <div className="flex h-56 items-end gap-1.5 sm:gap-2.5 overflow-x-auto border-b border-[#454d5b]/60 px-2 pb-3 pt-6">
-              {trendData.buckets.map(bucket => {
-                const maxRev = trendData.maxAmount > 0 ? trendData.maxAmount : 1
-                const ratio = bucket.amount > 0 ? bucket.amount / maxRev : 0
-                const barHeight = bucket.amount > 0 ? Math.max(8, Math.round(ratio * 140)) : 4
-
-                return (
-                  <div
-                    key={bucket.key}
-                    className="group relative flex flex-1 min-w-[22px] flex-col items-center gap-2"
-                  >
-                    {/* Tooltip */}
-                    <div className="pointer-events-none absolute bottom-full mb-2 hidden -translate-x-1/2 left-1/2 flex-col items-center group-hover:flex z-20 whitespace-nowrap">
-                      <div className="rounded-lg border border-[#454d5b] bg-[#1c222e] px-2.5 py-1.5 text-center text-xs shadow-lg">
-                        <p className="font-semibold text-white">{rupiah(bucket.amount)}</p>
-                        <p className="text-[10px] text-[#a4a7ac]">
-                          {bucket.count} transaksi · {bucket.label}
-                        </p>
-                      </div>
-                      <div className="size-1.5 -mt-0.5 rotate-45 border-b border-r border-[#454d5b] bg-[#1c222e]" />
-                    </div>
-
-                    {/* Bar */}
-                    <div className="relative flex w-full flex-col justify-end items-center h-36">
-                      <div
-                        style={{ height: `${barHeight}px` }}
-                        className={`w-full max-w-[28px] rounded-t-md transition-all duration-300 ${
-                          bucket.amount > 0
-                            ? 'bg-gradient-to-t from-[#1835d9] to-[#24cbc5] group-hover:brightness-110'
-                            : 'bg-[#454d5b]/30'
-                        }`}
-                      />
-                    </div>
-
-                    {/* Label */}
-                    <span className="text-[10px] text-[#a4a7ac] truncate max-w-[32px] select-none">
-                      {bucket.label.slice(0, 3)}
-                    </span>
-                  </div>
-                )
-              })}
+            <div className="border-b border-[#454d5b]/60 pb-2">
+              <RevenueApexChart buckets={trendData.buckets} height={230} />
             </div>
           )}
 
@@ -440,7 +408,7 @@ export default function SalonOverview({
               </p>
             </div>
           </div>
-        </Card>
+        </section>
 
         {/* Antrean & Janji Temu Hari Ini */}
         <Card

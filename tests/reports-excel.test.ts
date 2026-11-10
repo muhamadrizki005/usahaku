@@ -41,7 +41,6 @@ test('generateReportExcel creates formatted multi-sheet Excel with Usahaku styli
         actor_name: 'Adoy Kasir',
         customer_id: 'cust-1',
         customer: '=HYPERLINK("http://malicious.test")',
-        phone: '08123456789',
         receipt_number: 'TRX-001',
         status: 'completed',
         subtotal: 50000,
@@ -56,7 +55,9 @@ test('generateReportExcel creates formatted multi-sheet Excel with Usahaku styli
         change: 500,
         created_at: '2026-11-05T09:30:00.000Z',
         cancelled_at: null,
+        cancelled_by_name: null,
         cancellation_reason: null,
+        refund_amount: null,
         deposit_amount: 0,
         deposit_payment: null,
         balance_received: null,
@@ -68,10 +69,8 @@ test('generateReportExcel creates formatted multi-sheet Excel with Usahaku styli
             quantity: 1,
             unit: 'layanan',
             price: 50000,
-            original_price: 50000,
             total: 50000,
             original_total: 50000,
-            revision: 0,
           },
         ],
       },
@@ -82,7 +81,6 @@ test('generateReportExcel creates formatted multi-sheet Excel with Usahaku styli
         actor_name: 'Adoy Kasir',
         customer_id: null,
         customer: 'Budi Santoso',
-        phone: '',
         receipt_number: 'TRX-002',
         status: 'cancelled',
         subtotal: 30000,
@@ -97,7 +95,9 @@ test('generateReportExcel creates formatted multi-sheet Excel with Usahaku styli
         change: 0,
         created_at: '2026-11-06T10:00:00.000Z',
         cancelled_at: '2026-11-06T10:15:00.000Z',
+        cancelled_by_name: 'Manajer Budi',
         cancellation_reason: 'Pelanggan membatalkan pesanan',
+        refund_amount: 30000,
         deposit_amount: 0,
         deposit_payment: null,
         balance_received: null,
@@ -112,7 +112,6 @@ test('generateReportExcel creates formatted multi-sheet Excel with Usahaku styli
         actor_name: 'Adoy Kasir',
         customer_id: null,
         customer: 'Budi Santoso',
-        phone: '',
         receipt_number: 'TRX-002',
         status: 'cancelled',
         subtotal: 30000,
@@ -143,7 +142,7 @@ test('generateReportExcel creates formatted multi-sheet Excel with Usahaku styli
 
   // Read back generated workbook with ExcelJS to assert internal structure
   const wb = new ExcelJS.Workbook()
-  await wb.xlsx.load(buffer)
+  await wb.xlsx.load(buffer as any)
 
   const masterSheet = wb.getWorksheet('Laporan Lengkap')
   assert.ok(masterSheet, 'Master sheet should exist')

@@ -17,6 +17,7 @@ import {
 import { calculateRevenueTrend, getTodayWib, getPeriodSubtitle, type TrendPeriod } from '@/lib/dashboard-trends'
 import { CustomSelect } from '@/components/ui/custom-select'
 import { DatePicker } from '@/components/ui/date-picker'
+import RevenueApexChart from '@/components/revenue-apex-chart'
 import { salesSummary, saleCode, paymentLabel, type Sale } from '@/lib/pos'
 import {
   restaurantOrderCode,
@@ -399,44 +400,8 @@ export default function RestaurantOverview({
               <p className="text-xs text-[#a4a7ac]">Pilih rentang waktu lain atau selesaikan pesanan di kasir</p>
             </div>
           ) : (
-            <div className="flex h-56 items-end gap-1.5 sm:gap-2.5 overflow-x-auto border-b border-[#454d5b]/60 px-2 pb-3 pt-6">
-              {trendData.buckets.map((bucket) => {
-                const maxRev = trendData.maxAmount > 0 ? trendData.maxAmount : 1
-                const ratio = bucket.amount > 0 ? bucket.amount / maxRev : 0
-                const barHeight = bucket.amount > 0 ? Math.max(8, Math.round(ratio * 140)) : 4
-
-                return (
-                  <div key={bucket.key} className="group relative flex flex-1 min-w-[20px] flex-col items-center gap-2">
-                    {/* Tooltip on hover */}
-                    <div className="pointer-events-none absolute -top-12 z-20 hidden rounded-lg bg-[#1c222e] px-2.5 py-1 text-center shadow-lg group-hover:flex flex-col items-center whitespace-nowrap">
-                      <span className="text-[11px] font-semibold text-[#24cbc5]">{money(bucket.amount)}</span>
-                      <span className="text-[9px] text-[#c5cbd5]">
-                        {bucket.fullLabel} • {bucket.count} transaksi
-                      </span>
-                    </div>
-                    {/* Bar */}
-                    <div
-                      className={`w-full max-w-8 rounded-t-md transition-all duration-300 ${
-                        bucket.isCurrent
-                          ? 'bg-gradient-to-t from-[#1835d9] to-[#24cbc5] shadow-[0_0_12px_rgba(36,203,197,0.35)] group-hover:brightness-110'
-                          : bucket.amount > 0
-                          ? 'bg-gradient-to-t from-[#1835d9] to-[#24cbc5] group-hover:brightness-110'
-                          : 'bg-[#454d5b]/30'
-                      }`}
-                      style={{ height: `${barHeight}px` }}
-                    />
-                    {/* X Axis Label */}
-                    <span
-                      className={`text-[10px] sm:text-[11px] truncate max-w-full text-center ${
-                        bucket.isCurrent ? 'font-semibold text-[#24cbc5]' : 'font-medium text-[#c5cbd5]'
-                      }`}
-                      title={bucket.fullLabel}
-                    >
-                      {bucket.shortLabel || bucket.label}
-                    </span>
-                  </div>
-                )
-              })}
+            <div className="border-b border-[#454d5b]/60 pb-2">
+              <RevenueApexChart buckets={trendData.buckets} height={230} />
             </div>
           )}
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
