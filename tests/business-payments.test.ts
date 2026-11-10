@@ -4,6 +4,7 @@ import {readFile,readdir} from 'node:fs/promises'
 import {randomUUID} from 'node:crypto'
 import {PGlite} from '@electric-sql/pglite'
 import {paymentSettingsSchema,paymentSettingsView} from '../lib/business-payments'
+import {prepareStoreCheckout} from '../lib/store-checkout'
 
 test('payment configuration validates usable methods and preserves legacy manual defaults',()=>{
   assert.equal(paymentSettingsView(null).configured,false);assert.equal(paymentSettingsView(null).qris,true)
@@ -49,7 +50,11 @@ test('server payment settings isolate owner writes, assets, revisions, failed sa
     await assert.rejects(save({...cash,transfer:true,banks:[{bank:'B',holder:'',account:'1'}]},2,null),/bank/)
     await as(admin);await assert.rejects(save(cash,2),/access denied/);await assert.rejects(db.query('select public.reserve_payment_qr($1,$2)',[bid,randomUUID()]),/access denied/)
     await as(cashier);await assert.rejects(save(cash,2),/access denied/);assert.equal((await db.query('select * from public.business_payment_assets')).rows.length,1)
-    await checkout({...payload,paymentRevision:2})
+    const qrisDetails={...payload,paymentRevision:2,pointsRedeemed:0}
+    await assert.rejects(checkout({...qrisDetails,unexpectedField:true}),/Invalid checkout/)
+    const qrisRequest=randomUUID(),qrisSale=(await checkout(prepareStoreCheckout(qrisDetails),qrisRequest)).rows[0].sale
+    assert.equal(qrisSale.payment,'qris');assert.equal(Number(qrisSale.total),10000)
+    assert.equal((await checkout(prepareStoreCheckout(qrisDetails),qrisRequest)).rows[0].sale.id,qrisSale.id)
     await assert.rejects(db.query('update public.business_payments set cash=false'),/permission denied/)
     await assert.rejects(db.query('select public.claim_payment_qr_cleanup($1)',[qr]),/permission denied/)
     await as(other);assert.equal((await db.query('select * from public.business_payments')).rows.length,0);await assert.rejects(save(cash,2),/access denied/);await assert.rejects(save({...cash,qris:true},0,qr,bid2),/unavailable/)
@@ -59,7 +64,9 @@ test('server payment settings isolate owner writes, assets, revisions, failed sa
     const draft=randomUUID();await db.query('select public.reserve_payment_qr($1,$2)',[bid,draft]);await db.exec('reset role');await db.exec('set role service_role');assert.equal((await db.query<any>('select public.claim_payment_qr_cleanup($1) path',[draft])).rows[0].path,null)
     await as(owner);await save({cash:false,qris:false,transfer:false,banks:[]},3);await assert.rejects(checkout({...payload,payment:'cash',paymentRevision:4}),/disabled/)
     await save({cash:false,qris:false,transfer:false,banks:[],ewallet:true,ewallets:[{ewallet:'GoPay',holder:'Owner',number:'08123456789'}]},4);
-    const ewSale=(await checkout({...payload,payment:'ewallet',paymentRevision:5})).rows[0].sale;
+    const ewDetails=prepareStoreCheckout({...payload,payment:'ewallet',paymentRevision:5,pointsRedeemed:0})
+    const ewRequest=randomUUID(),ewSale=(await checkout(ewDetails,ewRequest)).rows[0].sale;
     assert.equal(ewSale.payment,'ewallet');
+    assert.equal((await checkout(ewDetails,ewRequest)).rows[0].sale.id,ewSale.id)
   }finally{await db.close()}
 })
