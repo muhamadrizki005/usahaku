@@ -5,42 +5,26 @@ import {requireBusiness} from '@/lib/access'
 import type {Sale} from '@/lib/pos'
 import {restaurantFailure} from '@/lib/restaurant-errors'
 import {salonOperationFailure} from '@/lib/salon-operations'
+import {prepareStoreCheckout} from '@/lib/store-checkout'
 export type PosResult={sale?:Sale;error?:string;uncertain?:boolean}
 function failure(code?:string):PosResult{return{error:code==='PT409'?'Produk, harga, stok, atau pelanggan telah berubah. Muat ulang dan periksa keranjang sebelum menerima pembayaran.':code==='42501'?'Akses transaksi ditolak.':code==='22023'?'Periksa jumlah, pembayaran, diskon, dan konfirmasi.':code==='PGRST202'?'Migrasi POS belum terpasang di Supabase.':'Hasil penyimpanan belum pasti. Coba ulang dengan permintaan yang sama atau periksa riwayat transaksi sebelum mencatat pembayaran lain.',uncertain:!['PT409','42501','22023','PGRST202'].includes(code||'')}}
 export async function checkoutPos(requestId:string,details:unknown):Promise<PosResult>{
   const {supabase,business}=await requireBusiness(undefined, false, ['pos:view', 'pos:create'])
   if(!z.uuid().safeParse(requestId).success)return{error:'ID permintaan tidak valid.'}
-  const {data,error}=await supabase.rpc('checkout_pos',{target_id:business.id,operation_id:requestId,details}).abortSignal(AbortSignal.timeout(15000)).retry(false)
-  if(error||!data)return failure(error?.code)
+  let checkoutDetails:unknown
+  try { checkoutDetails=prepareStoreCheckout(details) } catch(error) { return {error:(error as Error).message} }
+  const {data,error}=await supabase.rpc('checkout_pos',{target_id:business.id,operation_id:requestId,details:checkoutDetails}).abortSignal(AbortSignal.timeout(15000)).retry(false)
+  if(error||!data){
+    if(error?.message&&['Hadiah','Jumlah poin hadiah','Saldo poin member','Pilih member aktif','Tambahkan produk hadiah','Nominal voucher poin'].some(prefix=>error.message.startsWith(prefix)))return{error:error.message}
+    return failure(error?.code)
+  }
   const sale = data as Sale
-  const det = details as any
   if (sale.customer_id) {
     try {
-      if (det?.pointsRedeemed && Number(det.pointsRedeemed) > 0) {
-        const { createAdminClient } = await import('@/lib/supabase/admin')
-        const admin = createAdminClient()
-        const { data: cust } = await admin.from('customers').select('points').eq('id', sale.customer_id).single()
-        const cur = Number(cust?.points) || 0
-        const afterRedeem = Math.max(0, cur - Number(det.pointsRedeemed))
-        await admin.from('customers').update({ points: afterRedeem }).eq('id', sale.customer_id)
-        const { user } = await requireBusiness()
-        await admin.from('customer_point_history').insert({
-          business_id: business.id,
-          customer_id: sale.customer_id,
-          actor_id: user.id,
-          transaction_id: sale.id,
-          delta: -Number(det.pointsRedeemed),
-          balance_after: afterRedeem,
-          reason: det.redemptionReason || 'Penukaran poin member',
-        })
-        sale.customer_points = afterRedeem
-        ;(sale as any).points_redeemed = Number(det.pointsRedeemed)
-      } else {
-        const { data: cust } = await supabase.from('customers').select('points').eq('id', sale.customer_id).maybeSingle()
+        const { data: cust } = await supabase.from('customers').select('points').eq('business_id', business.id).eq('id', sale.customer_id).maybeSingle()
         if (cust && cust.points != null) {
           sale.customer_points = Number(cust.points)
         }
-      }
     } catch {}
   }
   revalidatePath('/dashboard','layout');return{sale}

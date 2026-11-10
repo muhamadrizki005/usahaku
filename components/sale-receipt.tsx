@@ -73,6 +73,7 @@ export default function SaleReceipt({ sale, business, id }: { sale: Sale; busine
         </> : business.category!=='barbershop' && sale.product_discount != null && sale.order_discount != null ? <>
           <ReceiptRow label="Diskon produk">{rupiah(Number(sale.product_discount))}</ReceiptRow>
           <ReceiptRow label={orderDiscountLabel}>{rupiah(Number(sale.order_discount))}</ReceiptRow>
+          {Number(sale.point_discount)>0 && <ReceiptRow label={`Tukar ${Number(sale.points_redeemed)} poin`}>{rupiah(Number(sale.point_discount))}</ReceiptRow>}
         </> : <ReceiptRow label={fallbackDiscountLabel}>{rupiah(Number(sale.discount))}</ReceiptRow>}
         {Number(sale.service_amount)>0 && <ReceiptRow label={`Biaya layanan (${Number(sale.service_rate)}%)`}>{rupiah(Number(sale.service_amount))}</ReceiptRow>}
         {sale.tax_rate !== undefined && <ReceiptRow label={`Pajak (${Number(sale.tax_rate)}%)`}>{rupiah(Number(sale.tax_amount || 0))}</ReceiptRow>}
