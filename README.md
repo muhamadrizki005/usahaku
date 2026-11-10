@@ -20,6 +20,25 @@ Ketiga akun merupakan akun **Pemilik** khusus demonstrasi. Nama pelanggan, baran
 4. Website langsung membuka dashboard usaha. Akun juri sudah diaktifkan dan menyelesaikan onboarding, sehingga tidak perlu membuat usaha atau memasukkan OTP lagi.
 5. Untuk mencoba kategori lain, buka menu akun di kanan atas, pilih **Keluar akun**, kemudian masuk menggunakan akun kategori berikutnya.
 
+### Akun admin dan kasir untuk juri
+
+Setiap usaha contoh juga memiliki **1 admin dan 1 kasir**. Seluruh akun staf di bawah memakai kata sandi **`JuriUsahaku123!`**.
+
+| Usaha | Kode toko | Username admin | Username kasir |
+| --- | --- | --- | --- |
+| Toko Contoh | `8F82D952` | `admin_juri` | `kasir_juri` |
+| Cafe Contoh | `662C0690` | `admin_juri` | `kasir_juri` |
+| Salon Contoh | `7AE8DA90` | `admin_juri` | `kasir_juri` |
+
+1. Jika masih masuk sebagai pemilik, buka dropdown akun kanan atas → **Keluar akun**.
+2. Pada halaman **Masuk**, pilih tab **Staf**.
+3. Isi **Kode toko** sesuai usaha yang ingin diuji, **Username**, dan **Kata sandi** staf dari tabel di atas, lalu tekan **Masuk**.
+4. Akun staf juri sudah siap digunakan tanpa perlu mengganti kata sandi pada login pertama.
+
+Admin dapat mengelola operasional dan melihat laporan sesuai kategori usaha. Kasir dapat melayani transaksi, tetapi hanya melihat riwayat transaksi miliknya sendiri. Karena tiga transaksi awal setiap usaha dibuat oleh pemilik, riwayat kasir awalnya kosong; catat transaksi menggunakan akun kasir untuk mencoba riwayat tersebut. Pengaturan usaha dan pengelolaan staf tetap khusus pemilik.
+
+Kode toko menentukan usaha yang diakses. Contohnya, kode `662C0690` dengan username `kasir_juri` masuk sebagai kasir Cafe Contoh, bukan kasir toko atau salon.
+
 ### Data yang sudah tersedia
 
 | Akun | Katalog siap pakai | Data pendukung | Riwayat contoh |
