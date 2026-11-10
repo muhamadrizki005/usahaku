@@ -7,6 +7,7 @@ const definitions = {
   business: ['businesses', 'name,category,address,city,province,district,village,description,operating_hours,tax_rate,loyalty_active,loyalty_point_nominal', 'name'],
   staff: ['business_members', 'name,role,active', 'name'],
   catalog: ['catalog_products', 'name,category,unit,sku,price,discount_kind,discount_value,active', 'name'],
+  services: ['salon_services', 'name,price,duration_minutes,active', 'name'],
   inventory: ['catalog_products', 'name,unit,stock,minimum_stock,active', 'name'],
   stock_history: ['stock_movements', 'product_name,kind,quantity,before_stock,after_stock,unit,created_at', 'product_name'],
   customers: ['customers', 'name,active,points', 'name'],
@@ -37,7 +38,6 @@ export async function readAssistantData(client: SupabaseClient, businessId: stri
       }
       let [table, columns, searchColumn]: readonly string[] = definitions[read.source]
       if (read.source === 'catalog' && category === 'restaurant') { table = 'restaurant_menu'; columns = 'name,category,price,available,active' }
-      if (read.source === 'catalog' && category === 'barbershop') { table = 'salon_services'; columns = 'name,price,duration_minutes,active' }
       let query = client.from(table).select(columns, { count: 'exact' }).eq(read.source === 'business' ? 'id' : 'business_id', businessId)
       if (read.source === 'tables') query = query.is('deleted_at', null)
       if (read.search) query = query.ilike(searchColumn, `%${read.search.replace(/[\\%_]/g, '\\$&')}%`)
@@ -46,7 +46,7 @@ export async function readAssistantData(client: SupabaseClient, businessId: stri
         const end = new Date(filter.to + 'T00:00:00+07:00'); end.setUTCDate(end.getUTCDate() + 1)
         query = query.gte(dateColumn, filter.from + 'T00:00:00+07:00').lt(dateColumn, end.toISOString())
       }
-      if (read.source === 'catalog' && read.order && read.order !== 'default') query = query.order('price', { ascending: read.order === 'price_asc' })
+      if ((read.source === 'catalog' || read.source === 'services') && read.order && read.order !== 'default') query = query.order('price', { ascending: read.order === 'price_asc' })
       query = query.order(dateColumn || searchColumn, { ascending: !dateColumn })
       if (!['business', 'payments', 'billing'].includes(read.source)) query = query.order('id')
       const start = (read.page - 1) * 20

@@ -81,7 +81,7 @@ export function renderChatAnswer(draft: ChatDraft, context: AssistantContext, bu
   }
   const used = new Set<string>()
   const message = draft.message.replace(/\{\{fact:([a-z0-9_]+)\}\}/g, (_match, id: string) => { used.add(id); return context.facts.find(f => f.id === id)!.text })
-  const facts = draft.factIds.filter(id => !used.has(id)).map(id => context.facts.find(f => f.id === id)!.text)
+  const facts = draft.factIds.filter(id => !used.has(id) && !id.endsWith('_scope')).map(id => context.facts.find(f => f.id === id)!.text)
   const dataSources = new Set(draft.factIds.map(id => context.facts.find(f => f.id === id)?.source).filter(Boolean))
   const dataScopes = context.facts.filter(fact => fact.id.endsWith('_scope') && fact.source && dataSources.has(fact.source)).map(fact => fact.text)
   const sources = [...new Set(draft.factIds.map(id => context.facts.find(f => f.id === id)?.source || (/^(stock_|empty_stock)/.test(id) ? 'Inventori saat ini' : 'Laporan penjualan periode pilihan')))]

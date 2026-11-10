@@ -13,7 +13,7 @@ const focus = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visi
 const time = (s: string) => new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Jakarta' }).format(new Date(s)) + ' WIB'
 const assistantSourceUrl = (source: string, category: 'store' | 'restaurant' | 'barbershop', from: string, to: string) => category === 'barbershop' ? ({
   'Profil dan jam usaha': '/dashboard/settings?category=barbershop', 'Staf dan akses': '/dashboard/settings/staff?category=barbershop',
-  'Katalog usaha': '/dashboard/salon/services?category=barbershop', 'Inventori saat ini': '/dashboard/salon/services?category=barbershop', 'Riwayat stok': '/dashboard/salon/services?category=barbershop',
+  'Katalog usaha': '/dashboard/salon/services?category=barbershop', 'Layanan salon': '/dashboard/salon/services?category=barbershop', 'Inventori saat ini': '/dashboard/salon/services?category=barbershop', 'Riwayat stok': '/dashboard/salon/services?category=barbershop',
   'Pelanggan dan poin': '/dashboard/customers?category=barbershop', 'Metode pembayaran aktif': '/dashboard/settings?category=barbershop',
   'Riwayat transaksi': '/dashboard/transactions?category=barbershop',
 }[source] || `/dashboard/reports?category=barbershop&from=${from}&to=${to}&payment=all`) : ({

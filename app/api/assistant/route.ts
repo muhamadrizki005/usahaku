@@ -29,7 +29,7 @@ export async function POST(request: Request) {
   if (!member?.active || member.must_change_password ) return fail('Asisten memerlukan akun toko aktif dengan izin yang sesuai.', 403)
   let access; try { access = await resolveAccessMember(client, member as Member) } catch { return fail('Akses belum dapat diperiksa.', 502) }
   if (!hasPermission(access.role,access.permissions,'reports:view') || !hasPermission(access.role,access.permissions,'products:view')) return fail('Akses Asisten ditolak.', 403)
-  const { data: business, error: businessError } = await client.from('businesses').select('category,onboarding_completed_at').eq('id', member.business_id).single()
+  const { data: business, error: businessError } = await client.from('businesses').select('name,category,onboarding_completed_at').eq('id', member.business_id).single()
   if (businessError || !business) return fail('Usaha belum dapat diperiksa.', 502)
   if (!['store','restaurant','barbershop'].includes(business.category) || !business.onboarding_completed_at || (['restaurant','barbershop'].includes(business.category) && !['owner','admin'].includes(member.role))) return fail('Selesaikan pengaturan usaha dengan akses yang sesuai sebelum memakai Asisten.', 403)
   const reader = request.body?.getReader()
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
     const reads = await planAssistantData(parsed.data.question, conversation, config)
     const { context, dataWarning } = await readAssistantData(client, member.business_id, member.role, business.category, parsed.data.period, reads)
     const budget = inferBudget(parsed.data.question, conversation.budget, conversation.lastMode === 'clarification')
-    const draft = await chatWithGemini(parsed.data.question, context, conversation, { ...config, budget, dataWarning })
+    const draft = await chatWithGemini(parsed.data.question, context, conversation, { ...config, budget, dataWarning, businessName: business.name, businessCategory: business.category as 'store' | 'restaurant' | 'barbershop' })
     const answer = renderChatAnswer(draft, context, budget, dataWarning)
     const conversationToken = advanceConversation(conversation, parsed.data.question, answer, budget, config.key, user.id, member.business_id, Date.now(), draft.message)
     return Response.json({ answer, conversationToken }, { headers })
