@@ -448,7 +448,7 @@ export default function OriginalIdentity({
             </section>
 
             {/* Program Poin Member Section */}
-            {(category === "toko" || category === "barbershop") && <section className="rounded-xl border border-[#454d5b] bg-[#273242] p-5 shadow-sm transition-all duration-300">
+            <section className="rounded-xl border border-[#454d5b] bg-[#273242] p-5 shadow-sm transition-all duration-300">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="font-medium text-white">Program Poin Member</h2>
@@ -566,7 +566,7 @@ export default function OriginalIdentity({
                   </button>
                 </div>
               )}
-            </section>}
+            </section>
           </aside>
           <div className="flex items-center justify-between border-t border-[#454d5b] pt-5 lg:col-span-2">
             <button
